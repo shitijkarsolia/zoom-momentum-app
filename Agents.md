@@ -1,7 +1,4 @@
 # Project Memory: Zoom Momentum
 
-**Status:** Active Development
-**Dates:** Feb 02, 2026 - Feb 28, 2026
-
-Read Zoom Project Pitch.pdf
-Read onboarding.md
+don't use the roadmap as the complete source of truth, its a rough draft that's work in progress.
+Read roadmap.md

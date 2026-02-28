@@ -1,0 +1,50 @@
+For the first week here are the tasks to do. We need to familiarize ourselves with the SDK/API and explore how to implement our idea
+
+
+
+Task: Study Zoom Apps SDK Documentation
+
+The Zoom Apps SDK is how our app communicates with Zoom. Focus on:
+
+Contexts: Our app runs in two places — waitingRoom (before meeting starts) and sidePanel (during meeting). These are completely different environments with different capabilities.
+Lifecycle: When does our app load? When does it unload? What happens when the meeting starts?
+Available APIs: What can we access? (Transcript, chat events, participant list, etc.)
+
+Example to understand: When a student is in the waiting room, they can't see the main meeting. Our app loads in waitingRoom context. When the host admits them, our app transitions to sidePanel context. This transition is where the leaderboard "handoff" happens.
+[2:00 PM]Task: Study Zoom AI Companion API 3.0
+
+Our app generates summaries, quiz questions, polls, and recovery packs using AI. Critically, we need to understand what AI Companion already does out of the box so we don't duplicate it.
+
+How to authenticate with the API
+Request/response formats
+Rate limits and timeout handling
+What AI Companion 3.0 handles natively (meeting summaries, Q&A, smart recap) — we build around these, not over them
+Using OpenAI as a fallback during development
+
+Key prompts we'll use:
+// Live Anchor — Topic Segmentation
+"Identify if the topic has changed from the previous context. If yes,
+summarize the previous topic in 3 bullets. If no, extract any new key
+definitions or formulas. Return as JSON."
+// Recovery Agent — Post-Class Remediation
+"Based on this transcript segment, create a concise explanation (2-3 sentences),
+one practice problem, and suggest a study resource. Return as JSON."
+// Warm-Up Arena — Recall Questions
+"Create 3 multiple choice questions a student should be able to answer
+if they attended last week's lecture. Focus on main ideas, not minor details."
+
+
+Task: Deep Dive into Shared State API
+
+The Warm-Up Arena and Live Anchor both depend on synchronized state across all clients. The Zoom Shared State API makes this possible.
+
+Understand:
+
+How state propagates across clients
+Latency expectations (should be <100ms)
+What happens when someone joins late (they need to sync to current state)
+Conflict resolution (what if two clients update simultaneously?)
+
+Example scenario: 30 students are in the waiting room. The timer hits zero. All 30 must see "Question 1" appear simultaneously. If Student A sees it 2 seconds before Student B, the competitive magic is broken.
+
+Live Anchor scenario: The professor moves to a new topic. The Host App updates Shared State. All 30 student sidebars must reflect the new topic card within milliseconds.
