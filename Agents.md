@@ -188,3 +188,28 @@ zoom-momentum/
 ├── .env.example             # Env template
 └── *.md                     # Planning & spec docs
 ```
+
+## Cursor Cloud specific instructions
+
+### Services overview
+- **Client** (Vite + React): `npm run dev -w client` → port 5173. Proxies `/api/*` to backend.
+- **Server** (Express + TypeScript): `npm run dev -w server` → port 3001. Requires env vars in `server/.env`.
+- **Mock Transcript** (optional): `npm run dev -w mock-transcript`. Simulates RTMS transcript chunks.
+- Combined: `npm run dev` (client + server) or `npm run dev:mock` (all three).
+
+### Environment variables
+The server uses `dotenv/config` which loads `.env` from `process.cwd()`. When using npm workspaces (`npm run dev -w server`), the cwd is the **server directory**, so the `.env` with all variables (ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET, ZOOM_REDIRECT_URL, SESSION_SECRET, OPENAI_API_KEY) must be in `server/.env`, not just the root `.env`. The root `.env` is only used if you run commands from the root directory directly. Prisma also needs `DATABASE_URL=file:./dev.db` in `server/.env`.
+
+### Database
+SQLite via Prisma. After install, run `cd server && npx prisma migrate dev --name init` to set up. The `dev.db` file lives in `server/prisma/dev.db`.
+
+### Build and type-check
+- No dedicated lint or test scripts are configured in this repo.
+- `tsc --noEmit` in `server/` passes cleanly; in `client/` there are 2 pre-existing TS errors from Zoom SDK type incompatibilities — these do not block Vite dev or build.
+- `npx vite build` in `client/` and `npx tsc` in `server/` both succeed.
+
+### Running outside Zoom
+The frontend is a Zoom Apps SDK side-panel app. When loaded in a regular browser, it will show "SDK Error: The Zoom Apps SDK is not supported by this browser" — this is expected. Full testing requires running inside a Zoom meeting with ngrok.
+
+### Transcript foreign key caveat
+The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: "mock-meeting-001"`. This requires a matching `Meeting` record in the DB, or it will 500 due to a Prisma foreign key constraint. A meeting must be created first (e.g., via the auth/OAuth flow which creates user and meeting records).
