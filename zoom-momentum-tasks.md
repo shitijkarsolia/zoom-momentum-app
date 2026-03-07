@@ -32,6 +32,17 @@ This document breaks down the high-level features of Zoom Momentum into specific
 
 ---
 
+## Week 1 Research Findings (Verified)
+*These findings from initial SDK research inform all implementation decisions.*
+
+- **No `waitingRoom` context:** Zoom Apps SDK does not support running apps in the waiting room. The Warm-Up Arena runs in-meeting (`inMeeting` context) at the start of class instead.
+- **No `onTranscriptUpdate` event:** The client SDK cannot subscribe to live transcripts directly. RTMS is the only supported path for real-time transcript access.
+- **AI Companion API not usable for custom prompts:** The "Customizable AI Companion" exposes only one endpoint with no webhooks—it's not a general-purpose LLM backend. We use an external LLM (OpenAI/Bedrock) for all AI features.
+- **Shared state via messaging:** There is no dedicated "Shared State API." Synchronized state is built on `connect()` + `postMessage()` + `onMessage()`, with the host as the source of truth.
+- **Host-only detection events:** `onParticipantChange`, `getMeetingParticipants`, and `onActiveSpeakerChange` are host-only for privacy reasons. All detection logic runs on the host and broadcasts results to students.
+
+---
+
 ## Phase 1: Tech Stack Research & Decisions (Pre-Code)
 *Goal: Decide on the foundational tools we will use.*
 
