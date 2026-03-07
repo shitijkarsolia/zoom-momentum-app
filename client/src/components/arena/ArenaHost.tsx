@@ -117,7 +117,7 @@ export function ArenaHost({
         </div>
 
         <div className="arena-live-stats">
-          <span>{responseCount} answers received</span>
+          <span>{responseCount} {responseCount === 1 ? 'answer' : 'answers'} received</span>
           <button className="btn btn-primary" onClick={onShowLeaderboard}>
             📊 Show Results
           </button>

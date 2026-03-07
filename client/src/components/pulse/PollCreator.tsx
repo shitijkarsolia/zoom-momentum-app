@@ -129,7 +129,7 @@ export function PollCreator({
             <span className="pulse-dot" />
             <span>Live</span>
           </div>
-          <span className="poll-response-count">{responseCount} responses</span>
+          <span className="poll-response-count">{responseCount} {responseCount === 1 ? 'response' : 'responses'}</span>
         </div>
         <button className="btn btn-primary" onClick={onEndPoll}>
           📊 End Poll & Show Results
