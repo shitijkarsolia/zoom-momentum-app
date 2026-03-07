@@ -2,9 +2,24 @@ import { Router } from 'express';
 import OpenAI from 'openai';
 import { config } from '../config.js';
 
-const openai = new OpenAI({ apiKey: config.openai.apiKey });
+const openai = new OpenAI({ apiKey: config.openai.apiKey, baseURL: config.openai.baseUrl });
 
 export const aiRouter = Router();
+
+/** Extract JSON from a response that may contain markdown fences or conversational text */
+function extractJSON(text: string): any {
+  // Try direct parse first
+  try { return JSON.parse(text); } catch {}
+  // Try extracting from markdown code block
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) try { return JSON.parse(fenced[1].trim()); } catch {}
+  // Try finding first { ... } or [ ... ]
+  const braceMatch = text.match(/(\{[\s\S]*\})/);
+  if (braceMatch) try { return JSON.parse(braceMatch[1]); } catch {}
+  const bracketMatch = text.match(/(\[[\s\S]*\])/);
+  if (bracketMatch) try { return JSON.parse(bracketMatch[1]); } catch {}
+  throw new Error('Could not extract JSON from response');
+}
 
 const FALLBACK_POLLS = [
   {
@@ -30,29 +45,29 @@ aiRouter.post('/poll-generate', async (req, res) => {
 ${currentTopic ? `Current topic: ${currentTopic}` : ''}
 ${context ? `Additional context from the professor: ${context}` : ''}
 
-The poll should gauge student understanding or engagement. Return valid JSON only with this exact structure:
+The poll should gauge student understanding or engagement. Return ONLY valid JSON with this exact structure, no other text:
 {"question": "...", "options": ["option1", "option2", "option3", "option4"]}
 
 Rules:
 - Exactly 4 options
 - Options should be concise (under 10 words each)
 - The question should be clear and relevant to the lecture context
-- If context is about a specific concept, ask about understanding of that concept`;
+- If context is about a specific concept, ask about understanding of that concept
+- Return ONLY the JSON object, nothing else`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'claude-sonnet-4.5',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
       max_tokens: 300,
-      response_format: { type: 'json_object' },
     });
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error('Empty response from OpenAI');
+      throw new Error('Empty response from AI');
     }
 
-    const parsed = JSON.parse(content);
+    const parsed = extractJSON(content);
     if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length < 2) {
       throw new Error('Invalid poll format from AI');
     }
@@ -67,7 +82,7 @@ Rules:
 
 // POST /api/ai/topic-segment — Analyze transcript for topic changes
 aiRouter.post('/topic-segment', async (_req, res) => {
-  // TODO: Implement with OpenAI integration
+  // TODO: Implement with AI integration
   res.json({ topicChanged: false, message: 'AI service not yet implemented' });
 });
 
@@ -114,7 +129,7 @@ aiRouter.post('/quiz-generate', async (req, res) => {
 ${topic ? `Topic: ${topic}` : ''}
 ${transcript ? `Based on this transcript excerpt:\n"${transcript.slice(0, 1500)}"` : 'Generate general knowledge questions about calculus/derivatives.'}
 
-Return valid JSON only with this exact structure:
+Return ONLY valid JSON with this exact structure, no other text:
 {"questions": [{"question": "...", "options": ["A", "B", "C", "D"], "correctIndex": 0, "explanation": "..."}]}
 
 Rules:
@@ -122,20 +137,20 @@ Rules:
 - correctIndex is 0-based (0-3)
 - Questions should test understanding, not just recall
 - Explanations should be brief (1-2 sentences)
-- Questions should increase in difficulty`;
+- Questions should increase in difficulty
+- Return ONLY the JSON object, nothing else`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'claude-sonnet-4.5',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
       max_tokens: 1500,
-      response_format: { type: 'json_object' },
     });
 
     const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from OpenAI');
+    if (!content) throw new Error('Empty response from AI');
 
-    const parsed = JSON.parse(content);
+    const parsed = extractJSON(content);
     if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
       throw new Error('Invalid quiz format from AI');
     }
@@ -150,12 +165,12 @@ Rules:
 
 // POST /api/ai/recovery-pack — Generate recovery pack from bookmarks
 aiRouter.post('/recovery-pack', async (_req, res) => {
-  // TODO: Implement with OpenAI integration
+  // TODO: Implement with AI integration
   res.json({ items: [], message: 'AI service not yet implemented' });
 });
 
 // POST /api/ai/detect-cues — Detect professor importance cues
 aiRouter.post('/detect-cues', async (_req, res) => {
-  // TODO: Implement with OpenAI integration
+  // TODO: Implement with AI integration
   res.json({ hasCue: false, message: 'AI service not yet implemented' });
 });

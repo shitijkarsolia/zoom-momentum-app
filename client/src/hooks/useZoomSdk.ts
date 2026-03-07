@@ -44,15 +44,19 @@ export function useZoomSdk(): ZoomContext {
     try {
       const configResponse = await zoomSdk.config({
         capabilities: [...SDK_CAPABILITIES],
+        version: '0.16.0',
       });
 
       const userContext = await zoomSdk.getUserContext();
+
+      // configResponse may contain meetingUUID at runtime even if not in the TS type
+      const meetingUUID = (configResponse as any).meetingUUID ?? '';
 
       setContext({
         isHost: userContext.role === 'host' || userContext.role === 'coHost',
         userName: userContext.screenName ?? '',
         participantId: userContext.participantUUID ?? '',
-        meetingId: configResponse.meetingUUID ?? '',
+        meetingId: meetingUUID,
         runningContext: configResponse.runningContext ?? 'inMeeting',
         isConfigured: true,
         error: null,
