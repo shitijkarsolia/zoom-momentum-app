@@ -47,14 +47,23 @@ Zoom Momentum is a **Zoom Apps SDK** in-meeting side panel app for live college 
 - Wired into [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Arena tab and [`StudentView.tsx`](client/src/views/StudentView.tsx) overlay
 - Message routing in [`App.tsx`](client/src/App.tsx): ARENA_START, ARENA_QUESTION, ARENA_ANSWER, ARENA_LEADERBOARD, ARENA_END
 
-**DevPreview** ([`DevPreview.tsx`](client/src/DevPreview.tsx)) — Full standalone dev testing environment for both Pulse and Arena features with simulated host/student modes, fake data, and all UI states.
+**Live Anchor (Feature A) — COMPLETE:**
+- [`useLiveAnchor.ts`](client/src/hooks/useLiveAnchor.ts) — Host hook: 30s polling loop fetches transcript buffer → calls AI topic-segment → broadcasts TOPIC_UPDATE/GLOSSARY_UPDATE. Student hook: accumulates topics + glossary from messages, bookmark support.
+- [`TopicCard.tsx`](client/src/components/anchor/TopicCard.tsx) — Single topic card with title, bullets, timestamp, bookmark button
+- [`Timeline.tsx`](client/src/components/anchor/Timeline.tsx) — Scrolling list of topic cards, newest first, current topic highlighted
+- [`GlossaryTab.tsx`](client/src/components/anchor/GlossaryTab.tsx) — Searchable glossary with terms, definitions, formulas
+- Wired into [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Anchor tab (AI controls: start/stop/poll now + topic view + glossary)
+- Wired into [`StudentView.tsx`](client/src/views/StudentView.tsx) Timeline + Glossary tabs with "📌 I'm Confused" bookmark button + toast
+- Message routing in [`App.tsx`](client/src/App.tsx): TOPIC_UPDATE, GLOSSARY_UPDATE
+
+**DevPreview** ([`DevPreview.tsx`](client/src/DevPreview.tsx)) — Full standalone dev testing environment for Pulse, Arena, and Live Anchor features with simulated host/student modes, mock data, and all UI states.
 
 **Backend (Express + TypeScript + Prisma/SQLite):**
 - OAuth routes ([`auth.ts`](server/src/routes/auth.ts)) — `/authorize`, `/callback` (GET redirect + POST token exchange), `/me`
 - AI routes ([`ai.ts`](server/src/routes/ai.ts)):
   - `/poll-generate` — **WORKING** — real OpenAI/compatible LLM integration with JSON extraction + 3 fallback polls
   - `/quiz-generate` — **WORKING** — real AI quiz generation with JSON extraction + 5 fallback questions
-  - `/topic-segment` — **STUB** — returns `{ topicChanged: false }`
+  - `/topic-segment` — **WORKING** — AI transcript analysis for topic changes, bullets, glossary terms + keyword fallback
   - `/recovery-pack` — **STUB** — returns `{ items: [] }`
   - `/detect-cues` — **STUB** — returns `{ hasCue: false }`
 - Transcript routes ([`transcript.ts`](server/src/routes/transcript.ts)) — POST `/segment`, GET `/buffer` (rolling ~300 word window)
@@ -70,30 +79,28 @@ Zoom Momentum is a **Zoom Apps SDK** in-meeting side panel app for live college 
 
 ## What Needs To Be Done Next
 
-### Immediate Next Task: Live Anchor (Feature A)
+### Immediate Next Task: Recovery Agent (Feature D)
 
-Professor's Pulse and Warm-Up Arena are both complete. The next feature is **Live Anchor** — the real-time topic timeline.
+Professor's Pulse, Warm-Up Arena, and Live Anchor are all complete. The next feature is **Recovery Agent** — post-class summary and bookmark-based review.
 
 **What to build:**
-1. Implement `/api/ai/topic-segment` — takes the 300-word transcript buffer, detects topic changes, extracts bullets + glossary terms
-2. Host-side AI loop — call topic-segment every ~2 minutes or on speaker pause, broadcast `TOPIC_UPDATE` / `GLOSSARY_UPDATE`
-3. Student Timeline UI — scrolling topic cards with bullets, sliding animation for older cards
-4. Student Glossary UI — searchable glossary/formula sheet tab that accumulates terms during the lecture
-5. Wire the "📌 I'm Confused" bookmark button in StudentView to the bookmarks API
+1. Implement `/api/ai/recovery-pack` — takes bookmarks + transcript segments, generates a study pack
+2. Implement `/api/ai/detect-cues` — detects professor importance cues ("this will be on the exam")
+3. Post-class summary view — shows bookmarked moments with context
+4. Auto-bookmark on professor cues (uses detect-cues endpoint)
 
 **Files to create/modify:**
-- `server/src/routes/ai.ts` — implement the `/topic-segment` endpoint (currently a stub)
-- `client/src/hooks/useLiveAnchor.ts` — new hook for host-side AI polling loop + student-side state
-- `client/src/components/anchor/` — TopicCard, Timeline, GlossaryTab components
-- Update [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Anchor tab (currently placeholder)
-- Update [`StudentView.tsx`](client/src/views/StudentView.tsx) Timeline + Glossary tabs (currently placeholder)
+- `server/src/routes/ai.ts` — implement `/recovery-pack` and `/detect-cues` stubs
+- `client/src/hooks/useRecovery.ts` — new hook for recovery pack generation
+- `client/src/components/recovery/` — RecoveryCard, SummaryView components
+- New student view tab or post-meeting page
 
 ### Full Build Order
 
 1. ~~**Professor's Pulse**~~ ✅ DONE
 2. ~~**Warm-Up Arena**~~ ✅ DONE
-3. **Live Anchor** ← START HERE (use mock transcript first, then real RTMS)
-4. **Recovery Agent** (needs transcript data accumulated over a session)
+3. ~~**Live Anchor**~~ ✅ DONE
+4. **Recovery Agent** ← START HERE
 5. **Enhancements** (auto-bookmark, smart spotlight, post-class summary)
 
 ### RTMS Integration
@@ -253,3 +260,23 @@ The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: 
 - `client/index.html` — Added `<script src="https://appssdk.zoom.us/sdk.js">`
 - `client/src/main.tsx` — Changed Zoom detection to `!!(window as any).zoomSdk`
 - `client/src/hooks/useZoomSdk.ts` — Added `version: '0.16.0'` to `zoomSdk.config()`, fixed `meetingUUID` type error
+
+### 2026-03-07 — Implement Live Anchor (Feature A)
+
+**What was built:** Full real-time topic timeline and glossary system — the third core feature.
+
+**Files created:**
+- `client/src/hooks/useLiveAnchor.ts` — Host polling loop (30s interval) + student state accumulation
+- `client/src/components/anchor/TopicCard.tsx` — Topic card with title, bullets, timestamp, bookmark
+- `client/src/components/anchor/Timeline.tsx` — Scrolling topic list, newest first
+- `client/src/components/anchor/GlossaryTab.tsx` — Searchable glossary/formula sheet
+- `client/src/components/anchor/index.ts` — Barrel export
+
+**Files modified:**
+- `server/src/routes/ai.ts` — Implemented `/topic-segment` endpoint (AI + fallback)
+- `client/src/App.tsx` — Added anchor hooks + TOPIC_UPDATE/GLOSSARY_UPDATE message routing
+- `client/src/views/HostDashboard.tsx` — Anchor tab with AI controls (start/stop/poll now)
+- `client/src/views/StudentView.tsx` — Timeline + Glossary tabs + bookmark button + toast
+- `client/src/DevPreview.tsx` — Added anchor simulation with mock topics/glossary
+- `client/src/hooks/useMessaging.ts` — Fixed TS error: `onMessage` payload type (`JSONObject` → runtime check)
+- `client/src/index.css` — Added anchor CSS (topic cards, glossary, bookmark toast)
