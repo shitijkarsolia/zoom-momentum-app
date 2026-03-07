@@ -45,9 +45,10 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
     };
 
     // Listen for incoming messages
-    zoomSdk.onMessage((message: { payload: string }) => {
+    zoomSdk.onMessage((message) => {
       try {
-        const parsed: AppMessage = JSON.parse(message.payload);
+        const raw = typeof message.payload === 'string' ? message.payload : JSON.stringify(message.payload);
+        const parsed: AppMessage = JSON.parse(raw);
 
         // Host auto-responds to state requests
         if (isHost && parsed.type === 'REQUEST_STATE' && stateRef.current) {

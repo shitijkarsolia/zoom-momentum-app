@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PollCard } from '../components/pulse/PollCard';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaStudent } from '../components/arena/ArenaStudent';
-import type { Poll } from '../types/messages';
+import { Timeline } from '../components/anchor/Timeline';
+import { GlossaryTab } from '../components/anchor/GlossaryTab';
+import type { Poll, Topic, GlossaryEntry } from '../types/messages';
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
 
@@ -31,6 +33,11 @@ interface StudentViewProps {
   arenaExplanation: string;
   arenaFinalLeaderboard: LeaderboardEntry[];
   onArenaSelectAndSubmit: (optionIndex: number) => void;
+  // Anchor props
+  anchorTopics: Topic[];
+  anchorCurrentTopicId: string;
+  anchorGlossary: GlossaryEntry[];
+  onBookmark: (meetingId: string, userId: string) => Promise<boolean>;
 }
 
 type StudentTab = 'timeline' | 'glossary';
@@ -53,10 +60,23 @@ export function StudentView({
   arenaExplanation,
   arenaFinalLeaderboard,
   onArenaSelectAndSubmit,
+  anchorTopics,
+  anchorCurrentTopicId,
+  anchorGlossary,
+  onBookmark,
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
+  const [bookmarkToast, setBookmarkToast] = useState(false);
 
   const showArena = arenaPhase !== 'waiting' || arenaCurrentQuestion !== null;
+
+  const handleBookmark = useCallback(async () => {
+    const ok = await onBookmark('current-meeting', userName);
+    if (ok) {
+      setBookmarkToast(true);
+      setTimeout(() => setBookmarkToast(false), 2200);
+    }
+  }, [onBookmark, userName]);
 
   return (
     <div className="app-container">
@@ -88,24 +108,28 @@ export function StudentView({
       <div className="card" style={{ flex: 1 }}>
         {activeTab === 'timeline' && (
           <div>
-            <h2 className="card-title">Live Anchor</h2>
-            <p style={{ color: 'var(--zoom-text-secondary)' }}>
-              Topic summaries will appear here as the lecture progresses.
-            </p>
-            <button className="btn btn-secondary" style={{ marginTop: 12 }}>
+            <Timeline
+              topics={anchorTopics}
+              currentTopicId={anchorCurrentTopicId}
+              onBookmark={handleBookmark ? () => handleBookmark() : undefined}
+            />
+            <button
+              className="btn btn-secondary"
+              style={{ marginTop: 12, width: '100%' }}
+              onClick={handleBookmark}
+            >
               📌 I'm Confused (Bookmark)
             </button>
           </div>
         )}
         {activeTab === 'glossary' && (
-          <div>
-            <h2 className="card-title">Glossary & Formulas</h2>
-            <p style={{ color: 'var(--zoom-text-secondary)' }}>
-              Key terms and formulas will accumulate here during the lecture.
-            </p>
-          </div>
+          <GlossaryTab glossary={anchorGlossary} />
         )}
       </div>
+
+      {bookmarkToast && (
+        <div className="bookmark-toast">📌 Bookmarked!</div>
+      )}
 
       {pollResults && (
         <div className="card">

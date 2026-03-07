@@ -8,12 +8,35 @@ import { PollCard } from './components/pulse/PollCard';
 import { PollResults } from './components/pulse/PollResults';
 import { ArenaHost } from './components/arena/ArenaHost';
 import { ArenaStudent } from './components/arena/ArenaStudent';
-import type { Poll, Question, LeaderboardEntry } from './types/messages';
+import { Timeline } from './components/anchor/Timeline';
+import { GlossaryTab } from './components/anchor/GlossaryTab';
+import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
 import type { PollDraft, PulsePhase } from './hooks/usePulse';
 import type { ArenaHostPhase, ArenaStudentPhase } from './hooks/useArena';
 
 type PreviewMode = 'host' | 'student';
-type FeatureTab = 'pulse' | 'arena';
+type FeatureTab = 'pulse' | 'arena' | 'anchor';
+
+const MOCK_TOPICS: Topic[] = [
+  {
+    id: 'topic-1',
+    title: 'Introduction to Derivatives',
+    bullets: ['Definition of a derivative as a limit', 'Notation: f\'(x) and dy/dx', 'Geometric interpretation as slope of tangent line'],
+    startTime: Date.now() - 600_000,
+  },
+  {
+    id: 'topic-2',
+    title: 'Power Rule',
+    bullets: ['d/dx(xⁿ) = nxⁿ⁻¹', 'Works for any real exponent', 'Examples with polynomials'],
+    startTime: Date.now() - 300_000,
+  },
+];
+
+const MOCK_GLOSSARY: GlossaryEntry[] = [
+  { term: 'Derivative', definition: 'The instantaneous rate of change of a function at a point', timestamp: Date.now() - 600_000 },
+  { term: 'Power Rule', definition: 'Differentiation rule: d/dx(xⁿ) = nxⁿ⁻¹', formula: 'd/dx(xⁿ) = nxⁿ⁻¹', timestamp: Date.now() - 300_000 },
+  { term: 'Tangent Line', definition: 'A line that touches a curve at exactly one point and has the same slope as the curve at that point', timestamp: Date.now() - 450_000 },
+];
 
 const QUESTION_TIME = 15;
 
@@ -54,15 +77,75 @@ export function DevPreview() {
   const [arenaExplanation, setArenaExplanation] = useState('');
   const [arenaFinalLeaderboard, setArenaFinalLeaderboard] = useState<LeaderboardEntry[]>([]);
 
+  // --- Anchor State ---
+  const [anchorTopics, setAnchorTopics] = useState<Topic[]>([]);
+  const [anchorCurrentTopicId, setAnchorCurrentTopicId] = useState('');
+  const [anchorGlossary, setAnchorGlossary] = useState<GlossaryEntry[]>([]);
+  const [anchorIsPolling, setAnchorIsPolling] = useState(false);
+  const [anchorStudentTab, setAnchorStudentTab] = useState<'timeline' | 'glossary'>('timeline');
+  const [bookmarkToast, setBookmarkToast] = useState(false);
+
   const hostTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const studentTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const anchorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimers = useCallback(() => {
     if (hostTimerRef.current) { clearInterval(hostTimerRef.current); hostTimerRef.current = null; }
     if (studentTimerRef.current) { clearInterval(studentTimerRef.current); studentTimerRef.current = null; }
+    if (anchorTimerRef.current) { clearInterval(anchorTimerRef.current); anchorTimerRef.current = null; }
   }, []);
 
   useEffect(() => () => clearTimers(), [clearTimers]);
+
+  // --- Anchor Handlers ---
+  const handleAnchorStartPolling = useCallback(() => {
+    setAnchorIsPolling(true);
+    // Immediately add first mock topic
+    setAnchorTopics([MOCK_TOPICS[0]!]);
+    setAnchorCurrentTopicId(MOCK_TOPICS[0]!.id);
+    setAnchorGlossary([MOCK_GLOSSARY[0]!]);
+    // Simulate a topic change after 5 seconds
+    anchorTimerRef.current = setInterval(() => {
+      setAnchorTopics(prev => {
+        if (prev.length >= MOCK_TOPICS.length) {
+          // Add a dynamic new topic
+          const newTopic: Topic = {
+            id: `topic-${Date.now()}`,
+            title: 'Chain Rule',
+            bullets: ['d/dx[f(g(x))] = f\'(g(x))·g\'(x)', 'Used for composite functions', 'Inner and outer function identification'],
+            startTime: Date.now(),
+          };
+          setAnchorCurrentTopicId(newTopic.id);
+          setAnchorGlossary(g => [...g, {
+            term: 'Chain Rule',
+            definition: 'Rule for differentiating composite functions',
+            formula: 'd/dx[f(g(x))] = f\'(g(x))·g\'(x)',
+            timestamp: Date.now(),
+          }]);
+          return [...prev, newTopic];
+        }
+        const next = MOCK_TOPICS[prev.length]!;
+        setAnchorCurrentTopicId(next.id);
+        setAnchorGlossary(g => [...g, ...MOCK_GLOSSARY.slice(prev.length, prev.length + 1)]);
+        return [...prev, next];
+      });
+    }, 8000);
+  }, []);
+
+  const handleAnchorStopPolling = useCallback(() => {
+    setAnchorIsPolling(false);
+    if (anchorTimerRef.current) { clearInterval(anchorTimerRef.current); anchorTimerRef.current = null; }
+  }, []);
+
+  const handleAnchorReset = useCallback(() => {
+    handleAnchorStopPolling();
+    setAnchorTopics([]); setAnchorCurrentTopicId(''); setAnchorGlossary([]);
+  }, [handleAnchorStopPolling]);
+
+  const handleBookmark = useCallback(() => {
+    setBookmarkToast(true);
+    setTimeout(() => setBookmarkToast(false), 2200);
+  }, []);
 
   // --- Pulse Handlers ---
   const handleGenerate = useCallback(async (context?: string) => {
@@ -260,6 +343,8 @@ export function DevPreview() {
                   onClick={() => setActiveFeature('pulse')}>📊 Pulse</button>
                 <button className={`tab ${activeFeature === 'arena' ? 'active' : ''}`}
                   onClick={() => setActiveFeature('arena')}>🎮 Arena</button>
+                <button className={`tab ${activeFeature === 'anchor' ? 'active' : ''}`}
+                  onClick={() => setActiveFeature('anchor')}>📌 Anchor</button>
               </div>
             </div>
             <div className="card" style={{ flex: 1 }}>
@@ -292,6 +377,31 @@ export function DevPreview() {
                   onReset={handleArenaReset}
                 />
               )}
+              {activeFeature === 'anchor' && (
+                <div className="anchor-controls">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 className="card-title" style={{ margin: 0 }}>Live Anchor</h2>
+                    <div className="anchor-status">
+                      <div className={`status-dot ${anchorIsPolling ? 'active' : ''}`} />
+                      <span>{anchorIsPolling ? 'AI Active' : 'Paused'}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {anchorIsPolling ? (
+                      <button className="btn btn-secondary" onClick={handleAnchorStopPolling}>⏸ Pause AI</button>
+                    ) : (
+                      <button className="btn btn-primary" onClick={handleAnchorStartPolling}>▶ Start AI</button>
+                    )}
+                    <button className="btn btn-secondary" onClick={handleAnchorReset}>🔄 Reset</button>
+                  </div>
+                  <Timeline topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+                  {anchorGlossary.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <GlossaryTab glossary={anchorGlossary} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -303,14 +413,39 @@ export function DevPreview() {
                 <span>Dev Preview</span>
               </div>
             </div>
+            <div className="card" style={{ padding: '8px 0 0' }}>
+              <div className="tabs">
+                <button className={`tab ${anchorStudentTab === 'timeline' ? 'active' : ''}`}
+                  onClick={() => setAnchorStudentTab('timeline')}>📌 Timeline</button>
+                <button className={`tab ${anchorStudentTab === 'glossary' ? 'active' : ''}`}
+                  onClick={() => setAnchorStudentTab('glossary')}>📖 Glossary</button>
+              </div>
+            </div>
             <div className="card" style={{ flex: 1 }}>
-              <h2 className="card-title">Live Anchor</h2>
-              <p style={{ color: 'var(--zoom-text-secondary)' }}>
-                Topic summaries will appear here as the lecture progresses.
-              </p>
+              {anchorStudentTab === 'timeline' ? (
+                <div>
+                  <Timeline
+                    topics={anchorTopics}
+                    currentTopicId={anchorCurrentTopicId}
+                    onBookmark={() => handleBookmark()}
+                  />
+                  <button
+                    className="btn btn-secondary"
+                    style={{ marginTop: 12, width: '100%' }}
+                    onClick={handleBookmark}
+                  >
+                    📌 I'm Confused (Bookmark)
+                  </button>
+                </div>
+              ) : (
+                <GlossaryTab glossary={anchorGlossary} />
+              )}
             </div>
             {studentResults && (
               <div className="card"><PollResults poll={studentResults} /></div>
+            )}
+            {bookmarkToast && (
+              <div className="bookmark-toast">📌 Bookmarked!</div>
             )}
           </div>
         )}

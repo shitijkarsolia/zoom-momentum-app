@@ -81,9 +81,77 @@ Rules:
 });
 
 // POST /api/ai/topic-segment — Analyze transcript for topic changes
-aiRouter.post('/topic-segment', async (_req, res) => {
-  // TODO: Implement with AI integration
-  res.json({ topicChanged: false, message: 'AI service not yet implemented' });
+aiRouter.post('/topic-segment', async (req, res) => {
+  const { transcript, previousTopic } = req.body;
+
+  if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 20) {
+    return res.json({ topicChanged: false, topic: null, glossaryTerms: [] });
+  }
+
+  try {
+    const prompt = `You are analyzing a live college lecture transcript to detect topic changes and extract key information.
+
+${previousTopic ? `The previous topic was: "${previousTopic}"` : 'This is the start of the lecture.'}
+
+Transcript excerpt (most recent ~300 words):
+"${transcript.slice(0, 2000)}"
+
+Analyze this transcript and return ONLY valid JSON with this exact structure:
+{
+  "topicChanged": true/false,
+  "topic": {
+    "title": "Short topic title (3-6 words)",
+    "bullets": ["Key point 1", "Key point 2", "Key point 3"]
+  },
+  "glossaryTerms": [
+    {"term": "Term Name", "definition": "Brief definition", "formula": "optional formula or null"}
+  ]
+}
+
+Rules:
+- topicChanged should be true if the lecturer has moved to a new subject or sub-topic
+- If topicChanged is false, still return the current topic with updated bullets
+- bullets: 2-4 concise bullet points summarizing what's being discussed
+- glossaryTerms: extract any technical terms, definitions, or formulas mentioned (0-3 per call)
+- formula field is optional — only include for mathematical/scientific terms
+- Keep everything concise — this is for a side panel UI
+- Return ONLY the JSON object, nothing else`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'claude-sonnet-4.5',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 600,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error('Empty response from AI');
+
+    const parsed = extractJSON(content);
+    if (typeof parsed.topicChanged !== 'boolean' || !parsed.topic?.title) {
+      throw new Error('Invalid topic-segment format from AI');
+    }
+
+    res.json({
+      topicChanged: parsed.topicChanged,
+      topic: {
+        title: parsed.topic.title,
+        bullets: Array.isArray(parsed.topic.bullets) ? parsed.topic.bullets : [],
+      },
+      glossaryTerms: Array.isArray(parsed.glossaryTerms) ? parsed.glossaryTerms : [],
+    });
+  } catch (err) {
+    console.error('[ai] topic-segment error:', err);
+    // Fallback: simple keyword-based topic extraction
+    const words = transcript.split(/\s+/);
+    const title = previousTopic || 'Lecture in Progress';
+    res.json({
+      topicChanged: false,
+      topic: { title, bullets: [`Discussing: ${words.slice(0, 8).join(' ')}…`] },
+      glossaryTerms: [],
+      fallback: true,
+    });
+  }
 });
 
 const FALLBACK_QUIZ = [
