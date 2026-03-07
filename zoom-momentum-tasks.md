@@ -52,17 +52,19 @@ This document breaks down the high-level features of Zoom Momentum into specific
   - **Action Items:**
     - [ ] Review Zoom's official Node.js server template to see what we get "for free."
     - [x] Backend language decided: Node.js.
-- [ ] **Task 5: Evaluate Database & ORM**
+- [x] **Task 5: Evaluate Database & ORM**
   - **Context:** We must store user data, generated quizzes, and private student bookmarks.
+  - **Decision:** Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema implemented with User, Meeting, TranscriptSegment, Bookmark, QuizSet, RecoveryPack models.
   - **Action Items:**
-    - [ ] Compare SQLite (easiest for local dev) vs. PostgreSQL.
-    - [ ] Evaluate if we need an ORM like Prisma or SQLAlchemy, or if basic SQL queries are sufficient.
-    - [ ] Draft a preliminary schema (Tables: Users, Meetings, Transcripts, Bookmarks, Quizzes).
-- [ ] **Task 6: Evaluate Frontend Framework**
+    - [x] Compare SQLite (easiest for local dev) vs. PostgreSQL. → SQLite for dev, PostgreSQL for prod.
+    - [x] Evaluate if we need an ORM like Prisma or SQLAlchemy, or if basic SQL queries are sufficient. → Prisma chosen.
+    - [x] Draft a preliminary schema (Tables: Users, Meetings, Transcripts, Bookmarks, Quizzes). → Implemented in `server/prisma/schema.prisma`.
+- [x] **Task 6: Evaluate Frontend Framework**
   - **Context:** The Zoom App UI runs inside Zoom's embedded web browser.
+  - **Decision:** Vite + React 18 + TypeScript. Next.js rejected (adds WebSocket complexity with no SSR benefit inside Zoom's embedded browser).
   - **Action Items:**
-    - [ ] Test the vanilla React template provided by Zoom.
-    - [ ] Evaluate if Next.js adds unnecessary complexity or required features (like SSR).
+    - [x] Test the vanilla React template provided by Zoom. → Used Vite + React instead.
+    - [x] Evaluate if Next.js adds unnecessary complexity or required features (like SSR). → Next.js rejected.
     
 ---
 
@@ -85,43 +87,43 @@ This document breaks down the high-level features of Zoom Momentum into specific
 ## Phase 2: App Foundation (Hello World)
 *Goal: Get a basic app loading in the Zoom client with working auth.*
 
-- [ ] **Task 9: Initialize the Frontend Repository**
+- [x] **Task 9: Initialize the Frontend Repository**
   - **Context:** Create the actual UI shell.
   - **Action Items:**
-    - [ ] Bootstrap the project using the chosen framework (e.g., `npx create-react-app` or Vite).
-    - [ ] Install the `@zoom/appssdk` package.
-    - [ ] Configure `zoomSdk.config()` with basic capabilities (`connect`).
-    - [ ] Display a "Hello World from Zoom" screen.
-- [ ] **Task 10: Initialize the Backend Repository**
+    - [x] Bootstrap the project using the chosen framework (e.g., `npx create-react-app` or Vite). → Vite + React 18 + TypeScript in `client/`.
+    - [x] Install the `@zoom/appssdk` package.
+    - [x] Configure `zoomSdk.config()` with basic capabilities (`connect`). → `client/src/hooks/useZoomSdk.ts`.
+    - [x] Display a "Hello World from Zoom" screen. → Role-based routing: HostDashboard + StudentView + AuthView.
+- [x] **Task 10: Initialize the Backend Repository**
   - **Context:** Create the backend server to serve the frontend and handle logic.
   - **Action Items:**
-    - [ ] Setup the server (Node/Express) locally.
+    - [x] Setup the server (Node/Express) locally. → `server/src/server.ts` with Express + TypeScript.
     - [ ] Set up ngrok to expose the local server to the public internet (required by Zoom).
     - [ ] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL).
-- [ ] **Task 11: Implement Zoom OAuth (Login Flow)**
+- [x] **Task 11: Implement Zoom OAuth (Login Flow)**
   - **Context:** The app needs to know who is opening it.
   - **Action Items:**
-    - [ ] Build the `/api/auth/login` and `/api/auth/callback` routes.
-    - [ ] Exchange the OAuth code for an access token.
-    - [ ] Fetch the user's Zoom Profile to get their name and ID.
-    - [ ] Create a `Users` record in the database if they are new.
+    - [x] Build the `/api/auth/login` and `/api/auth/callback` routes. → `server/src/routes/auth.ts` (PKCE flow).
+    - [x] Exchange the OAuth code for an access token.
+    - [x] Fetch the user's Zoom Profile to get their name and ID.
+    - [x] Create a `Users` record in the database if they are new.
 
 ---
 
 ## Phase 3: The "Multiplayer" Engine (Shared State)
 *Goal: Allow the Host app to send real-time UI updates to Student apps.*
 
-- [ ] **Task 12: Define the Messaging Protocol**
+- [x] **Task 12: Define the Messaging Protocol**
   - **Context:** We need a strict format for messages sent between Host and Students.
   - **Action Items:**
-    - [ ] Create a JSON schema for standard messages.
-    - [ ] Example: Decide exactly what a `{"type": "START_TRIVIA", "data": {...}}` packet looks like.
-- [ ] **Task 13: Build the `useMessaging` React Hook**
+    - [x] Create a JSON schema for standard messages. → `client/src/types/messages.ts` with `AppMessage` interface + sequence numbers.
+    - [x] Example: Decide exactly what a `{"type": "START_TRIVIA", "data": {...}}` packet looks like. → Full `MessageType` union defined.
+- [x] **Task 13: Build the `useMessaging` React Hook**
   - **Context:** A reusable piece of code to make sending/receiving messages easy across the app.
   - **Action Items:**
-    - [ ] Wrap `zoomSdk.postMessage()` for sending.
-    - [ ] Wrap `zoomSdk.onMessage()` for receiving.
-    - [ ] Add error handling (e.g., what if the message fails to send?).
+    - [x] Wrap `zoomSdk.postMessage()` for sending. → `client/src/hooks/useMessaging.ts`.
+    - [x] Wrap `zoomSdk.onMessage()` for receiving.
+    - [x] Add error handling (e.g., what if the message fails to send?).
 - [ ] **Task 14: Implement the "Late Joiner" Catch-Up Flow (Enhancement 1)**
   - **Context:** Students who join late automatically receive a full sync state and a personalized summary of what they missed.
   - **Action Items:**
@@ -135,20 +137,20 @@ This document breaks down the high-level features of Zoom Momentum into specific
 ## Phase 4: Mocking the Transcript
 *Goal: Fake a live transcript so frontend devs can build the AI features without waiting for Zoom's RTMS approval.*
 
-- [ ] **Task 15: Build a Static Transcript JSON File**
+- [x] **Task 15: Build a Static Transcript JSON File**
   - **Action Items:**
-    - [ ] Find a 5-minute transcript of a real lecture (math, history, etc.).
-    - [ ] Format it as an array of JSON objects: `[{"text": "So let's talk about...", "speaker": "Host", "time": "0:01"}]`
-- [ ] **Task 16: Build the "Mock RTMS Service"**
+    - [x] Find a 5-minute transcript of a real lecture (math, history, etc.). → Sample math lecture on derivatives embedded in `mock-transcript/src/index.ts`.
+    - [x] Format it as an array of JSON objects. → Inline array of `{ speaker, text }` objects.
+- [x] **Task 16: Build the "Mock RTMS Service"**
   - **Context:** A small script that pretends to be Zoom sending live text.
   - **Action Items:**
-    - [ ] Write a function that reads the JSON file.
-    - [ ] Emit one line of text over a local WebSocket to the Backend every 3 seconds.
-- [ ] **Task 17: Build the Rolling Buffer Logic (Backend)**
+    - [x] Write a function that reads the transcript data. → `mock-transcript/src/index.ts`.
+    - [x] Emit one line of text to the Backend every 3 seconds. → POSTs to `/api/transcript/segment` via HTTP.
+- [x] **Task 17: Build the Rolling Buffer Logic (Backend)**
   - **Context:** We only want to send the *recent* context to the AI, not the entire hour-long meeting.
   - **Action Items:**
-    - [ ] Accept WebSocket transcript chunks.
-    - [ ] Maintain an array of the last ~300 words spoken.
+    - [x] Accept transcript chunks. → `POST /api/transcript/segment` in `server/src/routes/transcript.ts`.
+    - [x] Maintain an array of the last ~300 words spoken. → `GET /api/transcript/buffer` returns trimmed buffer.
 
 ---
 

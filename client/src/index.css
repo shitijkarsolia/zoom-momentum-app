@@ -1,0 +1,143 @@
+:root {
+  --zoom-blue: #0b5cff;
+  --zoom-blue-dark: #0948cc;
+  --zoom-bg: #f7f8fa;
+  --zoom-card: #ffffff;
+  --zoom-text: #232333;
+  --zoom-text-secondary: #6e7191;
+  --zoom-border: #e4e4e7;
+  --zoom-success: #2ea44f;
+  --zoom-warning: #d29922;
+  --zoom-error: #cf222e;
+  --zoom-radius: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--zoom-bg);
+  color: var(--zoom-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 12px;
+  gap: 12px;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--zoom-card);
+  border-radius: var(--zoom-radius);
+  border: 1px solid var(--zoom-border);
+  font-size: 12px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--zoom-error);
+}
+
+.status-dot.connected {
+  background: var(--zoom-success);
+}
+
+.card {
+  background: var(--zoom-card);
+  border-radius: var(--zoom-radius);
+  border: 1px solid var(--zoom-border);
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--zoom-radius);
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary {
+  background: var(--zoom-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--zoom-blue-dark);
+}
+
+.btn-secondary {
+  background: var(--zoom-bg);
+  color: var(--zoom-text);
+  border: 1px solid var(--zoom-border);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--zoom-text-secondary);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--zoom-border);
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--zoom-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab.active {
+  color: var(--zoom-blue);
+  border-bottom-color: var(--zoom-blue);
+}
