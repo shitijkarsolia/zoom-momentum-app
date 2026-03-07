@@ -191,25 +191,25 @@ This document breaks down the high-level features of Zoom Momentum into specific
     - [ ] Build a separate searchable "Glossary / Formula Sheet" tab that accumulates terms dynamically during the lecture.
 
 **Feature B: Warm-Up Arena (Pre-class Trivia)**
-- [ ] **Task 23: The AI Quiz Endpoint (`/api/ai/quiz-generate`)**
+- [x] **Task 23: The AI Quiz Endpoint (`/api/ai/quiz-generate`)**
   - **Action Items:**
-    - [ ] Write a prompt that takes previous class transcripts and generates 5 multiple choice questions.
-- [ ] **Task 24: Trivia Game UI & Logic**
+    - [x] Write a prompt that takes previous class transcripts and generates 5 multiple choice questions. → Implemented in `server/src/routes/ai.ts` with real AI + 5 fallback questions.
+- [x] **Task 24: Trivia Game UI & Logic**
   - **Action Items:**
-    - [ ] Host UI: A "Start Game" button that fetches questions.
-    - [ ] Student UI: A clean, large countdown timer.
-    - [ ] Logic: Host computes scores as students reply with `ARENA_ANSWER` messages, and broadcasts a Top 3 Leaderboard.
+    - [x] Host UI: A "Start Game" button that fetches questions. → `ArenaHost.tsx` with topic input, generate, ready, question, leaderboard, finished phases.
+    - [x] Student UI: A clean, large countdown timer. → `ArenaStudent.tsx` with 15s countdown, tap-to-answer, answer reveal.
+    - [x] Logic: Host computes scores as students reply with `ARENA_ANSWER` messages, and broadcasts a Top 3 Leaderboard. → `useArena.ts` with 1000 base + speed bonus scoring, `Leaderboard.tsx` with medals.
 
 **Feature C: Professor's Pulse (Check-in Polls)**
-- [ ] **Task 25: Poll Generation UI (Host)**
+- [x] **Task 25: Poll Generation UI (Host)**
   - **Action Items:**
-    - [ ] Build a dashboard for the host to click "Generate Question", with an optional context input text box.
-    - [ ] Add an editable preview screen allowing the host to edit the question text and options before broadcasting.
-- [ ] **Task 26: Poll Display & Results UI (Student & Host)**
+    - [x] Build a dashboard for the host to click "Generate Question", with an optional context input text box. → `PollCreator.tsx` with context input + generate button.
+    - [x] Add an editable preview screen allowing the host to edit the question text and options before broadcasting. → `PollCreator.tsx` preview phase with editable fields.
+- [x] **Task 26: Poll Display & Results UI (Student & Host)**
   - **Action Items:**
-    - [ ] Student UI: A modal overlay that appears when Host launches `POLL_START`.
-    - [ ] Send `POLL_RESPONSE` answers back.
-    - [ ] Host UI: Aggregate scores and broadcast `POLL_RESULTS` bar chart to everyone.
+    - [x] Student UI: A modal overlay that appears when Host launches `POLL_START`. → `PollCard.tsx` overlay with option selection.
+    - [x] Send `POLL_RESPONSE` answers back. → `usePulse.ts` student hook sends via messaging.
+    - [x] Host UI: Aggregate scores and broadcast `POLL_RESULTS` bar chart to everyone. → `PollResults.tsx` bar chart + `usePulse.ts` host aggregation.
 
 **Feature D: Recovery Agent (Post-Class) & Enhancements**
 - [ ] **Task 27: The Manual Bookmark Button**

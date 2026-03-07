@@ -18,28 +18,51 @@ Zoom Momentum is a **Zoom Apps SDK** in-meeting side panel app for live college 
 
 ## What Has Been Done
 
-### Completed (Phases 1–4)
+### Completed (Phases 1–6 partial)
 
 **Monorepo scaffolding** — npm workspaces with `client`, `server`, `mock-transcript` packages.
 
 **Frontend (Vite + React 18 + TypeScript):**
-- Zoom SDK initialization ([`useZoomSdk.ts`](client/src/hooks/useZoomSdk.ts)) — calls `zoomSdk.config()`, detects host vs participant role
-- OAuth PKCE flow ([`useZoomAuth.ts`](client/src/hooks/useZoomAuth.ts)) — full authorize → callback → session flow
-- Messaging layer ([`useMessaging.ts`](client/src/hooks/useMessaging.ts)) — `connect()` + `sendMessage()` + `onMessage()` with sequence-numbered state sync, late joiner catch-up
+- Zoom SDK initialization ([`useZoomSdk.ts`](client/src/hooks/useZoomSdk.ts)) — calls `zoomSdk.config()` with SDK script tag + `version: '0.16.0'`, detects host vs participant role
+- OAuth PKCE flow ([`useZoomAuth.ts`](client/src/hooks/useZoomAuth.ts)) — full authorize → onAuthorized → callback → session flow
+- Messaging layer ([`useMessaging.ts`](client/src/hooks/useMessaging.ts)) — `connect()` + `sendMessage()` + `onMessage()` with sequence-numbered state sync, late joiner catch-up via `onParticipantChange` auto-broadcast of `FULL_STATE`
 - Message types ([`messages.ts`](client/src/types/messages.ts)) — full type system for all message types (FULL_STATE, REQUEST_STATE, ARENA_*, TOPIC_*, GLOSSARY_*, POLL_*)
-- Role-based routing ([`App.tsx`](client/src/App.tsx)) — SDK init → auth check → HostDashboard or StudentView
-- Shell views ([`HostDashboard.tsx`](client/src/views/HostDashboard.tsx), [`StudentView.tsx`](client/src/views/StudentView.tsx)) — tabbed layouts with placeholders
+- Role-based routing ([`App.tsx`](client/src/App.tsx)) — SDK init → auth check → HostDashboard or StudentView, with full message routing for all Pulse and Arena message types
+- Zoom detection ([`main.tsx`](client/src/main.tsx)) — uses `window.zoomSdk` to detect Zoom client; renders `DevPreview` outside Zoom, `App` inside
 - Zoom-branded CSS ([`index.css`](client/src/index.css))
 
+**Professor's Pulse (Feature C) — COMPLETE:**
+- [`usePulse.ts`](client/src/hooks/usePulse.ts) — Full host + student hooks: generate → preview/edit → launch → collect responses → end → show results
+- [`PollCreator.tsx`](client/src/components/pulse/PollCreator.tsx) — Host UI: idle → generating → editable preview → live (response counter) → results
+- [`PollCard.tsx`](client/src/components/pulse/PollCard.tsx) — Student overlay: option selection + submit, disabled after answering
+- [`PollResults.tsx`](client/src/components/pulse/PollResults.tsx) — Bar chart results with percentages and counts
+- Wired into [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Pulse tab and [`StudentView.tsx`](client/src/views/StudentView.tsx) overlay
+- Message routing in [`App.tsx`](client/src/App.tsx): POLL_START, POLL_RESPONSE, POLL_RESULTS
+
+**Warm-Up Arena (Feature B) — COMPLETE:**
+- [`useArena.ts`](client/src/hooks/useArena.ts) — Full host + student hooks: fetch AI questions → start game → countdown timer → scoring (1000 base + speed bonus) → leaderboard → next question → finish
+- [`ArenaHost.tsx`](client/src/components/arena/ArenaHost.tsx) — Host UI: topic input → generate → ready → question view (countdown, response count, correct answer highlight) → leaderboard → finished
+- [`ArenaStudent.tsx`](client/src/components/arena/ArenaStudent.tsx) — Student overlay: waiting → question (countdown, tap-to-answer) → answered → leaderboard (correct/wrong reveal + explanation) → final standings
+- [`Leaderboard.tsx`](client/src/components/arena/Leaderboard.tsx) — Medal display (🥇🥈🥉), top 10, compact mode
+- Wired into [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Arena tab and [`StudentView.tsx`](client/src/views/StudentView.tsx) overlay
+- Message routing in [`App.tsx`](client/src/App.tsx): ARENA_START, ARENA_QUESTION, ARENA_ANSWER, ARENA_LEADERBOARD, ARENA_END
+
+**DevPreview** ([`DevPreview.tsx`](client/src/DevPreview.tsx)) — Full standalone dev testing environment for both Pulse and Arena features with simulated host/student modes, fake data, and all UI states.
+
 **Backend (Express + TypeScript + Prisma/SQLite):**
-- OAuth routes ([`auth.ts`](server/src/routes/auth.ts)) — `/authorize`, `/callback`, `/me`
-- AI stub routes ([`ai.ts`](server/src/routes/ai.ts)) — `/topic-segment`, `/quiz-generate`, `/poll-generate`, `/recovery-pack`, `/detect-cues`
-- Transcript routes ([`transcript.ts`](server/src/routes/transcript.ts)) — POST `/segment`, GET `/buffer`
+- OAuth routes ([`auth.ts`](server/src/routes/auth.ts)) — `/authorize`, `/callback` (GET redirect + POST token exchange), `/me`
+- AI routes ([`ai.ts`](server/src/routes/ai.ts)):
+  - `/poll-generate` — **WORKING** — real OpenAI/compatible LLM integration with JSON extraction + 3 fallback polls
+  - `/quiz-generate` — **WORKING** — real AI quiz generation with JSON extraction + 5 fallback questions
+  - `/topic-segment` — **STUB** — returns `{ topicChanged: false }`
+  - `/recovery-pack` — **STUB** — returns `{ items: [] }`
+  - `/detect-cues` — **STUB** — returns `{ hasCue: false }`
+- Transcript routes ([`transcript.ts`](server/src/routes/transcript.ts)) — POST `/segment`, GET `/buffer` (rolling ~300 word window)
 - Bookmark routes ([`bookmarks.ts`](server/src/routes/bookmarks.ts)) — POST `/`, GET `/`
 - Prisma schema ([`schema.prisma`](server/prisma/schema.prisma)) — User, Meeting, TranscriptSegment, Bookmark, QuizSet, RecoveryPack
 - Config validation ([`config.ts`](server/src/config.ts)) — fails fast on missing env vars
 
-**Mock transcript** ([`mock-transcript/src/index.ts`](mock-transcript/src/index.ts)) — 16 sample math lecture chunks, POSTs to `/api/transcript/segment` every 3 seconds.
+**Mock transcript** ([`mock-transcript/src/index.ts`](mock-transcript/src/index.ts)) — 16 sample math lecture chunks, POSTs to `/api/transcript/segment` every 3 seconds, loops.
 
 **Database** — Prisma migration applied, SQLite `dev.db` ready.
 
@@ -47,36 +70,36 @@ Zoom Momentum is a **Zoom Apps SDK** in-meeting side panel app for live college 
 
 ## What Needs To Be Done Next
 
-### Immediate Next Task: Professor's Pulse (Feature C)
+### Immediate Next Task: Live Anchor (Feature A)
 
-This is the recommended next feature because it has **zero RTMS dependency** — it uses only `sendMessage`/`onMessage` which are already wired up.
+Professor's Pulse and Warm-Up Arena are both complete. The next feature is **Live Anchor** — the real-time topic timeline.
 
 **What to build:**
-1. Host creates a quick poll (free-text question or multiple choice)
-2. Poll is broadcast to all students via `sendMessage`
-3. Students see the poll and submit answers
-4. Host sees live response aggregation
-5. Host can close the poll and optionally share results
+1. Implement `/api/ai/topic-segment` — takes the 300-word transcript buffer, detects topic changes, extracts bullets + glossary terms
+2. Host-side AI loop — call topic-segment every ~2 minutes or on speaker pause, broadcast `TOPIC_UPDATE` / `GLOSSARY_UPDATE`
+3. Student Timeline UI — scrolling topic cards with bullets, sliding animation for older cards
+4. Student Glossary UI — searchable glossary/formula sheet tab that accumulates terms during the lecture
+5. Wire the "📌 I'm Confused" bookmark button in StudentView to the bookmarks API
 
 **Files to create/modify:**
-- `client/src/components/pulse/` — PollCreator, PollCard, PollResults components
-- `client/src/hooks/usePulse.ts` — poll state management using useMessaging
-- Update [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Pulse tab with real UI
-- Update [`StudentView.tsx`](client/src/views/StudentView.tsx) to show active polls
-- Message types already defined: `POLL_START`, `POLL_RESPONSE`, `POLL_END`
+- `server/src/routes/ai.ts` — implement the `/topic-segment` endpoint (currently a stub)
+- `client/src/hooks/useLiveAnchor.ts` — new hook for host-side AI polling loop + student-side state
+- `client/src/components/anchor/` — TopicCard, Timeline, GlossaryTab components
+- Update [`HostDashboard.tsx`](client/src/views/HostDashboard.tsx) Anchor tab (currently placeholder)
+- Update [`StudentView.tsx`](client/src/views/StudentView.tsx) Timeline + Glossary tabs (currently placeholder)
 
-### Full Build Order (from [`zoom-momentum-implementation.md`](zoom-momentum-implementation.md:724))
+### Full Build Order
 
-1. **Professor's Pulse** ← START HERE (no RTMS needed)
-2. **Warm-Up Arena** (no RTMS needed, uses sendMessage for trivia)
-3. **Live Anchor** (needs transcript — use mock transcript first)
+1. ~~**Professor's Pulse**~~ ✅ DONE
+2. ~~**Warm-Up Arena**~~ ✅ DONE
+3. **Live Anchor** ← START HERE (use mock transcript first, then real RTMS)
 4. **Recovery Agent** (needs transcript data accumulated over a session)
-5. **Enhancements** (glossary, auto-bookmark, smart spotlight, post-class summary)
+5. **Enhancements** (auto-bookmark, smart spotlight, post-class summary)
 
-### Phase 5: Real RTMS Integration
-- **RTMS access has been granted** to the developer account.
+### RTMS Integration
+- **RTMS access has been granted** to all core developer accounts (1-year trials through Feb 2027).
 - Not yet implemented. See [`zoom-momentum-tasks.md`](zoom-momentum-tasks.md) tasks 18–19.
-- Can now be built in parallel with or after Professor's Pulse.
+- Can be built in parallel with Live Anchor (mock transcript works for dev, RTMS for production).
 
 ---
 
