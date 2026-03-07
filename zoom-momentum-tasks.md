@@ -9,12 +9,21 @@ This document breaks down the high-level features of Zoom Momentum into specific
 
 - [ ] **Task 1: Request RTMS Access (Live Transcripts)**
   - **Context:** Our "Live Anchor" feature needs to read the transcript as the professor speaks. That requires Zoom's RTMS stream.
+  - **Findings (from Jen / Zoom DevRel):**
+    - RTMS is the correct and only supported path today for **live, in-meeting transcripts**; there is no separate client-side transcript API.
+    - 1-year RTMS trials are already enabled (through Feb 23, 2027) for `shitij`, `advikaa`, and `yash`.
   - **Action Items:**
-    - [ ] Request permission from Zoom to receive RTMS streams and webhooks (`meeting.rtms_started`).
-- [ ] **Task 2: Clarify AI Companion API Status**
+    - [x] Confirm RTMS as the path for live transcripts (done via DevRel + RTMS docs, videos, and quickstarts).
+    - [x] Enable RTMS trial for core dev accounts (done for Shitij, Advikaa, Yash).
+    - [ ] Send remaining team members' Zoom account emails to Jen so she can enable RTMS trials for the whole team.
+- [x] **Task 2: Clarify AI Companion API Status**
   - **Context:** We need to know if Zoom's native AI Companion allows custom, real-time prompt responses.
-  - **Action Items:**
-    - [ ] Verify if Zoom AI Companion 3.0 supports custom generation or if we should rely entirely on external LLMs.
+  - **Findings (from Jen / AI Companion docs):**
+    - "Customizable AI Companion" currently exposes only **one** API endpoint with **no webhooks** and is not designed as a general-purpose, real-time LLM backend that we can orchestrate.
+    - There is no AI Companion 3.0 API today that lets us run our own prompt loop, manage custom streaming UX, or deeply integrate Momentum’s state.
+  - **Decision:**
+    - We will **not** rely on AI Companion as the main engine for Momentum.
+    - Core features (Live Anchor, Recovery Agent, quizzes, polls, etc.) will use a **custom LLM backend** (e.g. OpenRouter / AWS Bedrock Claude) that we control end-to-end.
 - [ ] **Task 3: Confirm Next Lab AWS Access**
   - **Context:** The Next Lab might have AWS resources available. We need to check what is available before finalizing the stack.
   - **Action Items:**
@@ -26,12 +35,12 @@ This document breaks down the high-level features of Zoom Momentum into specific
 ## Phase 1: Tech Stack Research & Decisions (Pre-Code)
 *Goal: Decide on the foundational tools we will use.*
 
-- [ ] **Task 4: Evaluate Backend Language (Node.js vs. Python)**
+- [x] **Task 4: Evaluate Backend Language (Node.js vs. Python)**
   - **Context:** We need a server to process transcripts, call AI APIs, and handle Zoom OAuth.
+  - **Decision:** We will use **JavaScript (Node.js)** for the backend.
   - **Action Items:**
     - [ ] Review Zoom's official Node.js server template to see what we get "for free."
-    - [ ] Evaluate Python's AI library ecosystem (e.g., Langchain, simpler LLM API wrappers) versus Node.js.
-    - [ ] Document a recommendation based on our team's skills and the project timeline.
+    - [x] Backend language decided: Node.js.
 - [ ] **Task 5: Evaluate Database & ORM**
   - **Context:** We must store user data, generated quizzes, and private student bookmarks.
   - **Action Items:**
@@ -75,7 +84,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
 - [ ] **Task 10: Initialize the Backend Repository**
   - **Context:** Create the backend server to serve the frontend and handle logic.
   - **Action Items:**
-    - [ ] Setup the server (Node/Express or Python/FastAPI) locally.
+    - [ ] Setup the server (Node/Express) locally.
     - [ ] Set up ngrok to expose the local server to the public internet (required by Zoom).
     - [ ] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL).
 - [ ] **Task 11: Implement Zoom OAuth (Login Flow)**
