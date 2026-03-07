@@ -10,7 +10,7 @@ import { bookmarkRouter } from './routes/bookmarks.js';
 const app = express();
 
 // Middleware
-app.use(cors({ origin: config.clientUrl, credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(
   session({
@@ -18,12 +18,23 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set true in production with HTTPS
+      secure: true, // Set true in production with HTTPS
       httpOnly: true,
+      sameSite: 'none' as const,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   }),
 );
+
+
+// OWASP Security Headers
+app.use((_req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; frame-ancestors https://*.zoom.us");
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRouter);

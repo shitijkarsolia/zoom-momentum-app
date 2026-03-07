@@ -30,6 +30,19 @@ authRouter.get('/authorize', (req, res) => {
   res.json({ codeChallenge, state });
 });
 
+
+// GET callback — Zoom redirects here after OAuth consent
+authRouter.get('/callback', async (req, res) => {
+  const { code, state } = req.query;
+  if (!code) {
+    res.status(400).send('Missing authorization code');
+    return;
+  }
+  // Redirect to frontend with code+state so the client can POST it
+  const params = new URLSearchParams({ code: code as string, state: (state as string) ?? '' });
+  res.redirect(`${config.clientUrl}?zoom_auth=callback&${params.toString()}`);
+});
+
 // Step 2: Exchange authorization code for tokens
 authRouter.post('/callback', async (req, res) => {
   try {

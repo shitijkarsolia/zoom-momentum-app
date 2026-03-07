@@ -209,7 +209,24 @@ SQLite via Prisma. After install, run `cd server && npx prisma migrate dev --nam
 - `npx vite build` in `client/` and `npx tsc` in `server/` both succeed.
 
 ### Running outside Zoom
-The frontend is a Zoom Apps SDK side-panel app. When loaded in a regular browser, it will show "SDK Error: The Zoom Apps SDK is not supported by this browser" — this is expected. Full testing requires running inside a Zoom meeting with ngrok.
+The frontend is a Zoom Apps SDK side-panel app. When loaded in a regular browser (outside Zoom), `main.tsx` detects the absence of `window.zoomSdk` and renders `DevPreview` instead of the real `App`. To force DevPreview even inside Zoom, add `?dev=1` to the URL. Full in-meeting testing requires running inside a Zoom meeting with ngrok/cloudflare tunnel.
 
 ### Transcript foreign key caveat
 The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: "mock-meeting-001"`. This requires a matching `Meeting` record in the DB, or it will 500 due to a Prisma foreign key constraint. A meeting must be created first (e.g., via the auth/OAuth flow which creates user and meeting records).
+
+---
+
+## Changelog
+
+### 2026-03-07 — Fix "Something went wrong" error inside Zoom meeting (Error EF7F5831)
+
+**Root cause:** Three issues prevented the app from initializing correctly inside the Zoom client:
+
+1. **Missing SDK script tag** — The Zoom client requires `<script src="https://appssdk.zoom.us/sdk.js">` in the HTML to bootstrap the global `window.zoomSdk` object. The app only had the npm `@zoom/appssdk` package, which is not sufficient on its own inside the Zoom WebView.
+2. **Broken Zoom detection** — `main.tsx` checked for `zoomapp` in the URL query string or `ZoomApps` in the user agent. Neither is reliable inside the Zoom client. When detection failed, `DevPreview` rendered instead of `App`, so `zoomSdk.config()` was never called — causing the Zoom client to show the generic error screen.
+3. **Missing `version` in SDK config** — `zoomSdk.config()` was called without a `version` field. The working arlo project passes `version: '0.16.0'`.
+
+**Files changed:**
+- `client/index.html` — Added `<script src="https://appssdk.zoom.us/sdk.js">`
+- `client/src/main.tsx` — Changed Zoom detection to `!!(window as any).zoomSdk`
+- `client/src/hooks/useZoomSdk.ts` — Added `version: '0.16.0'` to `zoomSdk.config()`, fixed `meetingUUID` type error

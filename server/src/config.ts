@@ -27,6 +27,7 @@ export const config = {
   },
 
   openai: {
+    baseUrl: optional('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
     apiKey: required('OPENAI_API_KEY'),
   },
 } as const;

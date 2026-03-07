@@ -4,8 +4,8 @@ import App from './App';
 import { DevPreview } from './DevPreview';
 import './index.css';
 
-const isInsideZoom = window.location.search.includes('zoomapp') ||
-  navigator.userAgent.includes('ZoomApps');
+// Detect Zoom client: the SDK script sets window.zoomSdk when loaded inside Zoom
+const isInsideZoom = !!(window as any).zoomSdk;
 
 const params = new URLSearchParams(window.location.search);
 const forceDevPreview = params.get('dev') === '1';
