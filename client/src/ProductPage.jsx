@@ -1,70 +1,59 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-/* ─── Zoom Momentum — Single-Page Product Page ─── */
+/* ─── Zoom Momentum — Product Page (react-app.js theme) ─── */
+
+const customStyles = {
+  bgBlue: '#0044CC',
+  fontSerifItalic: {
+    fontFamily: "'Playfair Display', serif",
+    fontStyle: 'italic',
+    fontWeight: 400,
+  },
+};
 
 const GlobalStyles = () => {
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,400;1,700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Space+Mono:wght@400;700&display=swap');
 
       :root {
-        --zoom-blue: #0b5cff;
-        --zoom-blue-dark: #0948cc;
-        --zoom-blue-deeper: #0635a1;
-        --zoom-bg: #f7f8fa;
-        --zoom-card: #ffffff;
-        --zoom-text: #232333;
-        --zoom-text-secondary: #6e7191;
-        --zoom-border: #e4e4e7;
-        --zoom-success: #2ea44f;
-        --zoom-warning: #d29922;
-        --zoom-error: #cf222e;
-        --zoom-radius: 12px;
-        --grid-color: rgba(255, 255, 255, 0.06);
+        --bg-blue: #0044CC;
+        --grid-color: rgba(255, 255, 255, 0.08);
       }
-
       * { box-sizing: border-box; margin: 0; padding: 0; }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
       body {
-        background-color: #0a0f1a;
+        background-color: var(--bg-blue);
         color: #ffffff;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Space Mono', monospace;
         overflow-x: hidden;
       }
-
-      ::selection { background: var(--zoom-blue); color: #ffffff; }
-
+      html { scroll-behavior: smooth; }
+      ::selection { background: #facc15; color: #1e3a5f; }
       .font-serif-italic {
         font-family: 'Playfair Display', serif;
         font-style: italic;
         font-weight: 400;
       }
-
       .bg-grid {
         background-size: 60px 60px;
         background-image:
           linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
           linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-        mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+        mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
       }
-
       @keyframes float-slow {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-20px); }
       }
       @keyframes float-medium {
         0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-14px); }
+        50% { transform: translateY(-15px); }
       }
       @keyframes float-fast {
         0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-8px); }
+        50% { transform: translateY(-10px); }
       }
       .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
       .animate-float-medium { animation: float-medium 5s ease-in-out infinite; }
@@ -75,37 +64,31 @@ const GlobalStyles = () => {
       .delay-500 { animation-delay: 500ms; }
       .delay-700 { animation-delay: 700ms; }
       .delay-1000 { animation-delay: 1000ms; }
-
+      .pixel-art {
+        image-rendering: pixelated;
+        shape-rendering: crispEdges;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 0.8; transform: translateY(0); }
+      }
+      .animate-fade-in-delay-1 {
+        opacity: 0;
+        animation: fadeIn 1s ease-out 1s forwards;
+      }
+      .animate-fade-in-delay-1-5 {
+        opacity: 0;
+        animation: fadeIn 1s ease-out 1.5s forwards;
+      }
       @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(30px); }
         to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(-40px); }
-        to { opacity: 1; transform: translateX(0); }
-      }
-      @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(40px); }
-        to { opacity: 1; transform: translateX(0); }
-      }
-      @keyframes pulse-ring {
-        0% { transform: scale(1); opacity: 1; }
-        100% { transform: scale(1.8); opacity: 0; }
-      }
-      @keyframes gradient-shift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
       }
       @keyframes bounce {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-6px); }
       }
-      .animate-bounce-custom { animation: bounce 1.5s ease-in-out infinite; }
-
+      .animate-bounce-custom { animation: bounce 1s ease-in-out infinite; }
       .section-reveal {
         opacity: 0;
         transform: translateY(40px);
@@ -122,17 +105,71 @@ const GlobalStyles = () => {
   return null;
 };
 
-/* ─── Floating Orbs (replaces flowers, Zoom-themed) ─── */
-const FloatingOrbs = () => {
-  const orbsRef = useRef([]);
+/* ─── Pixel Flowers (from react-app.js) ─── */
+const PixelFlowerRed = () => (
+  <svg viewBox="0 0 12 16" style={{ width: '100%', height: '100%', imageRendering: 'pixelated', shapeRendering: 'crispEdges', filter: 'drop-shadow(0 4px 3px rgba(0,0,0,0.3))' }}>
+    <rect x="4" y="0" width="4" height="4" fill="#FF3333" />
+    <rect x="4" y="8" width="4" height="4" fill="#FF3333" />
+    <rect x="0" y="4" width="4" height="4" fill="#FF3333" />
+    <rect x="8" y="4" width="4" height="4" fill="#FF3333" />
+    <rect x="4" y="4" width="4" height="4" fill="#FFD700" />
+    <rect x="4" y="12" width="4" height="4" fill="#228B22" />
+  </svg>
+);
+
+const PixelFlowerYellow = () => (
+  <svg viewBox="0 0 12 16" style={{ width: '100%', height: '100%', imageRendering: 'pixelated', shapeRendering: 'crispEdges', filter: 'drop-shadow(0 4px 3px rgba(0,0,0,0.3))' }}>
+    <rect x="4" y="0" width="4" height="4" fill="#FFD700" />
+    <rect x="4" y="8" width="4" height="4" fill="#FFD700" />
+    <rect x="0" y="4" width="4" height="4" fill="#FFD700" />
+    <rect x="8" y="4" width="4" height="4" fill="#FFD700" />
+    <rect x="4" y="4" width="4" height="4" fill="#8B4513" />
+    <rect x="4" y="12" width="4" height="4" fill="#228B22" />
+  </svg>
+);
+
+const PixelFlowerTall = ({ withLeaf = false }) => (
+  <svg viewBox="0 0 12 20" style={{ width: '100%', height: '100%', imageRendering: 'pixelated', shapeRendering: 'crispEdges', filter: 'drop-shadow(0 4px 3px rgba(0,0,0,0.3))' }}>
+    <rect x="4" y="0" width="4" height="4" fill="#FF3333" />
+    <rect x="4" y="8" width="4" height="4" fill="#FF3333" />
+    <rect x="0" y="4" width="4" height="4" fill="#FF3333" />
+    <rect x="8" y="4" width="4" height="4" fill="#FF3333" />
+    <rect x="4" y="4" width="4" height="4" fill="#FFD700" />
+    <rect x="4" y="12" width="4" height="8" fill="#228B22" />
+    {withLeaf && <rect x="8" y="14" width="2" height="2" fill="#228B22" />}
+  </svg>
+);
+
+const CenterFlower = () => (
+  <svg viewBox="0 0 24 60" style={{ width: '100%', height: '100%', imageRendering: 'pixelated', shapeRendering: 'crispEdges', overflow: 'visible' }} preserveAspectRatio="xMidYMax">
+    <rect x="10" y="24" width="4" height="36" fill="#008000" />
+    <rect x="6" y="44" width="4" height="4" fill="#006400" />
+    <rect x="2" y="40" width="4" height="4" fill="#006400" />
+    <rect x="14" y="36" width="4" height="4" fill="#006400" />
+    <rect x="18" y="32" width="4" height="4" fill="#006400" />
+    <rect x="8" y="8" width="8" height="8" fill="#5C3317" />
+    <rect x="8" y="0" width="8" height="8" fill="#FFD700" />
+    <rect x="8" y="16" width="8" height="8" fill="#FFD700" />
+    <rect x="0" y="8" width="8" height="8" fill="#FFD700" />
+    <rect x="16" y="8" width="8" height="8" fill="#FFD700" />
+    <rect x="4" y="4" width="4" height="4" fill="#FFD700" opacity="0.8" />
+    <rect x="16" y="4" width="4" height="4" fill="#FFD700" opacity="0.8" />
+    <rect x="4" y="16" width="4" height="4" fill="#FFD700" opacity="0.8" />
+    <rect x="16" y="16" width="4" height="4" fill="#FFD700" opacity="0.8" />
+  </svg>
+);
+
+/* ─── Floating Flowers ─── */
+const FloatingFlowers = () => {
+  const flowersRef = useRef([]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      const x = (window.innerWidth / 2 - e.pageX) / 60;
-      const y = (window.innerHeight / 2 - e.pageY) / 60;
-      orbsRef.current.forEach((el, i) => {
+      const x = (window.innerWidth / 2 - e.pageX) / 50;
+      const y = (window.innerHeight / 2 - e.pageY) / 50;
+      flowersRef.current.forEach((el, index) => {
         if (el) {
-          const speed = (i + 1) * 0.4;
+          const speed = (index + 1) * 0.5;
           el.style.transform = `translate(${x * speed}px, ${y * speed}px)`;
         }
       });
@@ -141,38 +178,33 @@ const FloatingOrbs = () => {
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const setRef = (i) => (el) => { orbsRef.current[i] = el; };
-
-  const orbs = [
-    { top: '10%', left: '8%', size: 120, color: 'rgba(11,92,255,0.25)', anim: 'animate-float-medium delay-100' },
-    { top: '5%', right: '15%', size: 80, color: 'rgba(11,92,255,0.15)', anim: 'animate-float-slow delay-500' },
-    { top: '30%', right: '5%', size: 160, color: 'rgba(46,164,79,0.12)', anim: 'animate-float-fast delay-300' },
-    { bottom: '20%', left: '5%', size: 100, color: 'rgba(210,153,34,0.15)', anim: 'animate-float-slow delay-700' },
-    { bottom: '10%', right: '10%', size: 140, color: 'rgba(11,92,255,0.2)', anim: 'animate-float-medium delay-1000' },
-    { top: '50%', left: '50%', size: 200, color: 'rgba(11,92,255,0.08)', anim: 'animate-float-slow delay-200' },
-  ];
+  const setRef = (index) => (el) => {
+    flowersRef.current[index] = el;
+  };
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      {orbs.map((orb, i) => (
-        <div
-          key={i}
-          ref={setRef(i)}
-          className={orb.anim}
-          style={{
-            position: 'absolute',
-            top: orb.top,
-            left: orb.left,
-            right: orb.right,
-            bottom: orb.bottom,
-            width: orb.size,
-            height: orb.size,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
-            filter: 'blur(40px)',
-          }}
-        />
-      ))}
+      <div ref={setRef(0)} className="animate-float-medium delay-100" style={{ position: 'absolute', top: '15%', left: '10%', width: '2rem', height: '2rem', opacity: 0.9 }}>
+        <PixelFlowerRed />
+      </div>
+      <div ref={setRef(1)} className="animate-float-slow delay-500" style={{ position: 'absolute', top: '8%', left: '25%', width: '1.5rem', height: '1.5rem', opacity: 0.8 }}>
+        <PixelFlowerYellow />
+      </div>
+      <div ref={setRef(2)} className="animate-float-fast delay-300" style={{ position: 'absolute', top: '20%', right: '15%', width: '2.5rem', height: '2.5rem', opacity: 0.85 }}>
+        <PixelFlowerTall />
+      </div>
+      <div ref={setRef(3)} className="animate-float-slow delay-700" style={{ position: 'absolute', bottom: '20%', left: '8%', width: '1.75rem', height: '1.75rem', opacity: 0.8 }}>
+        <PixelFlowerYellow />
+      </div>
+      <div ref={setRef(4)} className="animate-float-medium delay-1000" style={{ position: 'absolute', bottom: '25%', right: '20%', width: '2.25rem', height: '2.25rem', opacity: 0.9 }}>
+        <PixelFlowerTall withLeaf={true} />
+      </div>
+      <div ref={setRef(5)} className="animate-float-slow" style={{ position: 'absolute', top: '40%', left: '10%', width: '1rem', height: '1rem', opacity: 0.6 }}>
+        <PixelFlowerYellow />
+      </div>
+      <div ref={setRef(6)} className="animate-float-slow delay-200" style={{ position: 'absolute', top: '60%', right: '8%', width: '1.25rem', height: '1.25rem', opacity: 0.7 }}>
+        <PixelFlowerRed />
+      </div>
     </div>
   );
 };
@@ -204,11 +236,12 @@ const NavLink = ({ children, href = '#' }) => {
       style={{
         position: 'relative',
         padding: '4px 0',
-        color: hovered ? '#0b5cff' : '#ffffff',
+        color: hovered ? '#fde047' : 'white',
         textDecoration: 'none',
-        fontWeight: 600,
+        fontWeight: 700,
         fontSize: '0.875rem',
         letterSpacing: '0.05em',
+        fontFamily: "'Space Mono', monospace",
         transition: 'color 0.3s',
       }}
       onMouseEnter={() => setHovered(true)}
@@ -222,7 +255,7 @@ const NavLink = ({ children, href = '#' }) => {
           left: 0,
           height: 2,
           width: hovered ? '100%' : '0%',
-          background: '#0b5cff',
+          background: '#fde047',
           transition: 'width 0.3s',
         }}
       />
@@ -230,213 +263,158 @@ const NavLink = ({ children, href = '#' }) => {
   );
 };
 
-const Nav = () => {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
+const SocialLink = ({ children }) => {
+  const [hovered, setHovered] = useState(false);
   return (
-    <nav
+    <a
+      href="#"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        padding: '0 clamp(1.5rem, 5vw, 4rem)',
-        height: 72,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: scrolled ? 'rgba(10,15,26,0.92)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(16px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-        transition: 'all 0.3s',
+        color: hovered ? '#fde047' : 'white',
+        textDecoration: 'none',
+        transition: 'color 0.2s',
+        fontFamily: "'Space Mono', monospace",
+        fontWeight: 700,
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 8,
-          background: 'linear-gradient(135deg, #0b5cff, #0948cc)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 800, fontSize: '1.1rem', color: '#fff',
-        }}>
-          M
-        </div>
-        <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>
-          <span style={{ color: '#0b5cff' }}>Zoom</span> Momentum
-        </span>
-      </div>
-
-      {/* Links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(1rem, 3vw, 2.5rem)' }}>
-        <NavLink href="#features">FEATURES</NavLink>
-        <NavLink href="#how-it-works">HOW IT WORKS</NavLink>
-        <NavLink href="#for-who">FOR WHO</NavLink>
-        <a
-          href="#cta"
-          style={{
-            padding: '10px 24px',
-            background: '#0b5cff',
-            color: '#fff',
-            borderRadius: 8,
-            textDecoration: 'none',
-            fontWeight: 700,
-            fontSize: '0.875rem',
-            letterSpacing: '0.02em',
-            transition: 'background 0.2s, transform 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#0948cc'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#0b5cff'; e.currentTarget.style.transform = 'translateY(0)'; }}
-        >
-          GET STARTED
-        </a>
-      </div>
-    </nav>
+      {children}
+    </a>
   );
 };
 
-/* ─── Hero ─── */
+/* ─── Hero (same layout as react-app.js HomePage) ─── */
 const Hero = () => (
   <section
     style={{
       position: 'relative',
-      minHeight: '100vh',
+      height: '100vh',
+      width: '100%',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-      padding: '120px clamp(1.5rem, 5vw, 4rem) 80px',
+      backgroundColor: '#0044CC',
+      color: '#ffffff',
+      fontFamily: "'Space Mono', monospace",
       overflow: 'hidden',
     }}
   >
+    {/* Grid background */}
     <div className="bg-grid" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
-    <FloatingOrbs />
 
-    {/* Badge */}
-    <div
-      style={{
-        position: 'relative', zIndex: 10,
-        display: 'inline-flex', alignItems: 'center', gap: 8,
-        padding: '8px 20px', borderRadius: 100,
-        background: 'rgba(11,92,255,0.12)',
-        border: '1px solid rgba(11,92,255,0.25)',
-        marginBottom: 32,
-        animation: 'fadeInUp 0.8s ease forwards',
-      }}
-    >
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2ea44f', position: 'relative' }}>
-        <span style={{
-          position: 'absolute', inset: -3,
-          borderRadius: '50%',
-          border: '2px solid #2ea44f',
-          animation: 'pulse-ring 2s ease-out infinite',
-        }} />
-      </span>
-      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#8bb3ff', letterSpacing: '0.06em' }}>
-        ZOOM APPS SDK — IN-MEETING SIDE PANEL
-      </span>
-    </div>
+    {/* Floating flowers */}
+    <FloatingFlowers />
 
-    {/* Title */}
-    <h1
-      className="font-serif-italic"
-      style={{
-        position: 'relative', zIndex: 10,
-        fontSize: 'clamp(3rem, 8vw, 7rem)',
-        fontWeight: 700,
-        lineHeight: 1.05,
-        letterSpacing: '-0.03em',
-        marginBottom: 24,
-        animation: 'fadeInUp 0.8s ease 0.2s both',
-      }}
-    >
-      <span style={{ color: '#ffffff' }}>Zoom</span>
-      <br />
-      <span
-        style={{
-          background: 'linear-gradient(135deg, #0b5cff 0%, #4d94ff 50%, #0b5cff 100%)',
-          backgroundSize: '200% 200%',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          animation: 'gradient-shift 4s ease infinite',
-        }}
-      >
-        Momentum
-      </span>
-    </h1>
-
-    {/* Subtitle */}
-    <p
-      style={{
-        position: 'relative', zIndex: 10,
-        fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
-        color: 'rgba(255,255,255,0.65)',
-        maxWidth: 640,
-        lineHeight: 1.6,
-        marginBottom: 48,
-        animation: 'fadeInUp 0.8s ease 0.4s both',
-      }}
-    >
-      Transform passive virtual classrooms into active learning environments.
-      Real-time trivia, live summaries, instant polls, and personalized study
-      guides — all inside Zoom.
-    </p>
-
-    {/* CTA Buttons */}
-    <div
-      style={{
-        position: 'relative', zIndex: 10,
-        display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center',
-        animation: 'fadeInUp 0.8s ease 0.6s both',
-      }}
-    >
-      <a
-        href="#features"
-        style={{
-          padding: '16px 36px', borderRadius: 10,
-          background: '#0b5cff', color: '#fff',
-          fontWeight: 700, fontSize: '1rem',
-          textDecoration: 'none',
-          boxShadow: '0 4px 24px rgba(11,92,255,0.35)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = '#0948cc'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(11,92,255,0.45)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = '#0b5cff'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(11,92,255,0.35)'; }}
-      >
-        Explore Features
-      </a>
-      <a
-        href="#how-it-works"
-        style={{
-          padding: '16px 36px', borderRadius: 10,
-          background: 'transparent', color: '#fff',
-          fontWeight: 700, fontSize: '1rem',
-          textDecoration: 'none',
-          border: '2px solid rgba(255,255,255,0.2)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(11,92,255,0.6)'; e.currentTarget.style.background = 'rgba(11,92,255,0.08)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = 'transparent'; }}
-      >
-        See How It Works
-      </a>
-    </div>
-
-    {/* Scroll indicator */}
-    <div className="animate-bounce-custom" style={{
-      position: 'absolute', bottom: 40, zIndex: 10,
-      fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em',
-      color: 'rgba(255,255,255,0.4)',
+    {/* Nav */}
+    <nav style={{
+      position: 'relative', zIndex: 50, width: '100%',
+      padding: '2rem 3rem',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     }}>
-      SCROLL
-    </div>
+      <div>
+        <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', opacity: 0.7, letterSpacing: '0.2em' }}>
+          Zoom Momentum 2025
+        </span>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'clamp(1.5rem, 4vw, 3rem)' }}>
+        <NavLink href="#features">FEATURES</NavLink>
+        <NavLink href="#how-it-works">HOW IT WORKS</NavLink>
+        <NavLink href="#for-who">FOR WHO</NavLink>
+        <NavLink href="#cta">GET STARTED</NavLink>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem', opacity: 0.7 }}>
+        <SocialLink>GH</SocialLink>
+        <SocialLink>ZM</SocialLink>
+      </div>
+    </nav>
+
+    {/* Main content */}
+    <main style={{
+      flexGrow: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative', zIndex: 20, paddingBottom: '5rem',
+    }}>
+      <div style={{ position: 'relative', cursor: 'default' }}>
+        <h1
+          className="font-serif-italic"
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontStyle: 'italic',
+            fontWeight: 400,
+            fontSize: '16vw',
+            lineHeight: 1,
+            letterSpacing: '-0.03em',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'flex-end',
+            userSelect: 'none',
+            filter: 'drop-shadow(0 25px 25px rgba(0,0,0,0.15))',
+          }}
+        >
+          <span>Zoom</span>
+
+          {/* Center flower */}
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              marginLeft: '0.5vw',
+              marginRight: '0.5vw',
+              width: '4vw',
+              height: '15vw',
+            }}
+          >
+            <CenterFlower />
+          </div>
+
+          <span>M</span>
+        </h1>
+
+        {/* Labels */}
+        <div
+          className="animate-fade-in-delay-1"
+          style={{
+            position: 'absolute', top: '-2rem', left: '1rem',
+            fontSize: 'clamp(0.65rem, 1vw, 0.875rem)', fontWeight: 700,
+            letterSpacing: '0.1em',
+          }}
+        >
+          IN-MEETING ENGAGEMENT
+        </div>
+        <div
+          className="animate-fade-in-delay-1-5"
+          style={{
+            position: 'absolute', bottom: '-1rem', right: '1rem',
+            fontSize: 'clamp(0.65rem, 1vw, 0.875rem)', fontWeight: 700,
+            letterSpacing: '0.1em',
+          }}
+        >
+          ZOOM APPS SDK
+        </div>
+      </div>
+    </main>
+
+    {/* Footer */}
+    <footer style={{
+      position: 'absolute', bottom: 0, left: 0, width: '100%',
+      padding: '1.5rem', display: 'flex', justifyContent: 'space-between',
+      alignItems: 'flex-end', zIndex: 30,
+      fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.1em',
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <span>TRANSFORM VIRTUAL CLASSROOMS</span>
+        <span>2025</span>
+      </div>
+      <div className="animate-bounce-custom" style={{ marginBottom: '0.5rem' }}>&#8595; SCROLL</div>
+      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <span>&copy; 2025 ZOOM MOMENTUM</span>
+        <span>ALL RIGHTS RESERVED</span>
+      </div>
+    </footer>
   </section>
 );
 
@@ -447,24 +425,24 @@ const FeatureCard = ({ icon, title, description, color, tags }) => {
     <div
       className="section-reveal"
       style={{
-        background: hovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${hovered ? color + '40' : 'rgba(255,255,255,0.06)'}`,
-        borderRadius: 16,
+        background: hovered ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+        border: `1px solid ${hovered ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: 4,
         padding: 'clamp(1.5rem, 3vw, 2.5rem)',
         transition: 'all 0.3s ease',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
         cursor: 'default',
+        fontFamily: "'Space Mono', monospace",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Icon */}
       <div style={{
-        width: 56, height: 56, borderRadius: 14,
-        background: `${color}18`,
-        border: `1px solid ${color}30`,
+        width: 48, height: 48, borderRadius: 4,
+        background: 'rgba(253,224,71,0.15)',
+        border: '1px solid rgba(253,224,71,0.3)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '1.6rem',
+        fontSize: '1.4rem',
         marginBottom: 20,
         transition: 'transform 0.3s',
         transform: hovered ? 'scale(1.08)' : 'scale(1)',
@@ -472,25 +450,24 @@ const FeatureCard = ({ icon, title, description, color, tags }) => {
         {icon}
       </div>
 
-      <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 12, color: '#fff' }}>{title}</h3>
-      <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, marginBottom: 20 }}>
+      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12, color: '#fde047' }}>{title}</h3>
+      <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: 20 }}>
         {description}
       </p>
 
-      {/* Tags */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {tags.map((tag) => (
           <span
             key={tag}
             style={{
-              padding: '4px 12px',
-              borderRadius: 100,
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              background: `${color}15`,
-              color: color,
-              border: `1px solid ${color}25`,
+              padding: '4px 10px',
+              borderRadius: 2,
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              background: 'rgba(253,224,71,0.1)',
+              color: '#fde047',
+              border: '1px solid rgba(253,224,71,0.2)',
             }}
           >
             {tag}
@@ -508,20 +485,24 @@ const Features = () => (
     padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 5vw, 4rem)',
     maxWidth: 1200,
     margin: '0 auto',
+    fontFamily: "'Space Mono', monospace",
   }}>
     <div className="section-reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
       <span style={{
-        display: 'inline-block', padding: '6px 16px', borderRadius: 100,
+        display: 'inline-block', padding: '6px 16px', borderRadius: 2,
         fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em',
-        color: '#0b5cff', background: 'rgba(11,92,255,0.1)',
-        border: '1px solid rgba(11,92,255,0.2)', marginBottom: 20,
+        color: '#fde047', background: 'rgba(253,224,71,0.1)',
+        border: '1px solid rgba(253,224,71,0.2)', marginBottom: 20,
       }}>
         CORE FEATURES
       </span>
-      <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 16 }}>
+      <h2 className="font-serif-italic" style={{
+        fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontWeight: 400,
+        fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', marginBottom: 16,
+      }}>
         Four Engines of Engagement
       </h2>
-      <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.5)', maxWidth: 560, margin: '0 auto' }}>
+      <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
         Every feature designed to keep students focused, professors informed, and lectures alive.
       </p>
     </div>
@@ -576,22 +557,26 @@ const HowItWorks = () => {
     <section id="how-it-works" style={{
       position: 'relative',
       padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 5vw, 4rem)',
-      background: 'linear-gradient(180deg, transparent 0%, rgba(11,92,255,0.04) 50%, transparent 100%)',
+      background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 50%, transparent 100%)',
+      fontFamily: "'Space Mono', monospace",
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div className="section-reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
           <span style={{
-            display: 'inline-block', padding: '6px 16px', borderRadius: 100,
+            display: 'inline-block', padding: '6px 16px', borderRadius: 2,
             fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em',
-            color: '#2ea44f', background: 'rgba(46,164,79,0.1)',
-            border: '1px solid rgba(46,164,79,0.2)', marginBottom: 20,
+            color: '#fde047', background: 'rgba(253,224,71,0.1)',
+            border: '1px solid rgba(253,224,71,0.2)', marginBottom: 20,
           }}>
             HOW IT WORKS
           </span>
-          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 16 }}>
+          <h2 className="font-serif-italic" style={{
+            fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontWeight: 400,
+            fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', marginBottom: 16,
+          }}>
             From Install to Impact in Minutes
           </h2>
-          <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: '0 auto' }}>
+          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>
             No complex configuration. No learning curve. Just open Zoom and teach.
           </p>
         </div>
@@ -602,27 +587,26 @@ const HowItWorks = () => {
           gap: 32,
           position: 'relative',
         }}>
-          {steps.map((step, i) => (
+          {steps.map((step) => (
             <div key={step.num} className="section-reveal" style={{
               position: 'relative',
               padding: '32px 28px',
-              borderRadius: 16,
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
             }}>
               <span style={{
                 display: 'block',
-                fontSize: '3rem', fontWeight: 900,
-                background: 'linear-gradient(135deg, #0b5cff, #4d94ff)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                fontSize: '3rem', fontWeight: 700,
+                color: '#fde047',
                 marginBottom: 16,
                 lineHeight: 1,
+                fontFamily: "'Space Mono', monospace",
               }}>
                 {step.num}
               </span>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 10 }}>{step.title}</h3>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{step.desc}</p>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 10 }}>{step.title}</h3>
+              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>{step.desc}</p>
             </div>
           ))}
         </div>
@@ -672,20 +656,24 @@ const ForWho = () => {
       padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 5vw, 4rem)',
       maxWidth: 1200,
       margin: '0 auto',
+      fontFamily: "'Space Mono', monospace",
     }}>
       <div className="section-reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
         <span style={{
-          display: 'inline-block', padding: '6px 16px', borderRadius: 100,
+          display: 'inline-block', padding: '6px 16px', borderRadius: 2,
           fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em',
-          color: '#d29922', background: 'rgba(210,153,34,0.1)',
-          border: '1px solid rgba(210,153,34,0.2)', marginBottom: 20,
+          color: '#fde047', background: 'rgba(253,224,71,0.1)',
+          border: '1px solid rgba(253,224,71,0.2)', marginBottom: 20,
         }}>
           BUILT FOR EDUCATION
         </span>
-        <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 16 }}>
+        <h2 className="font-serif-italic" style={{
+          fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontWeight: 400,
+          fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', marginBottom: 16,
+        }}>
           Everyone Benefits
         </h2>
-        <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: '0 auto' }}>
+        <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>
           Designed for the realities of virtual learning — not just another tool.
         </p>
       </div>
@@ -698,20 +686,20 @@ const ForWho = () => {
         {audiences.map((a) => (
           <div key={a.title} className="section-reveal" style={{
             padding: 'clamp(1.5rem, 3vw, 2.5rem)',
-            borderRadius: 16,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 4,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
           }}>
             <div style={{ marginBottom: 16 }}>{a.emoji}</div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 20 }}>{a.title}</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 20, color: '#fde047' }}>{a.title}</h3>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {a.points.map((p) => (
                 <li key={p} style={{
                   display: 'flex', alignItems: 'flex-start', gap: 12,
-                  fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)',
-                  marginBottom: 14, lineHeight: 1.5,
+                  fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)',
+                  marginBottom: 14, lineHeight: 1.6,
                 }}>
-                  <span style={{ color: '#0b5cff', fontWeight: 700, fontSize: '1rem', lineHeight: 1.5, flexShrink: 0 }}>&#10003;</span>
+                  <span style={{ color: '#fde047', fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.6, flexShrink: 0 }}>&#10003;</span>
                   {p}
                 </li>
               ))}
@@ -731,8 +719,9 @@ const TechStack = () => {
   return (
     <section style={{
       padding: '48px clamp(1.5rem, 5vw, 4rem)',
-      borderTop: '1px solid rgba(255,255,255,0.04)',
-      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      fontFamily: "'Space Mono', monospace",
     }}>
       <div className="section-reveal" style={{
         maxWidth: 1200, margin: '0 auto',
@@ -745,12 +734,12 @@ const TechStack = () => {
         {techs.map((t) => (
           <span key={t} style={{
             padding: '8px 18px',
-            borderRadius: 100,
-            fontSize: '0.8rem',
-            fontWeight: 600,
+            borderRadius: 2,
+            fontSize: '0.75rem',
+            fontWeight: 700,
             color: 'rgba(255,255,255,0.5)',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
           }}>
             {t}
           </span>
@@ -767,20 +756,12 @@ const CTA = () => (
     padding: 'clamp(4rem, 10vw, 8rem) clamp(1.5rem, 5vw, 4rem)',
     textAlign: 'center',
     overflow: 'hidden',
+    fontFamily: "'Space Mono', monospace",
   }}>
-    {/* Glow */}
-    <div style={{
-      position: 'absolute', top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: 600, height: 600,
-      background: 'radial-gradient(circle, rgba(11,92,255,0.15), transparent 70%)',
-      pointerEvents: 'none',
-    }} />
-
     <div className="section-reveal" style={{ position: 'relative', zIndex: 10 }}>
-      <h2 style={{
+      <h2 className="font-serif-italic" style={{
+        fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontWeight: 400,
         fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-        fontWeight: 800,
         letterSpacing: '-0.02em',
         marginBottom: 20,
         lineHeight: 1.1,
@@ -788,11 +769,11 @@ const CTA = () => (
         Ready to Transform<br />Your Virtual Classroom?
       </h2>
       <p style={{
-        fontSize: '1.1rem',
+        fontSize: '0.9rem',
         color: 'rgba(255,255,255,0.5)',
         maxWidth: 480,
         margin: '0 auto 40px',
-        lineHeight: 1.6,
+        lineHeight: 1.7,
       }}>
         Zoom Momentum is built for Zoom — install it once and every lecture
         becomes more engaging, more interactive, and more effective.
@@ -801,20 +782,21 @@ const CTA = () => (
         href="#"
         style={{
           display: 'inline-block',
-          padding: '18px 48px',
-          borderRadius: 12,
-          background: 'linear-gradient(135deg, #0b5cff, #0948cc)',
-          color: '#fff',
+          padding: '16px 40px',
+          borderRadius: 2,
+          background: '#fde047',
+          color: '#1e3a5f',
           fontWeight: 700,
-          fontSize: '1.05rem',
+          fontSize: '0.9rem',
           textDecoration: 'none',
-          boxShadow: '0 4px 32px rgba(11,92,255,0.4)',
+          letterSpacing: '0.05em',
+          fontFamily: "'Space Mono', monospace",
           transition: 'all 0.2s',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(11,92,255,0.55)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 32px rgba(11,92,255,0.4)'; }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(253,224,71,0.3)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
       >
-        Get Started with Zoom Momentum
+        GET STARTED WITH ZOOM MOMENTUM
       </a>
     </div>
   </section>
@@ -824,7 +806,7 @@ const CTA = () => (
 const Footer = () => (
   <footer style={{
     padding: '40px clamp(1.5rem, 5vw, 4rem)',
-    borderTop: '1px solid rgba(255,255,255,0.06)',
+    borderTop: '1px solid rgba(255,255,255,0.08)',
     maxWidth: 1200,
     margin: '0 auto',
     display: 'flex',
@@ -832,28 +814,15 @@ const Footer = () => (
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 16,
+    fontFamily: "'Space Mono', monospace",
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    letterSpacing: '0.1em',
+    opacity: 0.5,
   }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{
-        width: 28, height: 28, borderRadius: 6,
-        background: 'linear-gradient(135deg, #0b5cff, #0948cc)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontWeight: 800, fontSize: '0.8rem', color: '#fff',
-      }}>
-        M
-      </div>
-      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>
-        Zoom Momentum
-      </span>
-    </div>
-
-    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
-      BUILT WITH ZOOM APPS SDK &middot; POWERED BY AI
-    </span>
-
-    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>
-      &copy; 2025 Zoom Momentum. All rights reserved.
-    </span>
+    <span>ZOOM MOMENTUM</span>
+    <span>BUILT WITH ZOOM APPS SDK &middot; POWERED BY AI</span>
+    <span>&copy; 2025 ZOOM MOMENTUM</span>
   </footer>
 );
 
@@ -863,8 +832,7 @@ const App = () => {
   return (
     <>
       <GlobalStyles />
-      <div style={{ minHeight: '100vh', position: 'relative' }}>
-        <Nav />
+      <div style={{ minHeight: '100vh', position: 'relative', backgroundColor: '#0044CC' }}>
         <Hero />
         <Features />
         <HowItWorks />
