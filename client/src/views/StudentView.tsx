@@ -1,13 +1,31 @@
 import { useState } from 'react';
+import { PollCard } from '../components/pulse/PollCard';
+import { PollResults } from '../components/pulse/PollResults';
+import type { Poll } from '../types/messages';
 
 interface StudentViewProps {
   userName: string;
   connected: boolean;
+  activePoll: Poll | null;
+  selectedOption: number | null;
+  hasAnswered: boolean;
+  pollResults: Poll | null;
+  onSelectOption: (index: number) => void;
+  onSubmitAnswer: () => void;
 }
 
 type StudentTab = 'timeline' | 'glossary';
 
-export function StudentView({ userName, connected }: StudentViewProps) {
+export function StudentView({
+  userName,
+  connected,
+  activePoll,
+  selectedOption,
+  hasAnswered,
+  pollResults,
+  onSelectOption,
+  onSubmitAnswer,
+}: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
 
   return (
@@ -58,6 +76,22 @@ export function StudentView({ userName, connected }: StudentViewProps) {
           </div>
         )}
       </div>
+
+      {pollResults && (
+        <div className="card">
+          <PollResults poll={pollResults} />
+        </div>
+      )}
+
+      {activePoll && (
+        <PollCard
+          poll={activePoll}
+          selectedOption={selectedOption}
+          hasAnswered={hasAnswered}
+          onSelect={onSelectOption}
+          onSubmit={onSubmitAnswer}
+        />
+      )}
 
       <div style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', textAlign: 'center' }}>
         Joined as {userName}
