@@ -28,7 +28,7 @@ export function PostClassSummary({
   return (
     <div className="post-class-summary">
       <div className="post-class-header">
-        <h1 className="post-class-title">🎓 Class Complete!</h1>
+        <h1 className="post-class-title">Class Complete</h1>
         {meetingTitle && <p className="post-class-meeting">{meetingTitle}</p>}
       </div>
 
@@ -45,7 +45,7 @@ export function PostClassSummary({
 
       {topics.length > 0 && (
         <div className="post-class-section">
-          <h3 className="post-class-section-title">📌 Topics Covered</h3>
+          <h3 className="post-class-section-title">Topics Covered</h3>
           <div className="post-class-topics">
             {topics.map(topic => (
               <div key={topic.id} className="post-class-topic">
@@ -63,7 +63,7 @@ export function PostClassSummary({
 
       {glossary.length > 0 && (
         <div className="post-class-section">
-          <h3 className="post-class-section-title">📖 Key Terms</h3>
+          <h3 className="post-class-section-title">Key Terms</h3>
           <div className="post-class-terms">
             {glossary.slice(0, 6).map((entry, i) => (
               <div key={i} className="post-class-term">
@@ -76,7 +76,7 @@ export function PostClassSummary({
       )}
 
       <div className="post-class-section">
-        <h3 className="post-class-section-title">📋 Your Recovery Pack</h3>
+          <h3 className="post-class-section-title">Your Recovery Pack</h3>
         {isLoading ? (
           <div className="recovery-loading">
             <span className="spinner" /> Generating your personalized review…

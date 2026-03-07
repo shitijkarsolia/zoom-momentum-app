@@ -15,9 +15,9 @@ export function RecoveryPackCard({ items, meetingTitle, onDismiss }: RecoveryPac
   if (items.length === 0) {
     return (
       <div className="recovery-pack">
-        <h2 className="recovery-title">📋 Recovery Pack</h2>
+        <h2 className="recovery-title">Recovery Pack</h2>
         <p className="recovery-empty">
-          No bookmarks were created during this session. Great job staying on track!
+          No bookmarks were created during this session.
         </p>
       </div>
     );
@@ -26,7 +26,7 @@ export function RecoveryPackCard({ items, meetingTitle, onDismiss }: RecoveryPac
   return (
     <div className="recovery-pack">
       <div className="recovery-header">
-        <h2 className="recovery-title">📋 Recovery Pack</h2>
+        <h2 className="recovery-title">Recovery Pack</h2>
         {meetingTitle && (
           <span className="recovery-meeting">{meetingTitle}</span>
         )}
@@ -44,17 +44,17 @@ export function RecoveryPackCard({ items, meetingTitle, onDismiss }: RecoveryPac
             </div>
 
             <div className="recovery-section">
-              <span className="recovery-label">💡 Explanation</span>
+              <span className="recovery-label">Explanation</span>
               <p className="recovery-text">{item.explanation}</p>
             </div>
 
             <div className="recovery-section">
-              <span className="recovery-label">✏️ Practice</span>
+              <span className="recovery-label">Practice</span>
               <p className="recovery-text">{item.practice}</p>
             </div>
 
             <div className="recovery-section">
-              <span className="recovery-label">📚 Resource</span>
+              <span className="recovery-label">Resource</span>
               <p className="recovery-resource">{item.resource}</p>
             </div>
           </div>

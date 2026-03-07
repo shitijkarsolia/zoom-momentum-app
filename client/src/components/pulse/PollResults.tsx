@@ -14,7 +14,7 @@ export function PollResults({ poll, onDismiss }: PollResultsProps) {
   return (
     <div className="poll-results">
       <div className="poll-results-header">
-        <h3 className="poll-results-title">📊 Poll Results</h3>
+        <h3 className="poll-results-title">Poll Results</h3>
         {total > 0 && (
           <span className="poll-results-total">{total} response{total !== 1 ? 's' : ''}</span>
         )}

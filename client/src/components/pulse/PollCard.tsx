@@ -45,7 +45,7 @@ export function PollCard({ poll, selectedOption, hasAnswered, onSelect, onSubmit
           </button>
         ) : (
           <div className="poll-submitted">
-            ✓ Answer submitted — waiting for results…
+            Answer submitted — waiting for results…
           </div>
         )}
       </div>

@@ -39,7 +39,7 @@ export function ArenaHost({
   if (phase === 'idle' || phase === 'loading') {
     return (
       <div className="arena-host">
-        <h2 className="card-title">🎮 Warm-Up Arena</h2>
+        <h2 className="card-title">Warm-Up Arena</h2>
         <p className="arena-description">
           Launch a trivia game to review last lecture's material before class begins.
         </p>
@@ -49,7 +49,7 @@ export function ArenaHost({
           <input
             id="arena-topic"
             type="text"
-            placeholder="e.g., 'Calculus — derivatives and chain rule'"
+            placeholder="e.g., 'Cell Biology — mitosis and meiosis'"
             value={topic}
             onChange={e => setTopic(e.target.value)}
             disabled={phase === 'loading'}
@@ -68,7 +68,7 @@ export function ArenaHost({
               <span className="spinner" /> Generating Questions…
             </>
           ) : (
-            '🎯 Generate Quiz'
+            'Generate Quiz'
           )}
         </button>
       </div>
@@ -78,16 +78,16 @@ export function ArenaHost({
   if (phase === 'ready') {
     return (
       <div className="arena-host">
-        <h2 className="card-title">🎮 Quiz Ready</h2>
+        <h2 className="card-title">Quiz Ready</h2>
         <p className="arena-description">
           {totalQuestions} questions loaded. Students will see questions one at a time with a {15}s timer.
         </p>
         <div className="arena-ready-actions">
           <button className="btn btn-secondary" onClick={onReset}>
-            ← Back
+            Back
           </button>
           <button className="btn btn-primary" onClick={onStartGame}>
-            🚀 Start Trivia!
+            Start Trivia
           </button>
         </div>
       </div>
@@ -100,7 +100,7 @@ export function ArenaHost({
         <div className="arena-question-header">
           <span className="arena-q-number">Q{currentIndex + 1}/{totalQuestions}</span>
           <span className={`arena-countdown ${countdown <= 5 ? 'urgent' : ''}`}>
-            ⏱ {countdown}s
+            {countdown}s
           </span>
         </div>
 
@@ -111,7 +111,6 @@ export function ArenaHost({
             <div key={i} className={`arena-host-option ${i === currentQuestion.correctIndex ? 'correct' : ''}`}>
               <span className="poll-option-letter">{String.fromCharCode(65 + i)}</span>
               <span>{opt}</span>
-              {i === currentQuestion.correctIndex && <span className="arena-correct-badge">✓</span>}
             </div>
           ))}
         </div>
@@ -119,7 +118,7 @@ export function ArenaHost({
         <div className="arena-live-stats">
           <span>{responseCount} {responseCount === 1 ? 'answer' : 'answers'} received</span>
           <button className="btn btn-primary" onClick={onShowLeaderboard}>
-            📊 Show Results
+            Show Results
           </button>
         </div>
       </div>
@@ -134,8 +133,8 @@ export function ArenaHost({
           entries={leaderboard}
           title={`After Q${currentIndex + 1}`}
         />
-        <button className="btn btn-primary arena-next-btn" onClick={isLast ? onNextQuestion : onNextQuestion}>
-          {isLast ? '🏆 Final Results' : `Next Question (Q${currentIndex + 2}) →`}
+        <button className="btn btn-primary arena-next-btn" onClick={onNextQuestion}>
+          {isLast ? 'Final Results' : `Next Question (Q${currentIndex + 2})`}
         </button>
       </div>
     );
@@ -145,8 +144,7 @@ export function ArenaHost({
     return (
       <div className="arena-host">
         <div className="arena-finished">
-          <h2 className="arena-trophy">🏆</h2>
-          <h2 className="card-title">Game Over!</h2>
+          <h2 className="card-title">Game Over</h2>
         </div>
         <Leaderboard entries={leaderboard} title="Final Standings" />
         <button className="btn btn-secondary arena-next-btn" onClick={onReset}>
