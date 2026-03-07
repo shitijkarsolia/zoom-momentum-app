@@ -71,10 +71,81 @@ aiRouter.post('/topic-segment', async (_req, res) => {
   res.json({ topicChanged: false, message: 'AI service not yet implemented' });
 });
 
+const FALLBACK_QUIZ = [
+  {
+    question: 'What does the derivative of a function represent?',
+    options: ['The area under the curve', 'The rate of change at a point', 'The y-intercept', 'The maximum value'],
+    correctIndex: 1,
+    explanation: 'The derivative measures the instantaneous rate of change of a function at any given point.',
+  },
+  {
+    question: 'Using the power rule, what is the derivative of x³?',
+    options: ['x²', '3x', '3x²', '3x³'],
+    correctIndex: 2,
+    explanation: 'The power rule says d/dx(xⁿ) = nxⁿ⁻¹, so d/dx(x³) = 3x².',
+  },
+  {
+    question: 'What is the chain rule used for?',
+    options: ['Adding derivatives', 'Differentiating composite functions', 'Finding integrals', 'Solving equations'],
+    correctIndex: 1,
+    explanation: 'The chain rule lets us differentiate compositions of functions: d/dx[f(g(x))] = f\'(g(x))·g\'(x).',
+  },
+  {
+    question: 'What is the derivative of a constant?',
+    options: ['1', 'The constant itself', '0', 'Undefined'],
+    correctIndex: 2,
+    explanation: 'Constants don\'t change, so their rate of change is zero.',
+  },
+  {
+    question: 'If f(x) = 2x + 5, what is f\'(x)?',
+    options: ['2x', '5', '2', '2x + 5'],
+    correctIndex: 2,
+    explanation: 'The derivative of 2x is 2 and the derivative of the constant 5 is 0, so f\'(x) = 2.',
+  },
+];
+
 // POST /api/ai/quiz-generate — Generate quiz questions from transcript
-aiRouter.post('/quiz-generate', async (_req, res) => {
-  // TODO: Implement with OpenAI integration
-  res.json({ questions: [], message: 'AI service not yet implemented' });
+aiRouter.post('/quiz-generate', async (req, res) => {
+  const { transcript, topic, questionCount } = req.body;
+  const count = Math.min(questionCount ?? 5, 10);
+
+  try {
+    const prompt = `Generate ${count} multiple-choice trivia questions for a college lecture review quiz.
+${topic ? `Topic: ${topic}` : ''}
+${transcript ? `Based on this transcript excerpt:\n"${transcript.slice(0, 1500)}"` : 'Generate general knowledge questions about calculus/derivatives.'}
+
+Return valid JSON only with this exact structure:
+{"questions": [{"question": "...", "options": ["A", "B", "C", "D"], "correctIndex": 0, "explanation": "..."}]}
+
+Rules:
+- Each question has exactly 4 options
+- correctIndex is 0-based (0-3)
+- Questions should test understanding, not just recall
+- Explanations should be brief (1-2 sentences)
+- Questions should increase in difficulty`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1500,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error('Empty response from OpenAI');
+
+    const parsed = JSON.parse(content);
+    if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+      throw new Error('Invalid quiz format from AI');
+    }
+
+    res.json({ questions: parsed.questions });
+  } catch (err) {
+    console.error('[ai] quiz-generate error:', err);
+    const shuffled = [...FALLBACK_QUIZ].sort(() => Math.random() - 0.5);
+    res.json({ questions: shuffled.slice(0, count), fallback: true });
+  }
 });
 
 // POST /api/ai/recovery-pack — Generate recovery pack from bookmarks
