@@ -193,7 +193,7 @@ Students apply delta to local state
 ### Tech Stack
 - **Client:** Vite + React 18 + TypeScript + @zoom/appssdk
 - **Server:** Express + TypeScript + Prisma + SQLite (dev) / PostgreSQL (prod)
-- **AI:** OpenAI GPT-4 (via server-side API calls)
+- **AI:** OpenAI-compatible API (Kiro/Claude via `OPENAI_BASE_URL`)
 - **Monorepo:** npm workspaces
 
 ---
@@ -239,7 +239,10 @@ SQLite via Prisma. After install, run `cd server && npx prisma migrate dev --nam
 - `npx vite build` in `client/` and `npx tsc` in `server/` both succeed.
 
 ### Running outside Zoom
-The frontend is a Zoom Apps SDK side-panel app. When loaded in a regular browser (outside Zoom), `main.tsx` detects the absence of `window.zoomSdk` and renders `DevPreview` instead of the real `App`. To force DevPreview even inside Zoom, add `?dev=1` to the URL. Full in-meeting testing requires running inside a Zoom meeting with ngrok/cloudflare tunnel.
+The frontend is a Zoom Apps SDK side-panel app. `main.tsx` checks `navigator.userAgent` for `ZoomApps` or the URL for `zoomapp` to detect if we're inside Zoom. Outside Zoom, `DevPreview` renders automatically. To force the real `App` (even outside Zoom), add `?app=1`. The Zoom SDK script (`sdk.js`) is loaded globally via `index.html` so `window.zoomSdk` exists even outside Zoom — do NOT use `window.zoomSdk` for detection.
+
+### AI integration
+The server uses an OpenAI-compatible API (configured via `OPENAI_BASE_URL` and `OPENAI_API_KEY`). All AI endpoints return 500 on failure instead of hardcoded fallbacks — there is no subject-specific fallback content. Prompts are fully subject-agnostic and work for any academic discipline.
 
 ### Transcript foreign key caveat
 The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: "mock-meeting-001"`. This requires a matching `Meeting` record in the DB, or it will 500 due to a Prisma foreign key constraint. A meeting must be created first (e.g., via the auth/OAuth flow which creates user and meeting records).
@@ -280,3 +283,33 @@ The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: 
 - `client/src/DevPreview.tsx` — Added anchor simulation with mock topics/glossary
 - `client/src/hooks/useMessaging.ts` — Fixed TS error: `onMessage` payload type (`JSONObject` → runtime check)
 - `client/src/index.css` — Added anchor CSS (topic cards, glossary, bookmark toast)
+
+### 2026-03-07 — Recovery Agent + Subject-Agnostic AI + Bug Fixes
+
+**Recovery Agent (Feature D — Tasks 30-31):**
+- Implemented `/api/ai/recovery-pack` endpoint — generates personalized review items per bookmarked moment
+- Created `RecoveryPackCard` component — numbered items with explanation, practice, resource
+- Created `PostClassSummary` component — post-class stats, topics, terms, recovery pack
+- Added "End Class" flow in DevPreview — bookmark during lecture → end class → summary
+
+**Subject-Agnostic AI overhaul:**
+- Removed ALL hardcoded math/calculus fallbacks from every AI endpoint
+- Rewrote all prompts to work for any academic subject (history, biology, economics, etc.)
+- AI endpoints now return 500 on failure instead of subject-specific fallback data
+- Implemented `/api/ai/detect-cues` endpoint — detects professor importance signals in transcript
+- Consistent model (`claude-sonnet-4.5`) across all endpoints
+
+**Bug fixes:**
+- Fixed DevPreview not loading (Zoom SDK detection broken by `sdk.js` global)
+- Fixed duplicate topics/glossary in Anchor DevPreview simulation
+- Fixed "1 responses" / "1 answers" grammar
+- Validated POLL_RESPONSE against active poll ID
+- Blocked ARENA_ANSWER after countdown expires
+- Added question index to ARENA_ANSWER for correct scoring under latency
+
+**What's pending (needs Zoom meeting):**
+- Real RTMS integration (Tasks 18-19) — webhook handler + WebSocket transcript ingestion
+- Auto-Bookmark on professor cues (Task 28) — uses detect-cues endpoint + host broadcast
+- Smart Spotlight (Task 29) — needs `onActiveSpeakerChange` (host-only Zoom SDK event)
+- Late Joiner catch-up (Task 14) — needs `onParticipantChange` (host-only)
+- In-meeting testing of all features with real Zoom SDK messaging

@@ -212,28 +212,27 @@ This document breaks down the high-level features of Zoom Momentum into specific
     - [x] Host UI: Aggregate scores and broadcast `POLL_RESULTS` bar chart to everyone. → `PollResults.tsx` bar chart + `usePulse.ts` host aggregation.
 
 **Feature D: Recovery Agent (Post-Class) & Enhancements**
-- [ ] **Task 27: The Manual Bookmark Button**
+- [x] **Task 27: The Manual Bookmark Button**
   - **Action Items:**
-    - [ ] Add a `📌 I'm Confused` button to the Live Anchor UI saving the current timestamp to the DB.
+    - [x] Add a `📌 I'm Confused` button to the Live Anchor UI saving the current timestamp to the DB. → `StudentView.tsx` + `useLiveAnchor.ts` `bookmarkCurrentTopic` POSTs to `/api/bookmarks`.
 - [ ] **Task 28: Auto-Bookmark on Professor Cues (Enhancement 2)**
   - **Context:** Automatically bookmark moments when the professor indicates importance.
   - **Action Items:**
-    - [ ] Build `/api/ai/detect-cues` endpoint to scan transcript buffer for emphasis phrases (e.g., "This is critical").
-    - [ ] When detected, trigger the Host app to secretly log bookmarks for all students.
+    - [x] Build `/api/ai/detect-cues` endpoint to scan transcript buffer for emphasis phrases (e.g., "This is critical"). → Implemented in `server/src/routes/ai.ts` with real AI.
+    - [ ] When detected, trigger the Host app to secretly log bookmarks for all students. *(Needs Zoom SDK `sendMessage` in real meeting)*
 - [ ] **Task 29: Smart Spotlight for Student Questions (Enhancement 4)**
-  - **Context:** Emphasize students asking questions automatically.
+  - **Context:** Emphasize students asking questions automatically. *(Needs Zoom SDK host-only events)*
   - **Action Items:**
     - [ ] Use `zoomSdk.onActiveSpeakerChange()` to detect when a Student unmutes and speaks.
     - [ ] Host App Action: Call `zoomSdk.addParticipantSpotlight(studentID)` automatically.
     - [ ] Host App Action: Automatically annotate the Live Anchor timeline with "Student Question at [Time]".
     - [ ] Host App Action: Auto-remove the spotlight when the Host resumes speaking using `zoomSdk.removeParticipantSpotlights()`.
-- [ ] **Task 30: The AI Recovery Endpoint**
+- [x] **Task 30: The AI Recovery Endpoint**
   - **Action Items:**
-    - [ ] Prompt: "Explain this transcript segment simply and provide a practice problem."
-    - [ ] Endpoint runs this prompt for all bookmarks (manual + auto) after class.
-- [ ] **Task 31: Post-Class Summary Card UI (Enhancement 5)**
-  - **Context:** A final deliverable given to the student immediately after the Zoom call ends.
+    - [x] Prompt: "Explain this transcript segment simply and provide a practice problem." → Implemented in `server/src/routes/ai.ts` with subject-agnostic prompt.
+    - [x] Endpoint runs this prompt for all bookmarks (manual + auto) after class. → `/api/ai/recovery-pack` accepts bookmarks array, generates per-item explanations.
+- [x] **Task 31: Post-Class Summary Card UI (Enhancement 5)**
   - **Action Items:**
-    - [ ] Detect `onRunningContextChange` transitioning from `inMeeting` to `inMainClient` (meeting ended).
-    - [ ] Build a Summary Card UI summarizing key topics and links to the Glossary.
-    - [ ] Display the personalized Recovery Pack generated in Task 30 on this card.
+    - [ ] Detect `onRunningContextChange` transitioning from `inMeeting` to `inMainClient` (meeting ended). *(Needs Zoom SDK event)*
+    - [x] Build a Summary Card UI summarizing key topics and links to the Glossary. → `PostClassSummary.tsx` with stats, topics, terms.
+    - [x] Display the personalized Recovery Pack generated in Task 30 on this card. → `RecoveryPackCard.tsx` embedded in `PostClassSummary`.
