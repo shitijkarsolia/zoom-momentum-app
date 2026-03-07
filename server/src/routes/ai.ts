@@ -231,10 +231,84 @@ Rules:
   }
 });
 
+const FALLBACK_RECOVERY_ITEMS = [
+  {
+    topic: 'Derivatives',
+    explanation: 'A derivative measures the instantaneous rate of change of a function. Think of it as the slope of the tangent line at any point on a curve. The formal definition uses limits: f\'(x) = lim(h→0) [f(x+h) - f(x)] / h.',
+    practice: 'Find the derivative of f(x) = 3x² + 2x - 5 using the power rule.',
+    resource: 'Khan Academy: Introduction to Derivatives',
+  },
+  {
+    topic: 'Power Rule',
+    explanation: 'The power rule is one of the most fundamental differentiation rules. For any function f(x) = xⁿ, the derivative is f\'(x) = nxⁿ⁻¹. Simply bring down the exponent as a coefficient and reduce the exponent by one.',
+    practice: 'Use the power rule to find d/dx(x⁵ - 4x³ + 7x).',
+    resource: 'Khan Academy: Power Rule',
+  },
+  {
+    topic: 'Chain Rule',
+    explanation: 'The chain rule is used to differentiate composite functions. If y = f(g(x)), then dy/dx = f\'(g(x)) · g\'(x). Identify the "outer" and "inner" functions, differentiate each, and multiply.',
+    practice: 'Find the derivative of h(x) = (2x + 3)⁴ using the chain rule.',
+    resource: 'Khan Academy: Chain Rule',
+  },
+];
+
 // POST /api/ai/recovery-pack — Generate recovery pack from bookmarks
-aiRouter.post('/recovery-pack', async (_req, res) => {
-  // TODO: Implement with AI integration
-  res.json({ items: [], message: 'AI service not yet implemented' });
+aiRouter.post('/recovery-pack', async (req, res) => {
+  const { bookmarks, topics, transcript } = req.body;
+
+  if (!Array.isArray(bookmarks) || bookmarks.length === 0) {
+    res.json({ items: FALLBACK_RECOVERY_ITEMS.slice(0, 2), fallback: true });
+    return;
+  }
+
+  try {
+    const bookmarkSummary = bookmarks
+      .map((b: { topic: string; timestamp: number }, i: number) => `${i + 1}. "${b.topic}" (bookmarked at ${new Date(b.timestamp).toLocaleTimeString()})`)
+      .join('\n');
+
+    const topicSummary = Array.isArray(topics)
+      ? topics.map((t: { title: string; bullets: string[] }) => `- ${t.title}: ${t.bullets.join('; ')}`).join('\n')
+      : '';
+
+    const prompt = `A student bookmarked confusing moments during a lecture. Generate a personalized recovery pack to help them review.
+
+Student's bookmarked moments:
+${bookmarkSummary}
+
+${topicSummary ? `Lecture topics covered:\n${topicSummary}` : ''}
+${transcript ? `Relevant transcript excerpt:\n"${transcript.slice(0, 1000)}"` : ''}
+
+Return valid JSON with this structure:
+{"items": [{"topic": "...", "explanation": "2-3 sentence plain-language explanation", "practice": "A practice problem for the student", "resource": "Suggested resource name"}]}
+
+Rules:
+- One item per bookmarked moment
+- Explanations should be simple and accessible
+- Practice problems should be solvable without a calculator
+- Resource suggestions should reference well-known educational sources`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1500,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error('Empty response from AI');
+
+    const parsed = extractJSON(content);
+    if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
+      throw new Error('Invalid recovery pack format');
+    }
+
+    res.json({ items: parsed.items });
+  } catch (err) {
+    console.error('[ai] recovery-pack error:', err);
+    const relevant = FALLBACK_RECOVERY_ITEMS.slice(0, Math.min(bookmarks.length, 3));
+    res.json({ items: relevant, fallback: true });
+  }
 });
 
 // POST /api/ai/detect-cues — Detect professor importance cues
