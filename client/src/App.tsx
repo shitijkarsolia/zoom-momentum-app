@@ -4,10 +4,11 @@ import { useZoomAuth } from './hooks/useZoomAuth';
 import { useMessaging } from './hooks/useMessaging';
 import { usePulseHost, usePulseStudent } from './hooks/usePulse';
 import { useArenaHost, useArenaStudent } from './hooks/useArena';
+import { useAnchorHost, useAnchorStudent } from './hooks/useLiveAnchor';
 import { AuthView } from './views/AuthView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
-import type { AppMessage, Poll, LeaderboardEntry } from './types/messages';
+import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
 
 export default function App() {
   const zoom = useZoomSdk();
@@ -29,6 +30,8 @@ export default function App() {
   const pulseStudent = usePulseStudent({ send: messaging.send });
   const arenaHost = useArenaHost({ broadcast: messaging.broadcast });
   const arenaStudent = useArenaStudent({ send: messaging.send, participantName: zoom.userName });
+  const anchorHost = useAnchorHost({ broadcast: messaging.broadcast });
+  const anchorStudent = useAnchorStudent({ send: messaging.send });
 
   useEffect(() => {
     messageRouterRef.current = (message: AppMessage) => {
@@ -57,6 +60,10 @@ export default function App() {
           });
         } else if (message.type === 'ARENA_END') {
           arenaStudent.handleArenaEnd(message.payload as { leaderboard: LeaderboardEntry[] });
+        } else if (message.type === 'TOPIC_UPDATE') {
+          anchorStudent.handleTopicUpdate(message.payload as { topic: Topic; topicChanged: boolean });
+        } else if (message.type === 'GLOSSARY_UPDATE') {
+          anchorStudent.handleGlossaryUpdate(message.payload as { terms: GlossaryEntry[] });
         }
       }
       console.log('[App] received message:', message.type, message);
@@ -71,6 +78,8 @@ export default function App() {
     arenaStudent.handleQuestion,
     arenaStudent.handleLeaderboard,
     arenaStudent.handleArenaEnd,
+    anchorStudent.handleTopicUpdate,
+    anchorStudent.handleGlossaryUpdate,
   ]);
 
   if (!zoom.isConfigured && !zoom.error) {
@@ -126,6 +135,14 @@ export default function App() {
         onArenaShowLeaderboard={arenaHost.showLeaderboard}
         onArenaNextQuestion={arenaHost.nextQuestion}
         onArenaReset={arenaHost.resetArena}
+        anchorTopics={anchorHost.topics}
+        anchorCurrentTopicId={anchorHost.currentTopicId}
+        anchorGlossary={anchorHost.glossary}
+        anchorIsPolling={anchorHost.isPolling}
+        anchorError={anchorHost.error}
+        onAnchorStartPolling={anchorHost.startPolling}
+        onAnchorStopPolling={anchorHost.stopPolling}
+        onAnchorPollNow={anchorHost.pollTranscript}
       />
     );
   }
@@ -149,6 +166,10 @@ export default function App() {
       arenaExplanation={arenaStudent.explanation}
       arenaFinalLeaderboard={arenaStudent.finalLeaderboard}
       onArenaSelectAndSubmit={arenaStudent.selectAndSubmit}
+      anchorTopics={anchorStudent.topics}
+      anchorCurrentTopicId={anchorStudent.currentTopicId}
+      anchorGlossary={anchorStudent.glossary}
+      onBookmark={anchorStudent.bookmarkCurrentTopic}
     />
   );
 }
