@@ -100,33 +100,44 @@ export function DevPreview() {
   // --- Anchor Handlers ---
   const handleAnchorStartPolling = useCallback(() => {
     setAnchorIsPolling(true);
-    // Immediately add first mock topic
     setAnchorTopics([MOCK_TOPICS[0]!]);
     setAnchorCurrentTopicId(MOCK_TOPICS[0]!.id);
     setAnchorGlossary([MOCK_GLOSSARY[0]!]);
-    // Simulate a topic change after 5 seconds
+
     anchorTimerRef.current = setInterval(() => {
       setAnchorTopics(prev => {
         if (prev.length >= MOCK_TOPICS.length) {
-          // Add a dynamic new topic
+          // Only add the Chain Rule topic once
+          const chainRuleId = 'topic-chain-rule';
+          if (prev.some(t => t.id === chainRuleId)) {
+            return prev;
+          }
           const newTopic: Topic = {
-            id: `topic-${Date.now()}`,
+            id: chainRuleId,
             title: 'Chain Rule',
             bullets: ['d/dx[f(g(x))] = f\'(g(x))·g\'(x)', 'Used for composite functions', 'Inner and outer function identification'],
             startTime: Date.now(),
           };
           setAnchorCurrentTopicId(newTopic.id);
-          setAnchorGlossary(g => [...g, {
-            term: 'Chain Rule',
-            definition: 'Rule for differentiating composite functions',
-            formula: 'd/dx[f(g(x))] = f\'(g(x))·g\'(x)',
-            timestamp: Date.now(),
-          }]);
+          setAnchorGlossary(g => {
+            if (g.some(entry => entry.term.toLowerCase() === 'chain rule')) return g;
+            return [...g, {
+              term: 'Chain Rule',
+              definition: 'Rule for differentiating composite functions',
+              formula: 'd/dx[f(g(x))] = f\'(g(x))·g\'(x)',
+              timestamp: Date.now(),
+            }];
+          });
           return [...prev, newTopic];
         }
         const next = MOCK_TOPICS[prev.length]!;
         setAnchorCurrentTopicId(next.id);
-        setAnchorGlossary(g => [...g, ...MOCK_GLOSSARY.slice(prev.length, prev.length + 1)]);
+        setAnchorGlossary(g => {
+          const newTerms = MOCK_GLOSSARY.slice(prev.length, prev.length + 1);
+          const existing = new Set(g.map(e => e.term.toLowerCase()));
+          const unique = newTerms.filter(t => !existing.has(t.term.toLowerCase()));
+          return unique.length > 0 ? [...g, ...unique] : g;
+        });
         return [...prev, next];
       });
     }, 8000);
