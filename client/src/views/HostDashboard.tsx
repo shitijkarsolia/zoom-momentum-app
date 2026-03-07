@@ -4,9 +4,16 @@ import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
 import { Timeline } from '../components/anchor/Timeline';
 import { GlossaryTab } from '../components/anchor/GlossaryTab';
+import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { PollDraft, PulsePhase } from '../hooks/usePulse';
 import type { ArenaHostPhase } from '../hooks/useArena';
 import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from '../types/messages';
+
+const TAB_INFO = {
+  pulse: 'Generate AI check-in polls to gauge student understanding. You can edit the question before launching it to everyone.',
+  arena: 'Run a timed trivia quiz. AI generates questions from your topic, and students compete on a live leaderboard with scoring.',
+  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
+} as const;
 
 interface HostDashboardProps {
   userName: string;
@@ -89,7 +96,7 @@ export function HostDashboard({
   return (
     <div className="app-container">
       <div className="status-bar">
-        <span style={{ fontWeight: 600 }}>⚡ Momentum — Host</span>
+        <span style={{ fontWeight: 600 }}>Momentum — Host</span>
         <div className="status-indicator">
           <div className={`status-dot ${connected ? 'connected' : ''}`} />
           <span>{connected ? 'Connected' : 'Connecting…'}</span>
@@ -102,24 +109,27 @@ export function HostDashboard({
             className={`tab ${activeTab === 'pulse' ? 'active' : ''}`}
             onClick={() => setActiveTab('pulse')}
           >
-            📊 Pulse
+            Pulse
           </button>
           <button
             className={`tab ${activeTab === 'arena' ? 'active' : ''}`}
             onClick={() => setActiveTab('arena')}
           >
-            🎮 Arena
+            Arena
           </button>
           <button
             className={`tab ${activeTab === 'anchor' ? 'active' : ''}`}
             onClick={() => setActiveTab('anchor')}
           >
-            📌 Anchor
+            Anchor
           </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
+        <div className="tab-info-bar">
+          <FeatureInfo title={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} description={TAB_INFO[activeTab]} />
+        </div>
         {activeTab === 'pulse' && (
           <>
             {pulsePhase === 'results' && pulseActivePoll ? (
@@ -170,12 +180,12 @@ export function HostDashboard({
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {anchorIsPolling ? (
-                <button className="btn btn-secondary" onClick={onAnchorStopPolling}>⏸ Pause AI</button>
+                <button className="btn btn-secondary" onClick={onAnchorStopPolling}>Pause AI</button>
               ) : (
-                <button className="btn btn-primary" onClick={onAnchorStartPolling}>▶ Start AI</button>
+                <button className="btn btn-primary" onClick={onAnchorStartPolling}>Start AI</button>
               )}
               <button className="btn btn-secondary" onClick={onAnchorPollNow} disabled={anchorIsPolling}>
-                🔄 Analyze Now
+                Analyze Now
               </button>
             </div>
             {anchorError && (

@@ -10,9 +10,29 @@ import { ArenaHost } from './components/arena/ArenaHost';
 import { ArenaStudent } from './components/arena/ArenaStudent';
 import { Timeline } from './components/anchor/Timeline';
 import { GlossaryTab } from './components/anchor/GlossaryTab';
+import { PostClassSummary } from './components/recovery/PostClassSummary';
+import { FeatureInfo } from './components/shared/FeatureInfo';
+import { WelcomeView } from './views/WelcomeView';
 import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
 import type { PollDraft, PulsePhase } from './hooks/usePulse';
+
+const HOST_TAB_INFO: Record<string, string> = {
+  pulse: 'Generate AI check-in polls to gauge student understanding. You can edit the question before launching it to everyone.',
+  arena: 'Run a timed trivia quiz. AI generates questions from your topic, and students compete on a live leaderboard with scoring.',
+  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
+};
+const STUDENT_TAB_INFO: Record<string, string> = {
+  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
+  glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
+};
 import type { ArenaHostPhase, ArenaStudentPhase } from './hooks/useArena';
+
+interface RecoveryItem {
+  topic: string;
+  explanation: string;
+  practice: string;
+  resource: string;
+}
 
 type PreviewMode = 'host' | 'student';
 type FeatureTab = 'pulse' | 'arena' | 'anchor';
@@ -20,22 +40,21 @@ type FeatureTab = 'pulse' | 'arena' | 'anchor';
 const MOCK_TOPICS: Topic[] = [
   {
     id: 'topic-1',
-    title: 'Introduction to Derivatives',
-    bullets: ['Definition of a derivative as a limit', 'Notation: f\'(x) and dy/dx', 'Geometric interpretation as slope of tangent line'],
+    title: 'Opening Discussion',
+    bullets: ['Recap of last lecture', 'Today\'s learning objectives', 'Overview of key concepts'],
     startTime: Date.now() - 600_000,
   },
   {
     id: 'topic-2',
-    title: 'Power Rule',
-    bullets: ['d/dx(xⁿ) = nxⁿ⁻¹', 'Works for any real exponent', 'Examples with polynomials'],
+    title: 'Core Concepts',
+    bullets: ['Main ideas introduced', 'Supporting details and examples', 'Connections to prior knowledge'],
     startTime: Date.now() - 300_000,
   },
 ];
 
 const MOCK_GLOSSARY: GlossaryEntry[] = [
-  { term: 'Derivative', definition: 'The instantaneous rate of change of a function at a point', timestamp: Date.now() - 600_000 },
-  { term: 'Power Rule', definition: 'Differentiation rule: d/dx(xⁿ) = nxⁿ⁻¹', formula: 'd/dx(xⁿ) = nxⁿ⁻¹', timestamp: Date.now() - 300_000 },
-  { term: 'Tangent Line', definition: 'A line that touches a curve at exactly one point and has the same slope as the curve at that point', timestamp: Date.now() - 450_000 },
+  { term: 'Key Concept', definition: 'A fundamental idea covered in today\'s lecture', timestamp: Date.now() - 600_000 },
+  { term: 'Example', definition: 'A concrete illustration used to explain the concept', timestamp: Date.now() - 300_000 },
 ];
 
 const QUESTION_TIME = 15;
@@ -43,6 +62,7 @@ const QUESTION_TIME = 15;
 export function DevPreview() {
   const [mode, setMode] = useState<PreviewMode>('host');
   const [activeFeature, setActiveFeature] = useState<FeatureTab>('pulse');
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
 
   // --- Pulse State ---
   const [hostPhase, setHostPhase] = useState<PulsePhase>('idle');
@@ -85,6 +105,12 @@ export function DevPreview() {
   const [anchorStudentTab, setAnchorStudentTab] = useState<'timeline' | 'glossary'>('timeline');
   const [bookmarkToast, setBookmarkToast] = useState(false);
 
+  // --- Recovery State ---
+  const [showPostClass, setShowPostClass] = useState(false);
+  const [recoveryItems, setRecoveryItems] = useState<RecoveryItem[]>([]);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [studentBookmarks, setStudentBookmarks] = useState<{ topic: string; timestamp: number }[]>([]);
+
   const hostTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const studentTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const anchorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -100,33 +126,43 @@ export function DevPreview() {
   // --- Anchor Handlers ---
   const handleAnchorStartPolling = useCallback(() => {
     setAnchorIsPolling(true);
-    // Immediately add first mock topic
     setAnchorTopics([MOCK_TOPICS[0]!]);
     setAnchorCurrentTopicId(MOCK_TOPICS[0]!.id);
     setAnchorGlossary([MOCK_GLOSSARY[0]!]);
-    // Simulate a topic change after 5 seconds
+
     anchorTimerRef.current = setInterval(() => {
       setAnchorTopics(prev => {
         if (prev.length >= MOCK_TOPICS.length) {
-          // Add a dynamic new topic
+          // Only add the Chain Rule topic once
+          const advancedId = 'topic-advanced';
+          if (prev.some(t => t.id === advancedId)) {
+            return prev;
+          }
           const newTopic: Topic = {
-            id: `topic-${Date.now()}`,
-            title: 'Chain Rule',
-            bullets: ['d/dx[f(g(x))] = f\'(g(x))·g\'(x)', 'Used for composite functions', 'Inner and outer function identification'],
+            id: advancedId,
+            title: 'Advanced Applications',
+            bullets: ['Applying concepts to new problems', 'Common pitfalls and misconceptions', 'Practice strategies'],
             startTime: Date.now(),
           };
           setAnchorCurrentTopicId(newTopic.id);
-          setAnchorGlossary(g => [...g, {
-            term: 'Chain Rule',
-            definition: 'Rule for differentiating composite functions',
-            formula: 'd/dx[f(g(x))] = f\'(g(x))·g\'(x)',
-            timestamp: Date.now(),
-          }]);
+          setAnchorGlossary(g => {
+            if (g.some(entry => entry.term.toLowerCase() === 'application')) return g;
+            return [...g, {
+              term: 'Application',
+              definition: 'Using learned concepts to solve new problems',
+              timestamp: Date.now(),
+            }];
+          });
           return [...prev, newTopic];
         }
         const next = MOCK_TOPICS[prev.length]!;
         setAnchorCurrentTopicId(next.id);
-        setAnchorGlossary(g => [...g, ...MOCK_GLOSSARY.slice(prev.length, prev.length + 1)]);
+        setAnchorGlossary(g => {
+          const newTerms = MOCK_GLOSSARY.slice(prev.length, prev.length + 1);
+          const existing = new Set(g.map(e => e.term.toLowerCase()));
+          const unique = newTerms.filter(t => !existing.has(t.term.toLowerCase()));
+          return unique.length > 0 ? [...g, ...unique] : g;
+        });
         return [...prev, next];
       });
     }, 8000);
@@ -143,9 +179,40 @@ export function DevPreview() {
   }, [handleAnchorStopPolling]);
 
   const handleBookmark = useCallback(() => {
+    const currentTopic = anchorTopics.find(t => t.id === anchorCurrentTopicId);
+    setStudentBookmarks(prev => [...prev, {
+      topic: currentTopic?.title ?? 'Current topic',
+      timestamp: Date.now(),
+    }]);
     setBookmarkToast(true);
     setTimeout(() => setBookmarkToast(false), 2200);
-  }, []);
+  }, [anchorTopics, anchorCurrentTopicId]);
+
+  const handleEndClass = useCallback(async () => {
+    setRecoveryLoading(true);
+    setShowPostClass(true);
+
+    const bookmarksForAI = studentBookmarks.length > 0
+      ? studentBookmarks
+      : anchorTopics.slice(0, 2).map(t => ({ topic: t.title, timestamp: t.startTime }));
+
+    try {
+      const res = await fetch('/api/ai/recovery-pack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookmarks: bookmarksForAI,
+          topics: anchorTopics.map(t => ({ title: t.title, bullets: t.bullets })),
+        }),
+      });
+      const data = await res.json();
+      setRecoveryItems(data.items ?? []);
+    } catch {
+      setRecoveryItems([]);
+    } finally {
+      setRecoveryLoading(false);
+    }
+  }, [studentBookmarks, anchorTopics]);
 
   // --- Pulse Handlers ---
   const handleGenerate = useCallback(async (context?: string) => {
@@ -318,6 +385,16 @@ export function DevPreview() {
 
   const showStudentArena = arenaStudentPhase !== 'waiting' || arenaStudentQ !== null;
 
+  if (!hasSeenWelcome) {
+    return (
+      <WelcomeView
+        userName="Dev User"
+        isHost={mode === 'host'}
+        onContinue={() => setHasSeenWelcome(true)}
+      />
+    );
+  }
+
   return (
     <div style={{ display: 'flex', gap: 16, padding: 16, minHeight: '100vh', background: 'var(--zoom-bg)' }}>
       <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 200, display: 'flex', gap: 8 }}>
@@ -325,13 +402,32 @@ export function DevPreview() {
           onClick={() => setMode('host')} style={{ fontSize: 12 }}>Host View</button>
         <button className={`btn ${mode === 'student' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setMode('student')} style={{ fontSize: 12 }}>Student View</button>
+        {!showPostClass && (
+          <button className="btn btn-secondary" onClick={handleEndClass}
+            style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
+            End Class
+          </button>
+        )}
       </div>
 
       <div style={{ flex: 1, maxWidth: 420, margin: '0 auto' }}>
-        {mode === 'host' ? (
+        {showPostClass ? (
+          <div className="app-container" style={{ minHeight: 'auto' }}>
+            <div className="card" style={{ flex: 1 }}>
+              <PostClassSummary
+                meetingTitle="Lecture Session"
+                topics={anchorTopics}
+                glossary={anchorGlossary}
+                recoveryItems={recoveryItems}
+                isLoading={recoveryLoading}
+                onDismiss={() => { setShowPostClass(false); setRecoveryItems([]); }}
+              />
+            </div>
+          </div>
+        ) : mode === 'host' ? (
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="status-bar">
-              <span style={{ fontWeight: 600 }}>⚡ Momentum — Host</span>
+              <span style={{ fontWeight: 600 }}>Momentum — Host</span>
               <div className="status-indicator">
                 <div className="status-dot connected" />
                 <span>Dev Preview</span>
@@ -340,14 +436,17 @@ export function DevPreview() {
             <div className="card" style={{ padding: '8px 0 0' }}>
               <div className="tabs">
                 <button className={`tab ${activeFeature === 'pulse' ? 'active' : ''}`}
-                  onClick={() => setActiveFeature('pulse')}>📊 Pulse</button>
+                  onClick={() => setActiveFeature('pulse')}>Pulse</button>
                 <button className={`tab ${activeFeature === 'arena' ? 'active' : ''}`}
-                  onClick={() => setActiveFeature('arena')}>🎮 Arena</button>
+                  onClick={() => setActiveFeature('arena')}>Arena</button>
                 <button className={`tab ${activeFeature === 'anchor' ? 'active' : ''}`}
-                  onClick={() => setActiveFeature('anchor')}>📌 Anchor</button>
+                  onClick={() => setActiveFeature('anchor')}>Anchor</button>
               </div>
             </div>
             <div className="card" style={{ flex: 1 }}>
+              <div className="tab-info-bar">
+                <FeatureInfo title={activeFeature.charAt(0).toUpperCase() + activeFeature.slice(1)} description={HOST_TAB_INFO[activeFeature] ?? ''} />
+              </div>
               {activeFeature === 'pulse' && (
                 <>
                   {hostPhase === 'results' && resultsPoll ? (
@@ -388,11 +487,11 @@ export function DevPreview() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {anchorIsPolling ? (
-                      <button className="btn btn-secondary" onClick={handleAnchorStopPolling}>⏸ Pause AI</button>
+                      <button className="btn btn-secondary" onClick={handleAnchorStopPolling}>Pause AI</button>
                     ) : (
-                      <button className="btn btn-primary" onClick={handleAnchorStartPolling}>▶ Start AI</button>
+                      <button className="btn btn-primary" onClick={handleAnchorStartPolling}>Start AI</button>
                     )}
-                    <button className="btn btn-secondary" onClick={handleAnchorReset}>🔄 Reset</button>
+                    <button className="btn btn-secondary" onClick={handleAnchorReset}>Reset</button>
                   </div>
                   <Timeline topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
                   {anchorGlossary.length > 0 && (
@@ -407,7 +506,7 @@ export function DevPreview() {
         ) : (
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="status-bar">
-              <span style={{ fontWeight: 600 }}>⚡ Momentum</span>
+              <span style={{ fontWeight: 600 }}>Momentum</span>
               <div className="status-indicator">
                 <div className="status-dot connected" />
                 <span>Dev Preview</span>
@@ -416,12 +515,15 @@ export function DevPreview() {
             <div className="card" style={{ padding: '8px 0 0' }}>
               <div className="tabs">
                 <button className={`tab ${anchorStudentTab === 'timeline' ? 'active' : ''}`}
-                  onClick={() => setAnchorStudentTab('timeline')}>📌 Timeline</button>
+                  onClick={() => setAnchorStudentTab('timeline')}>Timeline</button>
                 <button className={`tab ${anchorStudentTab === 'glossary' ? 'active' : ''}`}
-                  onClick={() => setAnchorStudentTab('glossary')}>📖 Glossary</button>
+                  onClick={() => setAnchorStudentTab('glossary')}>Glossary</button>
               </div>
             </div>
             <div className="card" style={{ flex: 1 }}>
+              <div className="tab-info-bar">
+                <FeatureInfo title={anchorStudentTab === 'timeline' ? 'Timeline' : 'Glossary'} description={STUDENT_TAB_INFO[anchorStudentTab] ?? ''} />
+              </div>
               {anchorStudentTab === 'timeline' ? (
                 <div>
                   <Timeline
@@ -434,7 +536,7 @@ export function DevPreview() {
                     style={{ marginTop: 12, width: '100%' }}
                     onClick={handleBookmark}
                   >
-                    📌 I'm Confused (Bookmark)
+                    I'm Confused
                   </button>
                 </div>
               ) : (
@@ -445,7 +547,7 @@ export function DevPreview() {
               <div className="card"><PollResults poll={studentResults} /></div>
             )}
             {bookmarkToast && (
-              <div className="bookmark-toast">📌 Bookmarked!</div>
+              <div className="bookmark-toast">Bookmarked</div>
             )}
           </div>
         )}

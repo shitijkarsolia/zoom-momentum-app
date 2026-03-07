@@ -35,9 +35,8 @@ export function ArenaStudent({
       <div className="arena-student-overlay">
         <div className="arena-student-card">
           <div className="arena-waiting">
-            <span className="arena-waiting-icon">🎮</span>
             <h3>Warm-Up Arena</h3>
-            <p>Get ready! The trivia is about to begin…</p>
+            <p>Get ready — the trivia is about to begin.</p>
             <div className="arena-waiting-dots">
               <span className="dot-bounce" />
               <span className="dot-bounce" style={{ animationDelay: '0.2s' }} />
@@ -58,7 +57,7 @@ export function ArenaStudent({
           <div className="arena-question-header">
             <span className="arena-q-number">Q{currentQuestion.index + 1}/{currentQuestion.total}</span>
             <span className={`arena-countdown ${countdown <= 5 ? 'urgent' : ''}`}>
-              ⏱ {countdown}s
+              {countdown}s
             </span>
           </div>
 
@@ -80,7 +79,7 @@ export function ArenaStudent({
 
           {hasAnswered && (
             <div className="arena-answered-msg">
-              ✓ Locked in! Waiting for results…
+              Locked in — waiting for results…
             </div>
           )}
         </div>
@@ -99,9 +98,9 @@ export function ArenaStudent({
                 {String.fromCharCode(65 + correctIndex)}
               </span>
               {selectedOption === correctIndex ? (
-                <span className="arena-result-correct">✓ You got it right!</span>
+                <span className="arena-result-correct">Correct</span>
               ) : (
-                <span className="arena-result-wrong">✗ Better luck next time</span>
+                <span className="arena-result-wrong">Incorrect</span>
               )}
               {explanation && <p className="arena-explanation">{explanation}</p>}
             </div>
@@ -117,8 +116,7 @@ export function ArenaStudent({
       <div className="arena-student-overlay">
         <div className="arena-student-card">
           <div className="arena-finished">
-            <h2 className="arena-trophy">🏆</h2>
-            <h2 className="card-title">Game Over!</h2>
+            <h2 className="card-title">Game Over</h2>
           </div>
           <Leaderboard entries={finalLeaderboard} title="Final Standings" />
         </div>
