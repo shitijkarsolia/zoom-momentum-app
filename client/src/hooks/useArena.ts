@@ -110,11 +110,12 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     }, 1000);
   }, [broadcast, clearTimer]);
 
-  const handleAnswer = useCallback((senderId: string, senderName: string, optionIndex: number) => {
+  const handleAnswer = useCallback((senderId: string, senderName: string, optionIndex: number, questionIndex: number) => {
     const timeMs = Date.now() - questionStartRef.current;
     setState(prev => {
       if (prev.phase !== 'question') return prev;
       if (prev.responses.has(senderId)) return prev;
+      if (questionIndex !== prev.currentIndex) return prev;
 
       const newResponses = new Map(prev.responses);
       newResponses.set(senderId, { optionIndex, timeMs });
@@ -306,10 +307,11 @@ export function useArenaStudent({ send, participantName }: UseArenaStudentOption
 
   const selectAndSubmit = useCallback((optionIndex: number) => {
     setState(prev => {
-      if (prev.phase !== 'question' || prev.selectedOption !== null) return prev;
+      if (prev.phase !== 'question' || prev.selectedOption !== null || prev.countdown <= 0) return prev;
 
       send('ARENA_ANSWER', {
         optionIndex,
+        questionIndex: prev.currentQuestion?.index ?? 0,
         name: participantName,
       });
 

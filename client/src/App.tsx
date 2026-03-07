@@ -35,10 +35,10 @@ export default function App() {
       if (zoom.isHost) {
         if (message.type === 'POLL_RESPONSE') {
           const payload = message.payload as { pollId: string; optionIndex: number };
-          pulseHost.handleResponse(message.senderId, payload.optionIndex);
+          pulseHost.handleResponse(message.senderId, payload.pollId, payload.optionIndex);
         } else if (message.type === 'ARENA_ANSWER') {
-          const payload = message.payload as { optionIndex: number; name: string };
-          arenaHost.handleAnswer(message.senderId, payload.name, payload.optionIndex);
+          const payload = message.payload as { optionIndex: number; questionIndex: number; name: string };
+          arenaHost.handleAnswer(message.senderId, payload.name, payload.optionIndex, payload.questionIndex);
         }
       } else {
         if (message.type === 'POLL_START') {
