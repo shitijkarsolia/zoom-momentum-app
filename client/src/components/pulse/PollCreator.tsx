@@ -58,7 +58,7 @@ export function PollCreator({
               <span className="spinner" /> Generating…
             </>
           ) : (
-            '🎯 Generate Check-In'
+            'Generate Check-In'
           )}
         </button>
       </div>
@@ -113,7 +113,7 @@ export function PollCreator({
             onClick={onLaunch}
             disabled={!draft.question.trim() || draft.options.some(o => !o.trim())}
           >
-            🚀 Launch Poll
+            Launch Poll
           </button>
         </div>
       </div>
@@ -132,7 +132,7 @@ export function PollCreator({
           <span className="poll-response-count">{responseCount} {responseCount === 1 ? 'response' : 'responses'}</span>
         </div>
         <button className="btn btn-primary" onClick={onEndPoll}>
-          📊 End Poll & Show Results
+          End Poll & Show Results
         </button>
       </div>
     );

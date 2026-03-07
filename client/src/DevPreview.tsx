@@ -11,8 +11,20 @@ import { ArenaStudent } from './components/arena/ArenaStudent';
 import { Timeline } from './components/anchor/Timeline';
 import { GlossaryTab } from './components/anchor/GlossaryTab';
 import { PostClassSummary } from './components/recovery/PostClassSummary';
+import { FeatureInfo } from './components/shared/FeatureInfo';
+import { WelcomeView } from './views/WelcomeView';
 import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
 import type { PollDraft, PulsePhase } from './hooks/usePulse';
+
+const HOST_TAB_INFO: Record<string, string> = {
+  pulse: 'Generate AI check-in polls to gauge student understanding. You can edit the question before launching it to everyone.',
+  arena: 'Run a timed trivia quiz. AI generates questions from your topic, and students compete on a live leaderboard with scoring.',
+  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
+};
+const STUDENT_TAB_INFO: Record<string, string> = {
+  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
+  glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
+};
 import type { ArenaHostPhase, ArenaStudentPhase } from './hooks/useArena';
 
 interface RecoveryItem {
@@ -50,6 +62,7 @@ const QUESTION_TIME = 15;
 export function DevPreview() {
   const [mode, setMode] = useState<PreviewMode>('host');
   const [activeFeature, setActiveFeature] = useState<FeatureTab>('pulse');
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
 
   // --- Pulse State ---
   const [hostPhase, setHostPhase] = useState<PulsePhase>('idle');
@@ -372,6 +385,16 @@ export function DevPreview() {
 
   const showStudentArena = arenaStudentPhase !== 'waiting' || arenaStudentQ !== null;
 
+  if (!hasSeenWelcome) {
+    return (
+      <WelcomeView
+        userName="Dev User"
+        isHost={mode === 'host'}
+        onContinue={() => setHasSeenWelcome(true)}
+      />
+    );
+  }
+
   return (
     <div style={{ display: 'flex', gap: 16, padding: 16, minHeight: '100vh', background: 'var(--zoom-bg)' }}>
       <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 200, display: 'flex', gap: 8 }}>
@@ -382,7 +405,7 @@ export function DevPreview() {
         {!showPostClass && (
           <button className="btn btn-secondary" onClick={handleEndClass}
             style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
-            🔴 End Class
+            End Class
           </button>
         )}
       </div>
@@ -404,7 +427,7 @@ export function DevPreview() {
         ) : mode === 'host' ? (
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="status-bar">
-              <span style={{ fontWeight: 600 }}>⚡ Momentum — Host</span>
+              <span style={{ fontWeight: 600 }}>Momentum — Host</span>
               <div className="status-indicator">
                 <div className="status-dot connected" />
                 <span>Dev Preview</span>
@@ -413,14 +436,17 @@ export function DevPreview() {
             <div className="card" style={{ padding: '8px 0 0' }}>
               <div className="tabs">
                 <button className={`tab ${activeFeature === 'pulse' ? 'active' : ''}`}
-                  onClick={() => setActiveFeature('pulse')}>📊 Pulse</button>
+                  onClick={() => setActiveFeature('pulse')}>Pulse</button>
                 <button className={`tab ${activeFeature === 'arena' ? 'active' : ''}`}
-                  onClick={() => setActiveFeature('arena')}>🎮 Arena</button>
+                  onClick={() => setActiveFeature('arena')}>Arena</button>
                 <button className={`tab ${activeFeature === 'anchor' ? 'active' : ''}`}
-                  onClick={() => setActiveFeature('anchor')}>📌 Anchor</button>
+                  onClick={() => setActiveFeature('anchor')}>Anchor</button>
               </div>
             </div>
             <div className="card" style={{ flex: 1 }}>
+              <div className="tab-info-bar">
+                <FeatureInfo title={activeFeature.charAt(0).toUpperCase() + activeFeature.slice(1)} description={HOST_TAB_INFO[activeFeature] ?? ''} />
+              </div>
               {activeFeature === 'pulse' && (
                 <>
                   {hostPhase === 'results' && resultsPoll ? (
@@ -461,11 +487,11 @@ export function DevPreview() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {anchorIsPolling ? (
-                      <button className="btn btn-secondary" onClick={handleAnchorStopPolling}>⏸ Pause AI</button>
+                      <button className="btn btn-secondary" onClick={handleAnchorStopPolling}>Pause AI</button>
                     ) : (
-                      <button className="btn btn-primary" onClick={handleAnchorStartPolling}>▶ Start AI</button>
+                      <button className="btn btn-primary" onClick={handleAnchorStartPolling}>Start AI</button>
                     )}
-                    <button className="btn btn-secondary" onClick={handleAnchorReset}>🔄 Reset</button>
+                    <button className="btn btn-secondary" onClick={handleAnchorReset}>Reset</button>
                   </div>
                   <Timeline topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
                   {anchorGlossary.length > 0 && (
@@ -480,7 +506,7 @@ export function DevPreview() {
         ) : (
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="status-bar">
-              <span style={{ fontWeight: 600 }}>⚡ Momentum</span>
+              <span style={{ fontWeight: 600 }}>Momentum</span>
               <div className="status-indicator">
                 <div className="status-dot connected" />
                 <span>Dev Preview</span>
@@ -489,12 +515,15 @@ export function DevPreview() {
             <div className="card" style={{ padding: '8px 0 0' }}>
               <div className="tabs">
                 <button className={`tab ${anchorStudentTab === 'timeline' ? 'active' : ''}`}
-                  onClick={() => setAnchorStudentTab('timeline')}>📌 Timeline</button>
+                  onClick={() => setAnchorStudentTab('timeline')}>Timeline</button>
                 <button className={`tab ${anchorStudentTab === 'glossary' ? 'active' : ''}`}
-                  onClick={() => setAnchorStudentTab('glossary')}>📖 Glossary</button>
+                  onClick={() => setAnchorStudentTab('glossary')}>Glossary</button>
               </div>
             </div>
             <div className="card" style={{ flex: 1 }}>
+              <div className="tab-info-bar">
+                <FeatureInfo title={anchorStudentTab === 'timeline' ? 'Timeline' : 'Glossary'} description={STUDENT_TAB_INFO[anchorStudentTab] ?? ''} />
+              </div>
               {anchorStudentTab === 'timeline' ? (
                 <div>
                   <Timeline
@@ -507,7 +536,7 @@ export function DevPreview() {
                     style={{ marginTop: 12, width: '100%' }}
                     onClick={handleBookmark}
                   >
-                    📌 I'm Confused (Bookmark)
+                    I'm Confused
                   </button>
                 </div>
               ) : (
@@ -518,7 +547,7 @@ export function DevPreview() {
               <div className="card"><PollResults poll={studentResults} /></div>
             )}
             {bookmarkToast && (
-              <div className="bookmark-toast">📌 Bookmarked!</div>
+              <div className="bookmark-toast">Bookmarked</div>
             )}
           </div>
         )}

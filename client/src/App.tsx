@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import { useZoomSdk } from './hooks/useZoomSdk';
 import { useZoomAuth } from './hooks/useZoomAuth';
 import { useMessaging } from './hooks/useMessaging';
@@ -6,6 +6,7 @@ import { usePulseHost, usePulseStudent } from './hooks/usePulse';
 import { useArenaHost, useArenaStudent } from './hooks/useArena';
 import { useAnchorHost, useAnchorStudent } from './hooks/useLiveAnchor';
 import { AuthView } from './views/AuthView';
+import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
 import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
@@ -13,6 +14,7 @@ import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry } from '.
 export default function App() {
   const zoom = useZoomSdk();
   const auth = useZoomAuth();
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
 
   const messageRouterRef = useRef<(msg: AppMessage) => void>(() => {});
 
@@ -105,6 +107,16 @@ export default function App() {
 
   if (!auth.isAuthenticated) {
     return <AuthView onLogin={auth.login} isLoading={auth.isLoading} error={auth.error} />;
+  }
+
+  if (!hasSeenWelcome) {
+    return (
+      <WelcomeView
+        userName={zoom.userName}
+        isHost={zoom.isHost}
+        onContinue={() => setHasSeenWelcome(true)}
+      />
+    );
   }
 
   if (zoom.isHost) {
