@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { PollCreator } from '../components/pulse/PollCreator';
 import { PollResults } from '../components/pulse/PollResults';
-import type { PollDraft } from '../hooks/usePulse';
-import type { Poll } from '../types/messages';
-import type { PulsePhase } from '../hooks/usePulse';
+import { ArenaHost } from '../components/arena/ArenaHost';
+import type { PollDraft, PulsePhase } from '../hooks/usePulse';
+import type { ArenaHostPhase } from '../hooks/useArena';
+import type { Poll, Question, LeaderboardEntry } from '../types/messages';
 
 interface HostDashboardProps {
   userName: string;
   connected: boolean;
+  // Pulse props
   pulsePhase: PulsePhase;
   pulseDraft: PollDraft | null;
   pulseResponseCount: number;
@@ -18,6 +20,20 @@ interface HostDashboardProps {
   onPulseLaunch: () => void;
   onPulseEndPoll: () => void;
   onPulseReset: () => void;
+  // Arena props
+  arenaPhase: ArenaHostPhase;
+  arenaCurrentQuestion: Question | null;
+  arenaCurrentIndex: number;
+  arenaTotalQuestions: number;
+  arenaResponseCount: number;
+  arenaCountdown: number;
+  arenaLeaderboard: LeaderboardEntry[];
+  arenaError: string | null;
+  onArenaFetchQuestions: (topic?: string) => void;
+  onArenaStartGame: () => void;
+  onArenaShowLeaderboard: () => void;
+  onArenaNextQuestion: () => void;
+  onArenaReset: () => void;
 }
 
 type HostTab = 'pulse' | 'arena' | 'anchor';
@@ -35,6 +51,19 @@ export function HostDashboard({
   onPulseLaunch,
   onPulseEndPoll,
   onPulseReset,
+  arenaPhase,
+  arenaCurrentQuestion,
+  arenaCurrentIndex,
+  arenaTotalQuestions,
+  arenaResponseCount,
+  arenaCountdown,
+  arenaLeaderboard,
+  arenaError,
+  onArenaFetchQuestions,
+  onArenaStartGame,
+  onArenaShowLeaderboard,
+  onArenaNextQuestion,
+  onArenaReset,
 }: HostDashboardProps) {
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
 
@@ -95,15 +124,21 @@ export function HostDashboard({
           </>
         )}
         {activeTab === 'arena' && (
-          <div>
-            <h2 className="card-title">Warm-Up Arena</h2>
-            <p style={{ color: 'var(--zoom-text-secondary)' }}>
-              Launch a trivia game to review last lecture's material.
-            </p>
-            <button className="btn btn-primary" style={{ marginTop: 12 }} disabled>
-              Start Trivia (coming soon)
-            </button>
-          </div>
+          <ArenaHost
+            phase={arenaPhase}
+            currentQuestion={arenaCurrentQuestion}
+            currentIndex={arenaCurrentIndex}
+            totalQuestions={arenaTotalQuestions}
+            responseCount={arenaResponseCount}
+            countdown={arenaCountdown}
+            leaderboard={arenaLeaderboard}
+            error={arenaError}
+            onFetchQuestions={onArenaFetchQuestions}
+            onStartGame={onArenaStartGame}
+            onShowLeaderboard={onArenaShowLeaderboard}
+            onNextQuestion={onArenaNextQuestion}
+            onReset={onArenaReset}
+          />
         )}
         {activeTab === 'anchor' && (
           <div>
