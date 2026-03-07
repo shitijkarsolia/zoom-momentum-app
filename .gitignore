@@ -1,11 +1,17 @@
-# macOS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db-journal
+
+# Build output
+client/dist/
+server/dist/
 
 # IDE
 .vscode/
@@ -13,26 +19,16 @@ Thumbs.db
 *.swp
 *.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+server/prisma/migrations/
+
+# ngrok
+*.ngrok-free.app
+
 # Logs
 *.log
-logs/
-
-# Dependencies
-node_modules/
-vendor/
-
-# Build outputs
-dist/
-build/
-*.o
-*.exe
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Temporary files
-*.tmp
-*.temp
-*~
+npm-debug.log*
