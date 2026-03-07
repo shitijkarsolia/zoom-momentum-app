@@ -231,7 +231,7 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
           meetingId,
           odooUserId: userId,
           topicId: state.currentTopicId,
-          label: topic ? `📌 Confused at: ${topic.title}` : '📌 I\'m Confused',
+          label: topic ? `Confused at: ${topic.title}` : 'I\'m Confused',
           timestamp: Date.now(),
         }),
       });

@@ -4,7 +4,13 @@ import { PollResults } from '../components/pulse/PollResults';
 import { ArenaStudent } from '../components/arena/ArenaStudent';
 import { Timeline } from '../components/anchor/Timeline';
 import { GlossaryTab } from '../components/anchor/GlossaryTab';
+import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { Poll, Topic, GlossaryEntry } from '../types/messages';
+
+const TAB_INFO = {
+  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
+  glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
+} as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
 
@@ -81,7 +87,7 @@ export function StudentView({
   return (
     <div className="app-container">
       <div className="status-bar">
-        <span style={{ fontWeight: 600 }}>⚡ Momentum</span>
+        <span style={{ fontWeight: 600 }}>Momentum</span>
         <div className="status-indicator">
           <div className={`status-dot ${connected ? 'connected' : ''}`} />
           <span>{connected ? 'Connected' : 'Connecting…'}</span>
@@ -94,18 +100,21 @@ export function StudentView({
             className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
             onClick={() => setActiveTab('timeline')}
           >
-            📌 Timeline
+            Timeline
           </button>
           <button
             className={`tab ${activeTab === 'glossary' ? 'active' : ''}`}
             onClick={() => setActiveTab('glossary')}
           >
-            📖 Glossary
+            Glossary
           </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
+        <div className="tab-info-bar">
+          <FeatureInfo title={activeTab === 'timeline' ? 'Timeline' : 'Glossary'} description={TAB_INFO[activeTab]} />
+        </div>
         {activeTab === 'timeline' && (
           <div>
             <Timeline
@@ -118,7 +127,7 @@ export function StudentView({
               style={{ marginTop: 12, width: '100%' }}
               onClick={handleBookmark}
             >
-              📌 I'm Confused (Bookmark)
+              I'm Confused
             </button>
           </div>
         )}
@@ -128,7 +137,7 @@ export function StudentView({
       </div>
 
       {bookmarkToast && (
-        <div className="bookmark-toast">📌 Bookmarked!</div>
+        <div className="bookmark-toast">Bookmarked</div>
       )}
 
       {pollResults && (
