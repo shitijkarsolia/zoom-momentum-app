@@ -100,8 +100,11 @@ export function usePulseHost({ broadcast }: UsePulseHostOptions) {
     });
   }, [broadcast]);
 
-  const handleResponse = useCallback((senderId: string, optionIndex: number) => {
+  const handleResponse = useCallback((senderId: string, pollId: string, optionIndex: number) => {
     setState(prev => {
+      if (prev.phase !== 'live' || !prev.activePoll || prev.activePoll.pollId !== pollId) {
+        return prev;
+      }
       const newResponses = new Map(prev.responses);
       newResponses.set(senderId, optionIndex);
       return { ...prev, responses: newResponses };
