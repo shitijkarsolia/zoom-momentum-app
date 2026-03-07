@@ -28,22 +28,21 @@ type FeatureTab = 'pulse' | 'arena' | 'anchor';
 const MOCK_TOPICS: Topic[] = [
   {
     id: 'topic-1',
-    title: 'Introduction to Derivatives',
-    bullets: ['Definition of a derivative as a limit', 'Notation: f\'(x) and dy/dx', 'Geometric interpretation as slope of tangent line'],
+    title: 'Opening Discussion',
+    bullets: ['Recap of last lecture', 'Today\'s learning objectives', 'Overview of key concepts'],
     startTime: Date.now() - 600_000,
   },
   {
     id: 'topic-2',
-    title: 'Power Rule',
-    bullets: ['d/dx(xⁿ) = nxⁿ⁻¹', 'Works for any real exponent', 'Examples with polynomials'],
+    title: 'Core Concepts',
+    bullets: ['Main ideas introduced', 'Supporting details and examples', 'Connections to prior knowledge'],
     startTime: Date.now() - 300_000,
   },
 ];
 
 const MOCK_GLOSSARY: GlossaryEntry[] = [
-  { term: 'Derivative', definition: 'The instantaneous rate of change of a function at a point', timestamp: Date.now() - 600_000 },
-  { term: 'Power Rule', definition: 'Differentiation rule: d/dx(xⁿ) = nxⁿ⁻¹', formula: 'd/dx(xⁿ) = nxⁿ⁻¹', timestamp: Date.now() - 300_000 },
-  { term: 'Tangent Line', definition: 'A line that touches a curve at exactly one point and has the same slope as the curve at that point', timestamp: Date.now() - 450_000 },
+  { term: 'Key Concept', definition: 'A fundamental idea covered in today\'s lecture', timestamp: Date.now() - 600_000 },
+  { term: 'Example', definition: 'A concrete illustration used to explain the concept', timestamp: Date.now() - 300_000 },
 ];
 
 const QUESTION_TIME = 15;
@@ -122,23 +121,22 @@ export function DevPreview() {
       setAnchorTopics(prev => {
         if (prev.length >= MOCK_TOPICS.length) {
           // Only add the Chain Rule topic once
-          const chainRuleId = 'topic-chain-rule';
-          if (prev.some(t => t.id === chainRuleId)) {
+          const advancedId = 'topic-advanced';
+          if (prev.some(t => t.id === advancedId)) {
             return prev;
           }
           const newTopic: Topic = {
-            id: chainRuleId,
-            title: 'Chain Rule',
-            bullets: ['d/dx[f(g(x))] = f\'(g(x))·g\'(x)', 'Used for composite functions', 'Inner and outer function identification'],
+            id: advancedId,
+            title: 'Advanced Applications',
+            bullets: ['Applying concepts to new problems', 'Common pitfalls and misconceptions', 'Practice strategies'],
             startTime: Date.now(),
           };
           setAnchorCurrentTopicId(newTopic.id);
           setAnchorGlossary(g => {
-            if (g.some(entry => entry.term.toLowerCase() === 'chain rule')) return g;
+            if (g.some(entry => entry.term.toLowerCase() === 'application')) return g;
             return [...g, {
-              term: 'Chain Rule',
-              definition: 'Rule for differentiating composite functions',
-              formula: 'd/dx[f(g(x))] = f\'(g(x))·g\'(x)',
+              term: 'Application',
+              definition: 'Using learned concepts to solve new problems',
               timestamp: Date.now(),
             }];
           });
@@ -183,7 +181,7 @@ export function DevPreview() {
 
     const bookmarksForAI = studentBookmarks.length > 0
       ? studentBookmarks
-      : [{ topic: 'Derivatives', timestamp: Date.now() - 300000 }, { topic: 'Chain Rule', timestamp: Date.now() }];
+      : anchorTopics.slice(0, 2).map(t => ({ topic: t.title, timestamp: t.startTime }));
 
     try {
       const res = await fetch('/api/ai/recovery-pack', {
@@ -394,7 +392,7 @@ export function DevPreview() {
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="card" style={{ flex: 1 }}>
               <PostClassSummary
-                meetingTitle="Calculus 101 — Derivatives"
+                meetingTitle="Lecture Session"
                 topics={anchorTopics}
                 glossary={anchorGlossary}
                 recoveryItems={recoveryItems}
