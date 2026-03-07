@@ -10,9 +10,17 @@ import { ArenaHost } from './components/arena/ArenaHost';
 import { ArenaStudent } from './components/arena/ArenaStudent';
 import { Timeline } from './components/anchor/Timeline';
 import { GlossaryTab } from './components/anchor/GlossaryTab';
+import { PostClassSummary } from './components/recovery/PostClassSummary';
 import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
 import type { PollDraft, PulsePhase } from './hooks/usePulse';
 import type { ArenaHostPhase, ArenaStudentPhase } from './hooks/useArena';
+
+interface RecoveryItem {
+  topic: string;
+  explanation: string;
+  practice: string;
+  resource: string;
+}
 
 type PreviewMode = 'host' | 'student';
 type FeatureTab = 'pulse' | 'arena' | 'anchor';
@@ -85,6 +93,12 @@ export function DevPreview() {
   const [anchorStudentTab, setAnchorStudentTab] = useState<'timeline' | 'glossary'>('timeline');
   const [bookmarkToast, setBookmarkToast] = useState(false);
 
+  // --- Recovery State ---
+  const [showPostClass, setShowPostClass] = useState(false);
+  const [recoveryItems, setRecoveryItems] = useState<RecoveryItem[]>([]);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [studentBookmarks, setStudentBookmarks] = useState<{ topic: string; timestamp: number }[]>([]);
+
   const hostTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const studentTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const anchorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -154,9 +168,40 @@ export function DevPreview() {
   }, [handleAnchorStopPolling]);
 
   const handleBookmark = useCallback(() => {
+    const currentTopic = anchorTopics.find(t => t.id === anchorCurrentTopicId);
+    setStudentBookmarks(prev => [...prev, {
+      topic: currentTopic?.title ?? 'Current topic',
+      timestamp: Date.now(),
+    }]);
     setBookmarkToast(true);
     setTimeout(() => setBookmarkToast(false), 2200);
-  }, []);
+  }, [anchorTopics, anchorCurrentTopicId]);
+
+  const handleEndClass = useCallback(async () => {
+    setRecoveryLoading(true);
+    setShowPostClass(true);
+
+    const bookmarksForAI = studentBookmarks.length > 0
+      ? studentBookmarks
+      : [{ topic: 'Derivatives', timestamp: Date.now() - 300000 }, { topic: 'Chain Rule', timestamp: Date.now() }];
+
+    try {
+      const res = await fetch('/api/ai/recovery-pack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookmarks: bookmarksForAI,
+          topics: anchorTopics.map(t => ({ title: t.title, bullets: t.bullets })),
+        }),
+      });
+      const data = await res.json();
+      setRecoveryItems(data.items ?? []);
+    } catch {
+      setRecoveryItems([]);
+    } finally {
+      setRecoveryLoading(false);
+    }
+  }, [studentBookmarks, anchorTopics]);
 
   // --- Pulse Handlers ---
   const handleGenerate = useCallback(async (context?: string) => {
@@ -336,10 +381,29 @@ export function DevPreview() {
           onClick={() => setMode('host')} style={{ fontSize: 12 }}>Host View</button>
         <button className={`btn ${mode === 'student' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setMode('student')} style={{ fontSize: 12 }}>Student View</button>
+        {!showPostClass && (
+          <button className="btn btn-secondary" onClick={handleEndClass}
+            style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
+            🔴 End Class
+          </button>
+        )}
       </div>
 
       <div style={{ flex: 1, maxWidth: 420, margin: '0 auto' }}>
-        {mode === 'host' ? (
+        {showPostClass ? (
+          <div className="app-container" style={{ minHeight: 'auto' }}>
+            <div className="card" style={{ flex: 1 }}>
+              <PostClassSummary
+                meetingTitle="Calculus 101 — Derivatives"
+                topics={anchorTopics}
+                glossary={anchorGlossary}
+                recoveryItems={recoveryItems}
+                isLoading={recoveryLoading}
+                onDismiss={() => { setShowPostClass(false); setRecoveryItems([]); }}
+              />
+            </div>
+          </div>
+        ) : mode === 'host' ? (
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="status-bar">
               <span style={{ fontWeight: 600 }}>⚡ Momentum — Host</span>
