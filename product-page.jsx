@@ -1,15 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /* ─── Zoom Momentum — Product Page (react-app.js theme) ─── */
-
-const customStyles = {
-  bgBlue: '#0044CC',
-  fontSerifItalic: {
-    fontFamily: "'Playfair Display', serif",
-    fontStyle: 'italic',
-    fontWeight: 400,
-  },
-};
 
 const GlobalStyles = () => {
   useEffect(() => {
@@ -100,7 +91,7 @@ const GlobalStyles = () => {
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => { document.head.removeChild(style); };
   }, []);
   return null;
 };
@@ -161,10 +152,10 @@ const CenterFlower = () => (
 
 /* ─── Floating Flowers ─── */
 const FloatingFlowers = () => {
-  const flowersRef = useRef([]);
+  const flowersRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       const x = (window.innerWidth / 2 - e.pageX) / 50;
       const y = (window.innerHeight / 2 - e.pageY) / 50;
       flowersRef.current.forEach((el, index) => {
@@ -178,7 +169,7 @@ const FloatingFlowers = () => {
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const setRef = (index) => (el) => {
+  const setRef = (index: number) => (el: HTMLDivElement | null) => {
     flowersRef.current[index] = el;
   };
 
@@ -228,7 +219,7 @@ const useScrollReveal = () => {
 };
 
 /* ─── Nav ─── */
-const NavLink = ({ children, href = '#' }) => {
+const NavLink = ({ children, href = '#' }: { children: React.ReactNode; href?: string }) => {
   const [hovered, setHovered] = useState(false);
   return (
     <a
@@ -263,7 +254,7 @@ const NavLink = ({ children, href = '#' }) => {
   );
 };
 
-const SocialLink = ({ children }) => {
+const SocialLink = ({ children }: { children: React.ReactNode }) => {
   const [hovered, setHovered] = useState(false);
   return (
     <a
@@ -419,7 +410,7 @@ const Hero = () => (
 );
 
 /* ─── Feature Card ─── */
-const FeatureCard = ({ icon, title, description, color, tags }) => {
+const FeatureCard = ({ icon, title, description, tags }: { icon: React.ReactNode; title: string; description: string; color?: string; tags: string[] }) => {
   const [hovered, setHovered] = useState(false);
   return (
     <div
