@@ -487,7 +487,7 @@ graph TB
 | **RTMS Service** | `@zoom/rtms` SDK (separate Node.js process) | Real-time transcript ingestion |
 | **Database** | SQLite (dev) / PostgreSQL (prod) via Prisma | Transcripts, bookmarks, recovery packs |
 | **AI** | OpenAI API (`gpt-4o-mini`) | Topic segmentation, quiz gen, recovery packs |
-| **Hosting** | EC2 with HTTPS (`zoom.shitijmathur.tech`) | Production deployment |
+| **Tunnel / URL** | Your server domain (tunnel or deployed) | Expose server for webhooks/OAuth |
 | **Containerization** | Docker Compose (optional) | Run all services together |
 
 ---

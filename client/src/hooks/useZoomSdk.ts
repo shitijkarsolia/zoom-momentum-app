@@ -62,7 +62,11 @@ export function useZoomSdk(): ZoomContext {
         error: null,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to configure Zoom SDK';
+      const rawMessage = err instanceof Error ? err.message : 'Failed to configure Zoom SDK';
+      const isAppNotSupport = /80004|app_not_support/i.test(rawMessage);
+      const message = isAppNotSupport
+        ? 'APP_NOT_SUPPORT: Your Marketplace app must be a Zoom App (In-Meeting App) with the In-Meeting side panel enabled. Meeting SDK and Video SDK app types cannot use the Zoom Apps SDK.'
+        : rawMessage;
       setContext((prev) => ({ ...prev, error: message }));
     }
   }, []);

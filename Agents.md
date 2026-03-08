@@ -132,7 +132,7 @@ cd server && npx prisma migrate dev --name init && cd ..
 ```
 ZOOM_CLIENT_ID=your_zoom_client_id
 ZOOM_CLIENT_SECRET=your_zoom_client_secret
-ZOOM_REDIRECT_URL=https://zoom.shitijmathur.tech/api/auth/callback
+ZOOM_REDIRECT_URL=https://your-server-domain/api/auth/callback
 SESSION_SECRET=any-random-string
 DATABASE_URL=file:./dev.db
 OPENAI_API_KEY=your_openai_key
@@ -153,10 +153,9 @@ npm run dev:mock
 ```
 
 ### Testing in Zoom
-The app is deployed on EC2 at `zoom.shitijmathur.tech`. To test:
-1. Open a Zoom meeting
-2. Go to Apps panel and find Zoom Momentum
-3. The app loads in the side panel, detects your role, and shows the appropriate view
+1. Ensure your server is reachable (tunnel or deployed URL) and set `ZOOM_REDIRECT_URL` in `.env` accordingly
+2. Configure Zoom App on marketplace.zoom.us with your server URL
+3. Open a Zoom meeting → Apps → find your app
 
 ---
 

@@ -222,20 +222,21 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
   }, []);
 
   const bookmarkCurrentTopic = useCallback(async (meetingId: string, userId: string) => {
+    if (!userId) return false;
     const topic = state.topics.find(t => t.id === state.currentTopicId);
+    const topicLabel = topic ? topic.title : 'I\'m Confused';
     try {
-      await fetch('/api/bookmarks', {
+      const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           meetingId,
-          odooUserId: userId,
-          topicId: state.currentTopicId,
-          label: topic ? `Confused at: ${topic.title}` : 'I\'m Confused',
+          userId,
+          topic: topicLabel,
           timestamp: Date.now(),
         }),
       });
-      return true;
+      return res.ok;
     } catch (err) {
       console.error('[anchor] bookmark error:', err);
       return false;

@@ -6,7 +6,7 @@ todos:
     content: "Get RTMS access enabled by Zoom DevRel (Zoom-sponsored project — access guaranteed)"
     status: pending
   - id: zoom-app-setup
-    content: Create Zoom App on Marketplace, configure OAuth, scopes, SDK capabilities, RTMS events, and deploy to EC2
+    content: Create Zoom App on Marketplace, configure OAuth, scopes, SDK capabilities, RTMS events, and tunnel/deployed URL for webhooks
     status: pending
   - id: bootstrap-project
     content: Bootstrap project from Zoom's Advanced React Sample, add Prisma/SQLite, configure Docker Compose with backend + frontend + RTMS services
@@ -353,7 +353,7 @@ export function useMessaging({ onMessage, isHost }) {
 | **Mock Transcript** | Node.js WebSocket emitter | Simulates RTMS output for development |
 | **Database** | SQLite (dev) / PostgreSQL (prod) via Prisma | Transcripts, bookmarks, recovery packs |
 | **AI** | Kiro API (OpenAI-compatible, `claude-sonnet-4.5`) | All AI features |
-| **Hosting** | EC2 with HTTPS (`zoom.shitijmathur.tech`) | Production deployment |
+| **Tunnel / URL** | Your server domain (tunnel or deployed) | Webhook and OAuth endpoints |
 
 ---
 
@@ -700,11 +700,11 @@ model RecoveryPack {
 **Event Subscriptions:**
 - `meeting.rtms_started`
 - `meeting.rtms_stopped`
-- Webhook URL: `https://zoom.shitijmathur.tech/api/rtms/webhook`
+- Webhook URL: `https://your-server-domain/api/rtms/webhook`
 
 **Surfaces:**
-- Home URL: `https://zoom.shitijmathur.tech`
-- Domain allow list: `zoom.shitijmathur.tech` + `appssdk.zoom.us`
+- Home URL: `https://your-server-domain`
+- Domain allow list: your server domain + `appssdk.zoom.us`
 
 **Guest Mode:** Enable (so unauthenticated students can see the app)
 
