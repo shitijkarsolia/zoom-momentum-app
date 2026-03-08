@@ -6,7 +6,7 @@ todos:
     content: "Get RTMS access enabled by Zoom DevRel (Zoom-sponsored project — access guaranteed)"
     status: pending
   - id: zoom-app-setup
-    content: Create Zoom App on Marketplace, configure OAuth, scopes, SDK capabilities, RTMS events, and ngrok tunnel
+    content: Create Zoom App on Marketplace, configure OAuth, scopes, SDK capabilities, RTMS events, and deploy to EC2
     status: pending
   - id: bootstrap-project
     content: Bootstrap project from Zoom's Advanced React Sample, add Prisma/SQLite, configure Docker Compose with backend + frontend + RTMS services
@@ -352,8 +352,8 @@ export function useMessaging({ onMessage, isHost }) {
 | **RTMS Service** | `@zoom/rtms` SDK (separate process) | Real-time transcript ingestion (when access granted) |
 | **Mock Transcript** | Node.js WebSocket emitter | Simulates RTMS output for development |
 | **Database** | SQLite (dev) / PostgreSQL (prod) via Prisma | Transcripts, bookmarks, recovery packs |
-| **AI** | OpenAI API (`gpt-4o-mini`) | All AI features |
-| **Tunnel** | ngrok (static domain) | Webhook and OAuth endpoints |
+| **AI** | Kiro API (OpenAI-compatible, `claude-sonnet-4.5`) | All AI features |
+| **Hosting** | EC2 with HTTPS (`zoom.shitijmathur.tech`) | Production deployment |
 
 ---
 
@@ -700,11 +700,11 @@ model RecoveryPack {
 **Event Subscriptions:**
 - `meeting.rtms_started`
 - `meeting.rtms_stopped`
-- Webhook URL: `https://your-ngrok-domain/api/rtms/webhook`
+- Webhook URL: `https://zoom.shitijmathur.tech/api/rtms/webhook`
 
 **Surfaces:**
-- Home URL: `https://your-ngrok-domain`
-- Domain allow list: your ngrok domain + `appssdk.zoom.us`
+- Home URL: `https://zoom.shitijmathur.tech`
+- Domain allow list: `zoom.shitijmathur.tech` + `appssdk.zoom.us`
 
 **Guest Mode:** Enable (so unauthenticated students can see the app)
 

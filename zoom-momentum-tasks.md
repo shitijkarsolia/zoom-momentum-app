@@ -99,7 +99,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
   - **Context:** Create the backend server to serve the frontend and handle logic.
   - **Action Items:**
     - [x] Setup the server (Node/Express) locally. → `server/src/server.ts` with Express + TypeScript.
-    - [x] Deploy to EC2 with HTTPS at `zoom.shitijmathur.tech` (no ngrok needed).
+    - [x] Deploy to EC2 with HTTPS at `zoom.shitijmathur.tech`.
     - [x] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL). → Done, app configured on marketplace.zoom.us.
 - [x] **Task 11: Implement Zoom OAuth (Login Flow)**
   - **Context:** The app needs to know who is opening it.
