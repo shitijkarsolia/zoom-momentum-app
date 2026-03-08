@@ -27,9 +27,6 @@ Thumbs.db
 # Prisma
 server/prisma/migrations/
 
-# Tunnel artifacts
-*.ngrok-free.app
-
 # Logs
 *.log
 npm-debug.log*
