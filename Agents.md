@@ -244,8 +244,18 @@ The frontend is a Zoom Apps SDK side-panel app. `main.tsx` checks `navigator.use
 ### AI integration
 The server uses an OpenAI-compatible API (configured via `OPENAI_BASE_URL` and `OPENAI_API_KEY`). All AI endpoints return 500 on failure instead of hardcoded fallbacks — there is no subject-specific fallback content. Prompts are fully subject-agnostic and work for any academic discipline.
 
+### Deployment
+The app runs on EC2 at `zoom.shitijmathur.tech` with HTTPS. No ngrok or tunnel needed. The Zoom Marketplace app is fully configured with OAuth redirect URL and RTMS webhook URL pointing to this domain. AI is served by Kiro API at `kiro.shitijmathur.tech`.
+
 ### Transcript foreign key caveat
 The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: "mock-meeting-001"`. This requires a matching `Meeting` record in the DB, or it will 500 due to a Prisma foreign key constraint. A meeting must be created first (e.g., via the auth/OAuth flow which creates user and meeting records).
+
+### What's pending
+- **RTMS integration** (Tasks 18-19): Build `/api/rtms/webhook` and `@zoom/rtms` WebSocket ingestion. RTMS is enabled on the Zoom app; the webhook URL is configured. Need to implement the handler and transcript ingestion service.
+- **Auto-bookmark broadcast** (Task 28): The detect-cues AI endpoint works. Need host-side logic to call it periodically and broadcast auto-bookmarks.
+- **Smart Spotlight** (Task 29): Needs `onActiveSpeakerChange` (host-only event).
+- **Late Joiner** (Task 14): Needs `onParticipantChange` (host-only event). The `REQUEST_STATE`/`FULL_STATE` protocol is already in `useMessaging.ts`.
+- **Post-meeting detection** (Task 31): Needs `onRunningContextChange` to detect `inMeeting` -> `inMainClient` transition.
 
 ---
 
