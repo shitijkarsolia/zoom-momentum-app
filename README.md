@@ -138,7 +138,7 @@ All real-time communication uses the Zoom SDK's `sendMessage` / `onMessage`:
 
 ## Deployment
 
-The app runs on an **EC2 instance** at `your-domain.example` with HTTPS. No ngrok or tunnel required.
+The app runs on an **EC2 instance** at `your-domain.example` with HTTPS.
 
 ### Zoom Marketplace Configuration
 
