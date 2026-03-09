@@ -7,7 +7,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
 ## Phase 0: Prerequisites & Approvals
 *Goal: Unblock production deployment by getting necessary access and approvals early.*
 
-- [ ] **Task 1: Request RTMS Access (Live Transcripts)**
+- [x] **Task 1: Request RTMS Access (Live Transcripts)**
   - **Context:** Our "Live Anchor" feature needs to read the transcript as the professor speaks. That requires Zoom's RTMS stream.
   - **Findings (from Jen / Zoom DevRel):**
     - RTMS is the correct and only supported path today for **live, in-meeting transcripts**; there is no separate client-side transcript API.
@@ -16,6 +16,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
     - [x] Confirm RTMS as the path for live transcripts (done via DevRel + RTMS docs, videos, and quickstarts).
     - [x] Enable RTMS trial for core dev accounts (done for Shitij, Advikaa, Yash).
     - [ ] Send remaining team members' Zoom account emails to Jen so she can enable RTMS trials for the whole team.
+  - **Status:** RTMS enabled on the Zoom Marketplace app. Webhook URL configured at `https://zoom.shitijmathur.tech/api/rtms/webhook`.
 - [x] **Task 2: Clarify AI Companion API Status**
   - **Context:** We need to know if Zoom's native AI Companion allows custom, real-time prompt responses.
   - **Findings (from Jen / AI Companion docs):**
@@ -98,8 +99,8 @@ This document breaks down the high-level features of Zoom Momentum into specific
   - **Context:** Create the backend server to serve the frontend and handle logic.
   - **Action Items:**
     - [x] Setup the server (Node/Express) locally. → `server/src/server.ts` with Express + TypeScript.
-    - [ ] Set up ngrok to expose the local server to the public internet (required by Zoom).
-    - [ ] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL).
+    - [x] Deploy to EC2 with HTTPS at `zoom.shitijmathur.tech`.
+    - [x] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL). → Done, app configured on marketplace.zoom.us.
 - [x] **Task 11: Implement Zoom OAuth (Login Flow)**
   - **Context:** The app needs to know who is opening it.
   - **Action Items:**
@@ -175,20 +176,21 @@ This document breaks down the high-level features of Zoom Momentum into specific
 *Goal: Connect the fake transcript to LLMs to build the actual product features.*
 
 **Feature A: Live Anchor (The Pinned Timeline) & Running Glossary**
-- [ ] **Task 20: The AI Topic Endpoint (`/api/ai/topic-segment`)**
+- [x] **Task 20: The AI Topic Endpoint (`/api/ai/topic-segment`)**
   - **Action Items:**
-    - [ ] Build a route that takes the 300-word buffer.
-    - [ ] Write the prompt: "Did the topic change? Summarize previous topic in 3 bullets. Extract definitions or formulas."
-    - [ ] Parse the AI response into strict JSON.
-- [ ] **Task 21: The Host Broadcast Logic**
+    - [x] Build a route that takes the 300-word buffer. → `server/src/routes/ai.ts`, subject-agnostic prompt.
+    - [x] Write the prompt: "Did the topic change? Summarize previous topic in 3 bullets. Extract definitions or formulas." → Implemented with glossaryTerms extraction.
+    - [x] Parse the AI response into strict JSON. → `extractJSON()` helper handles markdown-fenced responses.
+- [x] **Task 21: The Host Broadcast Logic**
   - **Action Items:**
-    - [ ] Host App: Call the AI endpoint every 2 minutes or when a pause is detected via `zoomSdk.onActiveSpeakerChange()`.
-    - [ ] Host App: If the AI says the topic changed, use `postMessage` to broadcast `TOPIC_UPDATE` to all students.
-- [ ] **Task 22: The Student Timeline & Glossary UI (Enhancement 3)**
+    - [x] Host App: Call the AI endpoint every 30 seconds. → `useLiveAnchor.ts` polling loop with `startPolling`/`stopPolling`.
+    - [x] Host App: If the AI says the topic changed, use `postMessage` to broadcast `TOPIC_UPDATE` to all students. → Broadcasts `TOPIC_UPDATE` and `GLOSSARY_UPDATE`.
+    - [ ] Pause detection via `zoomSdk.onActiveSpeakerChange()`. *(Host-only SDK event, to be integrated)*
+- [x] **Task 22: The Student Timeline & Glossary UI (Enhancement 3)**
   - **Action Items:**
-    - [ ] Build a React component for a "Topic Card". Sliding animation for older cards.
-    - [ ] Listen for `GLOSSARY_UPDATE` messages broadcasted by the Host.
-    - [ ] Build a separate searchable "Glossary / Formula Sheet" tab that accumulates terms dynamically during the lecture.
+    - [x] Build a React component for a "Topic Card". → `TopicCard.tsx` with title, bullets, timestamp, bookmark.
+    - [x] Listen for `GLOSSARY_UPDATE` messages broadcasted by the Host. → `useAnchorStudent` handles updates.
+    - [x] Build a separate searchable "Glossary / Formula Sheet" tab. → `GlossaryTab.tsx` with search filter.
 
 **Feature B: Warm-Up Arena (Pre-class Trivia)**
 - [x] **Task 23: The AI Quiz Endpoint (`/api/ai/quiz-generate`)**

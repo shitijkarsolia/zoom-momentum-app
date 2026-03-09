@@ -132,15 +132,16 @@ cd server && npx prisma migrate dev --name init && cd ..
 ```
 ZOOM_CLIENT_ID=your_zoom_client_id
 ZOOM_CLIENT_SECRET=your_zoom_client_secret
-ZOOM_REDIRECT_URL=https://your-ngrok-url.ngrok-free.app/api/auth/callback
+ZOOM_REDIRECT_URL=https://your-server-domain/api/auth/callback
 SESSION_SECRET=any-random-string
 DATABASE_URL=file:./dev.db
 OPENAI_API_KEY=your_openai_key
+OPENAI_BASE_URL=https://kiro.shitijmathur.tech/v1
 PORT=3001
 CLIENT_URL=http://localhost:5173
 ```
 
-Note: `server/.env` also needs `DATABASE_URL=file:./dev.db` for Prisma CLI commands.
+Note: `server/.env` also needs all the same variables. Copy with `cp .env server/.env`.
 
 ### Dev Commands
 ```bash
@@ -149,19 +150,12 @@ npm run dev
 
 # Start with mock transcript feed included
 npm run dev:mock
-
-# Run just the client
-npm run dev:client
-
-# Run just the server
-npm run dev:server
 ```
 
 ### Testing in Zoom
-1. Start ngrok: `ngrok http 3001`
-2. Update `ZOOM_REDIRECT_URL` in `.env` with ngrok URL
-3. Configure Zoom App on marketplace.zoom.us with the ngrok URL
-4. Open a Zoom meeting → Apps → find your app
+1. Ensure your server is reachable (tunnel or deployed URL) and set `ZOOM_REDIRECT_URL` in `.env` accordingly
+2. Configure Zoom App on marketplace.zoom.us with your server URL
+3. Open a Zoom meeting → Apps → find your app
 
 ---
 
@@ -244,8 +238,18 @@ The frontend is a Zoom Apps SDK side-panel app. `main.tsx` checks `navigator.use
 ### AI integration
 The server uses an OpenAI-compatible API (configured via `OPENAI_BASE_URL` and `OPENAI_API_KEY`). All AI endpoints return 500 on failure instead of hardcoded fallbacks — there is no subject-specific fallback content. Prompts are fully subject-agnostic and work for any academic discipline.
 
+### Deployment
+The app runs on EC2 at `zoom.shitijmathur.tech` with HTTPS. The Zoom Marketplace app is fully configured with OAuth redirect URL and RTMS webhook URL pointing to this domain. AI is served by Kiro API at `kiro.shitijmathur.tech`.
+
 ### Transcript foreign key caveat
 The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: "mock-meeting-001"`. This requires a matching `Meeting` record in the DB, or it will 500 due to a Prisma foreign key constraint. A meeting must be created first (e.g., via the auth/OAuth flow which creates user and meeting records).
+
+### What's pending
+- **RTMS integration** (Tasks 18-19): Build `/api/rtms/webhook` and `@zoom/rtms` WebSocket ingestion. RTMS is enabled on the Zoom app; the webhook URL is configured. Need to implement the handler and transcript ingestion service.
+- **Auto-bookmark broadcast** (Task 28): The detect-cues AI endpoint works. Need host-side logic to call it periodically and broadcast auto-bookmarks.
+- **Smart Spotlight** (Task 29): Needs `onActiveSpeakerChange` (host-only event).
+- **Late Joiner** (Task 14): Needs `onParticipantChange` (host-only event). The `REQUEST_STATE`/`FULL_STATE` protocol is already in `useMessaging.ts`.
+- **Post-meeting detection** (Task 31): Needs `onRunningContextChange` to detect `inMeeting` -> `inMainClient` transition.
 
 ---
 

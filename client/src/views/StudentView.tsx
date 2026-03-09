@@ -17,6 +17,10 @@ import type { ArenaStudentPhase } from '../hooks/useArena';
 interface StudentViewProps {
   userName: string;
   connected: boolean;
+  isSignedIn?: boolean;
+  onSignIn?: () => void;
+  signInLoading?: boolean;
+  authUserId?: string | null;
   // Pulse props
   activePoll: Poll | null;
   selectedOption: number | null;
@@ -46,11 +50,18 @@ interface StudentViewProps {
   onBookmark: (meetingId: string, userId: string) => Promise<boolean>;
 }
 
+const BOOKMARK_SAVED = 'Bookmarked';
+const BOOKMARK_SIGN_IN = 'Sign in to save bookmarks';
+
 type StudentTab = 'timeline' | 'glossary';
 
 export function StudentView({
   userName,
   connected,
+  isSignedIn = false,
+  onSignIn,
+  signInLoading = false,
+  authUserId = null,
   activePoll,
   selectedOption,
   hasAnswered,
@@ -72,25 +83,43 @@ export function StudentView({
   onBookmark,
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
-  const [bookmarkToast, setBookmarkToast] = useState(false);
+  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
 
   const showArena = arenaPhase !== 'waiting' || arenaCurrentQuestion !== null;
 
   const handleBookmark = useCallback(async () => {
-    const ok = await onBookmark('current-meeting', userName);
-    if (ok) {
-      setBookmarkToast(true);
-      setTimeout(() => setBookmarkToast(false), 2200);
+    if (!authUserId) {
+      setBookmarkToast(BOOKMARK_SIGN_IN);
+      setTimeout(() => setBookmarkToast(null), 2800);
+      return;
     }
-  }, [onBookmark, userName]);
+    const ok = await onBookmark('current-meeting', authUserId);
+    if (ok) {
+      setBookmarkToast(BOOKMARK_SAVED);
+      setTimeout(() => setBookmarkToast(null), 2200);
+    }
+  }, [onBookmark, authUserId]);
 
   return (
     <div className="app-container">
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum</span>
-        <div className="status-indicator">
-          <div className={`status-dot ${connected ? 'connected' : ''}`} />
-          <span>{connected ? 'Connected' : 'Connecting…'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {!isSignedIn && onSignIn && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ padding: '4px 10px', fontSize: 12 }}
+              onClick={onSignIn}
+              disabled={signInLoading}
+            >
+              {signInLoading ? 'Connecting…' : 'Sign in to save bookmarks'}
+            </button>
+          )}
+          <div className="status-indicator">
+            <div className={`status-dot ${connected ? 'connected' : ''}`} />
+            <span>{connected ? 'Connected' : 'Connecting…'}</span>
+          </div>
         </div>
       </div>
 
@@ -137,7 +166,7 @@ export function StudentView({
       </div>
 
       {bookmarkToast && (
-        <div className="bookmark-toast">Bookmarked</div>
+        <div className="bookmark-toast">{bookmarkToast}</div>
       )}
 
       {pollResults && (
