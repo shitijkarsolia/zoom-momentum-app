@@ -27,9 +27,6 @@ Thumbs.db
 # Prisma
 server/prisma/migrations/
 
-# ngrok
-*.ngrok-free.app
-
 # Logs
 *.log
 npm-debug.log*

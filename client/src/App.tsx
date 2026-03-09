@@ -5,7 +5,6 @@ import { useMessaging } from './hooks/useMessaging';
 import { usePulseHost, usePulseStudent } from './hooks/usePulse';
 import { useArenaHost, useArenaStudent } from './hooks/useArena';
 import { useAnchorHost, useAnchorStudent } from './hooks/useLiveAnchor';
-import { AuthView } from './views/AuthView';
 import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
@@ -93,22 +92,34 @@ export default function App() {
   }
 
   if (zoom.error) {
+    const isAppNotSupport = zoom.error.startsWith('APP_NOT_SUPPORT:');
+    const displayMessage = isAppNotSupport ? zoom.error.replace(/^APP_NOT_SUPPORT:\s*/, '') : zoom.error;
     return (
       <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div className="card" style={{ textAlign: 'center', maxWidth: 320 }}>
-          <p style={{ color: 'var(--zoom-error)' }}>SDK Error: {zoom.error}</p>
-          <p style={{ color: 'var(--zoom-text-secondary)', fontSize: 12, marginTop: 8 }}>
-            Make sure you're running this inside a Zoom meeting.
-          </p>
+        <div className="card" style={{ textAlign: 'left', maxWidth: 420 }}>
+          <p style={{ color: 'var(--zoom-error)', fontWeight: 600 }}>SDK Error</p>
+          <p style={{ color: 'var(--zoom-text)', fontSize: 14, marginTop: 8 }}>{displayMessage}</p>
+          {isAppNotSupport ? (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--zoom-border)', fontSize: 13, color: 'var(--zoom-text-secondary)' }}>
+              <p style={{ fontWeight: 600, marginBottom: 8 }}>Fix in Zoom Marketplace:</p>
+              <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.6 }}>
+                <li>Open your app → <strong>Build</strong> → <strong>Surface</strong>.</li>
+                <li>Under <strong>In-Client App Features</strong>, find <strong>Zoom App SDK</strong>. If it says “You have 0 APIs added for this app”, click <strong>Add API</strong> and add the APIs your app needs (e.g. user context, in-meeting messaging, authorize).</li>
+                <li>Under “Select WHERE to use your app”, ensure <strong>In-Meeting</strong> is ON.</li>
+                <li>Add your app URL to <strong>Domain Whitelist URL</strong>. Add OAuth redirect URL and scope <code>zoomapp:inmeeting</code> as in the manual.</li>
+              </ol>
+            </div>
+          ) : (
+            <p style={{ color: 'var(--zoom-text-secondary)', fontSize: 12, marginTop: 12 }}>
+              Make sure you're running this inside a Zoom meeting.
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  if (!auth.isAuthenticated) {
-    return <AuthView onLogin={auth.login} isLoading={auth.isLoading} error={auth.error} />;
-  }
-
+  // Sign-in is optional: app works with Zoom meeting context only. Sign-in enables saving bookmarks to your account.
   if (!hasSeenWelcome) {
     return (
       <WelcomeView
@@ -163,6 +174,9 @@ export default function App() {
     <StudentView
       userName={zoom.userName}
       connected={messaging.connected}
+      isSignedIn={auth.isAuthenticated}
+      onSignIn={auth.login}
+      signInLoading={auth.isLoading}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}
@@ -182,6 +196,7 @@ export default function App() {
       anchorCurrentTopicId={anchorStudent.currentTopicId}
       anchorGlossary={anchorStudent.glossary}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
+      authUserId={auth.user?.id ?? null}
     />
   );
 }

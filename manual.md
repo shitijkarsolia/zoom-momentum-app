@@ -1,6 +1,6 @@
-# Zoom Momentum — Manual Setup Guide
+# Zoom Momentum -- Manual Setup Guide
 
-Follow these steps to get the app running locally and testable inside a Zoom meeting.
+Follow these steps to get the app running and testable inside a Zoom meeting.
 
 ---
 
@@ -20,9 +20,7 @@ This installs all three workspaces: `client`, `server`, and `mock-transcript`.
 cd server && npx prisma migrate dev --name init && cd ..
 ```
 
-This creates the SQLite database at `server/dev.db` with all required tables.
-
-Note: `server/.env` must contain `DATABASE_URL=file:./dev.db` for Prisma CLI to work. This file should already exist.
+This creates the SQLite database at `server/prisma/dev.db` with all required tables.
 
 ---
 
@@ -32,6 +30,7 @@ Copy the template and fill in real values:
 
 ```bash
 cp .env.example .env
+cp .env server/.env
 ```
 
 Required values in `.env`:
@@ -40,30 +39,19 @@ Required values in `.env`:
 |---|---|
 | `ZOOM_CLIENT_ID` | Zoom Marketplace → your app → App Credentials |
 | `ZOOM_CLIENT_SECRET` | Zoom Marketplace → your app → App Credentials |
-| `ZOOM_REDIRECT_URL` | `https://<your-ngrok-domain>.ngrok-free.app/api/auth/callback` |
+| `ZOOM_REDIRECT_URL` | `https://<your-server-domain>/api/auth/callback` |
 | `SESSION_SECRET` | Any random string. Generate one: `openssl rand -hex 32` |
-| `OPENAI_API_KEY` | https://platform.openai.com/api-keys |
+| `OPENAI_API_KEY` | Your AI provider API key |
+| `OPENAI_BASE_URL` | `https://your-domain.example/v1` (or omit for OpenAI default) |
 | `DATABASE_URL` | `file:./dev.db` (already set) |
 | `PORT` | `3001` (already set) |
 | `CLIENT_URL` | `http://localhost:5173` (already set) |
-| `NGROK_DOMAIN` | Your ngrok static domain (e.g. `your-name.ngrok-free.app`) |
 
 ---
 
-## 4. Set Up ngrok
+## 4. Expose your server (for local dev)
 
-ngrok tunnels your local server so Zoom can reach it.
-
-```bash
-ngrok http 3001
-```
-
-If you have a static ngrok domain:
-```bash
-ngrok http --domain=your-name.ngrok-free.app 3001
-```
-
-After starting ngrok, update `ZOOM_REDIRECT_URL` and `NGROK_DOMAIN` in `.env` with the ngrok URL.
+Zoom must be able to reach your server for OAuth and webhooks. Use a tunnel (e.g. Cloudflare Tunnel, localtunnel, or a similar tool) pointing at port 3001, then set `ZOOM_REDIRECT_URL` in `.env` to your public URL (e.g. `https://your-tunnel-domain.example.com/api/auth/callback`).
 
 ---
 
@@ -72,20 +60,24 @@ After starting ngrok, update `ZOOM_REDIRECT_URL` and `NGROK_DOMAIN` in `.env` wi
 Go to [marketplace.zoom.us](https://marketplace.zoom.us) and configure your app:
 
 ### OAuth Settings
-- **Redirect URL:** `https://<your-ngrok-domain>.ngrok-free.app/api/auth/callback`
-- **Allow List:** Add your ngrok domain
+- **Redirect URL:** `https://<your-server-domain>/api/auth/callback`
+- **Allow List:** Add your server domain
 
 ### Scopes
-- `zoomapp:inmeeting` — required for in-meeting side panel
+- `zoomapp:inmeeting` -- required for in-meeting side panel
 
-### Surface Settings
-- **Home URL:** `https://<your-ngrok-domain>.ngrok-free.app`
-- **In-Meeting:** Enable side panel
+### Surface (required for in-meeting and to fix 80004)
+- **Domain Whitelist URL:** Add your app’s origin (e.g. `https://<your-server-domain>` for dev, or your production URL). Add `http://localhost:5173` if you test locally.
+- **Select WHERE to use your app:** Turn **In-Meeting** ON and select **Meetings**.
+- **In-Client App Features → Zoom App SDK:** The SDK toggle must be ON **and** you must add APIs:
+  - If it says **“You have 0 APIs added for this app”**, click **Add API**.
+  - Add the Zoom App SDK APIs your app needs (e.g. user context, in-meeting messaging/postMessage, authorize/OAuth, notifications). Without at least one API added, you get **“No Permission for this API (80004, app_not_support)”**.
+- **Help URL** / **Privacy Policy URL:** Optional but recommended for publish.
 
 ### RTMS (Real-Time Media Streams)
-RTMS access has been granted to the developer account. Configure:
+RTMS access has been granted (1-year trial through Feb 2027). Configure:
 - **Webhook subscriptions:** Add `meeting.rtms_started` and `meeting.rtms_stopped` events
-- **Webhook URL:** `https://<your-ngrok-domain>.ngrok-free.app/api/rtms/webhook`
+- **Webhook URL:** `https://<your-server-domain>/api/rtms/webhook`
 - Ensure transcript streaming scope is enabled on the account
 
 ### Zoom Client Requirement
@@ -103,23 +95,18 @@ npm run dev
 npm run dev:mock
 ```
 
-Other commands:
-```bash
-npm run dev:client   # Just the frontend
-npm run dev:server   # Just the backend
-```
-
 ---
 
 ## 7. Test in Zoom
 
-1. Make sure ngrok is running (`ngrok http 3001`)
-2. Make sure dev server is running (`npm run dev`)
-3. Open a Zoom meeting
-4. Go to **Apps** → find your app → open it
-5. The app loads in the side panel
-6. As the meeting host, you'll see the **Host Dashboard**
-7. Other participants see the **Student View**
+1. Make sure your server is reachable from the internet (tunnel or deployed URL) and dev server is running (`npm run dev`)
+2. Open a Zoom meeting
+3. Go to **Apps** → find your app → open it
+4. The app loads in the side panel
+5. As the meeting host, you'll see the **Host Dashboard**
+6. Other participants see the **Student View**
+
+**Sign-in is optional.** You can use the app (polls, Arena, timeline, glossary) without signing in. Sign in with Zoom only if you want to **save bookmarks** (“I’m Confused”) to your account; students see a “Sign in to save bookmarks” button when not signed in.
 
 ### Testing with Mock Transcript
 Run `npm run dev:mock` instead of `npm run dev`. This starts a mock transcript service that sends fake lecture chunks to the server every 3 seconds, simulating a live lecture without needing real RTMS.
@@ -131,5 +118,6 @@ Run `npm run dev:mock` instead of `npm run dev`. This starts a mock transcript s
 - **"Cannot find module" errors after clone:** Run `npm install` from the root.
 - **Prisma errors:** Make sure `server/.env` has `DATABASE_URL=file:./dev.db` and run the migration.
 - **OAuth redirect fails:** Check that `ZOOM_REDIRECT_URL` in `.env` matches exactly what's configured in Zoom Marketplace.
-- **App doesn't load in Zoom:** Verify the Home URL in Marketplace matches your ngrok domain. Check browser console for SDK errors.
+- **App doesn't load in Zoom:** Verify the Home URL in Marketplace matches your server domain. Check browser console for SDK errors.
 - **CORS errors:** The Vite dev server proxies `/api/*` to `localhost:3001`. Make sure the server is running.
+- **"No Permission for this API" (code 80004, reason: app_not_support):** Usually caused by **0 APIs added** for Zoom App SDK. In Marketplace → your app → **Surface** → **In-Client App Features** → **Zoom App SDK**, click **Add API** and add the APIs the app uses (e.g. user context, in-meeting messaging, authorize). Also ensure: app type is **Zoom App**, **In-Meeting** is ON under “Select WHERE to use your app”, scope `zoomapp:inmeeting` is added, and Domain Whitelist includes your app URL.
