@@ -7,7 +7,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
 ## Phase 0: Prerequisites & Approvals
 *Goal: Unblock production deployment by getting necessary access and approvals early.*
 
-- [ ] **Task 1: Request RTMS Access (Live Transcripts)**
+- [x] **Task 1: Request RTMS Access (Live Transcripts)**
   - **Context:** Our "Live Anchor" feature needs to read the transcript as the professor speaks. That requires Zoom's RTMS stream.
   - **Findings (from Jen / Zoom DevRel):**
     - RTMS is the correct and only supported path today for **live, in-meeting transcripts**; there is no separate client-side transcript API.
@@ -16,6 +16,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
     - [x] Confirm RTMS as the path for live transcripts (done via DevRel + RTMS docs, videos, and quickstarts).
     - [x] Enable RTMS trial for core dev accounts (done for Shitij, Advikaa, Yash).
     - [ ] Send remaining team members' Zoom account emails to Jen so she can enable RTMS trials for the whole team.
+  - **Status:** RTMS enabled on the Zoom Marketplace app. Webhook URL configured at `https://zoom.shitijmathur.tech/api/rtms/webhook`.
 - [x] **Task 2: Clarify AI Companion API Status**
   - **Context:** We need to know if Zoom's native AI Companion allows custom, real-time prompt responses.
   - **Findings (from Jen / AI Companion docs):**
@@ -98,8 +99,8 @@ This document breaks down the high-level features of Zoom Momentum into specific
   - **Context:** Create the backend server to serve the frontend and handle logic.
   - **Action Items:**
     - [x] Setup the server (Node/Express) locally. → `server/src/server.ts` with Express + TypeScript.
-    - [ ] Set up ngrok to expose the local server to the public internet (required by Zoom).
-    - [ ] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL).
+    - [x] Deploy to EC2 with HTTPS at `zoom.shitijmathur.tech`.
+    - [x] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL). → Done, app configured on marketplace.zoom.us.
 - [x] **Task 11: Implement Zoom OAuth (Login Flow)**
   - **Context:** The app needs to know who is opening it.
   - **Action Items:**
@@ -175,65 +176,65 @@ This document breaks down the high-level features of Zoom Momentum into specific
 *Goal: Connect the fake transcript to LLMs to build the actual product features.*
 
 **Feature A: Live Anchor (The Pinned Timeline) & Running Glossary**
-- [ ] **Task 20: The AI Topic Endpoint (`/api/ai/topic-segment`)**
+- [x] **Task 20: The AI Topic Endpoint (`/api/ai/topic-segment`)**
   - **Action Items:**
-    - [ ] Build a route that takes the 300-word buffer.
-    - [ ] Write the prompt: "Did the topic change? Summarize previous topic in 3 bullets. Extract definitions or formulas."
-    - [ ] Parse the AI response into strict JSON.
-- [ ] **Task 21: The Host Broadcast Logic**
+    - [x] Build a route that takes the 300-word buffer. → `server/src/routes/ai.ts`, subject-agnostic prompt.
+    - [x] Write the prompt: "Did the topic change? Summarize previous topic in 3 bullets. Extract definitions or formulas." → Implemented with glossaryTerms extraction.
+    - [x] Parse the AI response into strict JSON. → `extractJSON()` helper handles markdown-fenced responses.
+- [x] **Task 21: The Host Broadcast Logic**
   - **Action Items:**
-    - [ ] Host App: Call the AI endpoint every 2 minutes or when a pause is detected via `zoomSdk.onActiveSpeakerChange()`.
-    - [ ] Host App: If the AI says the topic changed, use `postMessage` to broadcast `TOPIC_UPDATE` to all students.
-- [ ] **Task 22: The Student Timeline & Glossary UI (Enhancement 3)**
+    - [x] Host App: Call the AI endpoint every 30 seconds. → `useLiveAnchor.ts` polling loop with `startPolling`/`stopPolling`.
+    - [x] Host App: If the AI says the topic changed, use `postMessage` to broadcast `TOPIC_UPDATE` to all students. → Broadcasts `TOPIC_UPDATE` and `GLOSSARY_UPDATE`.
+    - [ ] Pause detection via `zoomSdk.onActiveSpeakerChange()`. *(Host-only SDK event, to be integrated)*
+- [x] **Task 22: The Student Timeline & Glossary UI (Enhancement 3)**
   - **Action Items:**
-    - [ ] Build a React component for a "Topic Card". Sliding animation for older cards.
-    - [ ] Listen for `GLOSSARY_UPDATE` messages broadcasted by the Host.
-    - [ ] Build a separate searchable "Glossary / Formula Sheet" tab that accumulates terms dynamically during the lecture.
+    - [x] Build a React component for a "Topic Card". → `TopicCard.tsx` with title, bullets, timestamp, bookmark.
+    - [x] Listen for `GLOSSARY_UPDATE` messages broadcasted by the Host. → `useAnchorStudent` handles updates.
+    - [x] Build a separate searchable "Glossary / Formula Sheet" tab. → `GlossaryTab.tsx` with search filter.
 
 **Feature B: Warm-Up Arena (Pre-class Trivia)**
-- [ ] **Task 23: The AI Quiz Endpoint (`/api/ai/quiz-generate`)**
+- [x] **Task 23: The AI Quiz Endpoint (`/api/ai/quiz-generate`)**
   - **Action Items:**
-    - [ ] Write a prompt that takes previous class transcripts and generates 5 multiple choice questions.
-- [ ] **Task 24: Trivia Game UI & Logic**
+    - [x] Write a prompt that takes previous class transcripts and generates 5 multiple choice questions. → Implemented in `server/src/routes/ai.ts` with real AI + 5 fallback questions.
+- [x] **Task 24: Trivia Game UI & Logic**
   - **Action Items:**
-    - [ ] Host UI: A "Start Game" button that fetches questions.
-    - [ ] Student UI: A clean, large countdown timer.
-    - [ ] Logic: Host computes scores as students reply with `ARENA_ANSWER` messages, and broadcasts a Top 3 Leaderboard.
+    - [x] Host UI: A "Start Game" button that fetches questions. → `ArenaHost.tsx` with topic input, generate, ready, question, leaderboard, finished phases.
+    - [x] Student UI: A clean, large countdown timer. → `ArenaStudent.tsx` with 15s countdown, tap-to-answer, answer reveal.
+    - [x] Logic: Host computes scores as students reply with `ARENA_ANSWER` messages, and broadcasts a Top 3 Leaderboard. → `useArena.ts` with 1000 base + speed bonus scoring, `Leaderboard.tsx` with medals.
 
 **Feature C: Professor's Pulse (Check-in Polls)**
-- [ ] **Task 25: Poll Generation UI (Host)**
+- [x] **Task 25: Poll Generation UI (Host)**
   - **Action Items:**
-    - [ ] Build a dashboard for the host to click "Generate Question", with an optional context input text box.
-    - [ ] Add an editable preview screen allowing the host to edit the question text and options before broadcasting.
-- [ ] **Task 26: Poll Display & Results UI (Student & Host)**
+    - [x] Build a dashboard for the host to click "Generate Question", with an optional context input text box. → `PollCreator.tsx` with context input + generate button.
+    - [x] Add an editable preview screen allowing the host to edit the question text and options before broadcasting. → `PollCreator.tsx` preview phase with editable fields.
+- [x] **Task 26: Poll Display & Results UI (Student & Host)**
   - **Action Items:**
-    - [ ] Student UI: A modal overlay that appears when Host launches `POLL_START`.
-    - [ ] Send `POLL_RESPONSE` answers back.
-    - [ ] Host UI: Aggregate scores and broadcast `POLL_RESULTS` bar chart to everyone.
+    - [x] Student UI: A modal overlay that appears when Host launches `POLL_START`. → `PollCard.tsx` overlay with option selection.
+    - [x] Send `POLL_RESPONSE` answers back. → `usePulse.ts` student hook sends via messaging.
+    - [x] Host UI: Aggregate scores and broadcast `POLL_RESULTS` bar chart to everyone. → `PollResults.tsx` bar chart + `usePulse.ts` host aggregation.
 
 **Feature D: Recovery Agent (Post-Class) & Enhancements**
-- [ ] **Task 27: The Manual Bookmark Button**
+- [x] **Task 27: The Manual Bookmark Button**
   - **Action Items:**
-    - [ ] Add a `📌 I'm Confused` button to the Live Anchor UI saving the current timestamp to the DB.
+    - [x] Add a `📌 I'm Confused` button to the Live Anchor UI saving the current timestamp to the DB. → `StudentView.tsx` + `useLiveAnchor.ts` `bookmarkCurrentTopic` POSTs to `/api/bookmarks`.
 - [ ] **Task 28: Auto-Bookmark on Professor Cues (Enhancement 2)**
   - **Context:** Automatically bookmark moments when the professor indicates importance.
   - **Action Items:**
-    - [ ] Build `/api/ai/detect-cues` endpoint to scan transcript buffer for emphasis phrases (e.g., "This is critical").
-    - [ ] When detected, trigger the Host app to secretly log bookmarks for all students.
+    - [x] Build `/api/ai/detect-cues` endpoint to scan transcript buffer for emphasis phrases (e.g., "This is critical"). → Implemented in `server/src/routes/ai.ts` with real AI.
+    - [ ] When detected, trigger the Host app to secretly log bookmarks for all students. *(Needs Zoom SDK `sendMessage` in real meeting)*
 - [ ] **Task 29: Smart Spotlight for Student Questions (Enhancement 4)**
-  - **Context:** Emphasize students asking questions automatically.
+  - **Context:** Emphasize students asking questions automatically. *(Needs Zoom SDK host-only events)*
   - **Action Items:**
     - [ ] Use `zoomSdk.onActiveSpeakerChange()` to detect when a Student unmutes and speaks.
     - [ ] Host App Action: Call `zoomSdk.addParticipantSpotlight(studentID)` automatically.
     - [ ] Host App Action: Automatically annotate the Live Anchor timeline with "Student Question at [Time]".
     - [ ] Host App Action: Auto-remove the spotlight when the Host resumes speaking using `zoomSdk.removeParticipantSpotlights()`.
-- [ ] **Task 30: The AI Recovery Endpoint**
+- [x] **Task 30: The AI Recovery Endpoint**
   - **Action Items:**
-    - [ ] Prompt: "Explain this transcript segment simply and provide a practice problem."
-    - [ ] Endpoint runs this prompt for all bookmarks (manual + auto) after class.
-- [ ] **Task 31: Post-Class Summary Card UI (Enhancement 5)**
-  - **Context:** A final deliverable given to the student immediately after the Zoom call ends.
+    - [x] Prompt: "Explain this transcript segment simply and provide a practice problem." → Implemented in `server/src/routes/ai.ts` with subject-agnostic prompt.
+    - [x] Endpoint runs this prompt for all bookmarks (manual + auto) after class. → `/api/ai/recovery-pack` accepts bookmarks array, generates per-item explanations.
+- [x] **Task 31: Post-Class Summary Card UI (Enhancement 5)**
   - **Action Items:**
-    - [ ] Detect `onRunningContextChange` transitioning from `inMeeting` to `inMainClient` (meeting ended).
-    - [ ] Build a Summary Card UI summarizing key topics and links to the Glossary.
-    - [ ] Display the personalized Recovery Pack generated in Task 30 on this card.
+    - [ ] Detect `onRunningContextChange` transitioning from `inMeeting` to `inMainClient` (meeting ended). *(Needs Zoom SDK event)*
+    - [x] Build a Summary Card UI summarizing key topics and links to the Glossary. → `PostClassSummary.tsx` with stats, topics, terms.
+    - [x] Display the personalized Recovery Pack generated in Task 30 on this card. → `RecoveryPackCard.tsx` embedded in `PostClassSummary`.

@@ -6,8 +6,6 @@ interface LeaderboardProps {
   compact?: boolean;
 }
 
-const MEDALS = ['🥇', '🥈', '🥉'];
-
 export function Leaderboard({ entries, title, compact }: LeaderboardProps) {
   const displayed = compact ? entries.slice(0, 5) : entries.slice(0, 10);
 
@@ -20,9 +18,7 @@ export function Leaderboard({ entries, title, compact }: LeaderboardProps) {
         <div className="leaderboard-list">
           {displayed.map((entry) => (
             <div key={entry.participantId} className={`leaderboard-row ${entry.rank <= 3 ? 'top-three' : ''}`}>
-              <span className="leaderboard-rank">
-                {entry.rank <= 3 ? MEDALS[entry.rank - 1] : `#${entry.rank}`}
-              </span>
+              <span className="leaderboard-rank">#{entry.rank}</span>
               <span className="leaderboard-name">{entry.name}</span>
               <span className="leaderboard-score">{entry.score.toLocaleString()}</span>
             </div>

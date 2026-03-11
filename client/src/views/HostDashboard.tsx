@@ -2,9 +2,18 @@ import { useState } from 'react';
 import { PollCreator } from '../components/pulse/PollCreator';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
+import { Timeline } from '../components/anchor/Timeline';
+import { GlossaryTab } from '../components/anchor/GlossaryTab';
+import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { PollDraft, PulsePhase } from '../hooks/usePulse';
 import type { ArenaHostPhase } from '../hooks/useArena';
-import type { Poll, Question, LeaderboardEntry } from '../types/messages';
+import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from '../types/messages';
+
+const TAB_INFO = {
+  pulse: 'Generate AI check-in polls to gauge student understanding. You can edit the question before launching it to everyone.',
+  arena: 'Run a timed trivia quiz. AI generates questions from your topic, and students compete on a live leaderboard with scoring.',
+  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
+} as const;
 
 interface HostDashboardProps {
   userName: string;
@@ -34,6 +43,15 @@ interface HostDashboardProps {
   onArenaShowLeaderboard: () => void;
   onArenaNextQuestion: () => void;
   onArenaReset: () => void;
+  // Anchor props
+  anchorTopics: Topic[];
+  anchorCurrentTopicId: string;
+  anchorGlossary: GlossaryEntry[];
+  anchorIsPolling: boolean;
+  anchorError: string | null;
+  onAnchorStartPolling: () => void;
+  onAnchorStopPolling: () => void;
+  onAnchorPollNow: () => void;
 }
 
 type HostTab = 'pulse' | 'arena' | 'anchor';
@@ -64,13 +82,21 @@ export function HostDashboard({
   onArenaShowLeaderboard,
   onArenaNextQuestion,
   onArenaReset,
+  anchorTopics,
+  anchorCurrentTopicId,
+  anchorGlossary,
+  anchorIsPolling,
+  anchorError,
+  onAnchorStartPolling,
+  onAnchorStopPolling,
+  onAnchorPollNow,
 }: HostDashboardProps) {
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
 
   return (
     <div className="app-container">
       <div className="status-bar">
-        <span style={{ fontWeight: 600 }}>⚡ Momentum — Host</span>
+        <span style={{ fontWeight: 600 }}>Momentum — Host</span>
         <div className="status-indicator">
           <div className={`status-dot ${connected ? 'connected' : ''}`} />
           <span>{connected ? 'Connected' : 'Connecting…'}</span>
@@ -83,24 +109,27 @@ export function HostDashboard({
             className={`tab ${activeTab === 'pulse' ? 'active' : ''}`}
             onClick={() => setActiveTab('pulse')}
           >
-            📊 Pulse
+            Pulse
           </button>
           <button
             className={`tab ${activeTab === 'arena' ? 'active' : ''}`}
             onClick={() => setActiveTab('arena')}
           >
-            🎮 Arena
+            Arena
           </button>
           <button
             className={`tab ${activeTab === 'anchor' ? 'active' : ''}`}
             onClick={() => setActiveTab('anchor')}
           >
-            📌 Anchor
+            Anchor
           </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
+        <div className="tab-info-bar">
+          <FeatureInfo title={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} description={TAB_INFO[activeTab]} />
+        </div>
         {activeTab === 'pulse' && (
           <>
             {pulsePhase === 'results' && pulseActivePoll ? (
@@ -141,11 +170,33 @@ export function HostDashboard({
           />
         )}
         {activeTab === 'anchor' && (
-          <div>
-            <h2 className="card-title">Live Anchor</h2>
-            <p style={{ color: 'var(--zoom-text-secondary)' }}>
-              Real-time topic timeline powered by live transcript analysis.
-            </p>
+          <div className="anchor-controls">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 className="card-title" style={{ margin: 0 }}>Live Anchor</h2>
+              <div className="anchor-status">
+                <div className={`status-dot ${anchorIsPolling ? 'active' : ''}`} />
+                <span>{anchorIsPolling ? 'AI Active' : 'Paused'}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {anchorIsPolling ? (
+                <button className="btn btn-secondary" onClick={onAnchorStopPolling}>Pause AI</button>
+              ) : (
+                <button className="btn btn-primary" onClick={onAnchorStartPolling}>Start AI</button>
+              )}
+              <button className="btn btn-secondary" onClick={onAnchorPollNow} disabled={anchorIsPolling}>
+                Analyze Now
+              </button>
+            </div>
+            {anchorError && (
+              <p style={{ color: 'var(--zoom-error)', fontSize: 12 }}>{anchorError}</p>
+            )}
+            <Timeline topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+            {anchorGlossary.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <GlossaryTab glossary={anchorGlossary} />
+              </div>
+            )}
           </div>
         )}
       </div>

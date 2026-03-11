@@ -1,17 +1,19 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import { useZoomSdk } from './hooks/useZoomSdk';
 import { useZoomAuth } from './hooks/useZoomAuth';
 import { useMessaging } from './hooks/useMessaging';
 import { usePulseHost, usePulseStudent } from './hooks/usePulse';
 import { useArenaHost, useArenaStudent } from './hooks/useArena';
-import { AuthView } from './views/AuthView';
+import { useAnchorHost, useAnchorStudent } from './hooks/useLiveAnchor';
+import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
-import type { AppMessage, Poll, LeaderboardEntry } from './types/messages';
+import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
 
 export default function App() {
   const zoom = useZoomSdk();
   const auth = useZoomAuth();
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
 
   const messageRouterRef = useRef<(msg: AppMessage) => void>(() => {});
 
@@ -29,6 +31,8 @@ export default function App() {
   const pulseStudent = usePulseStudent({ send: messaging.send });
   const arenaHost = useArenaHost({ broadcast: messaging.broadcast });
   const arenaStudent = useArenaStudent({ send: messaging.send, participantName: zoom.userName });
+  const anchorHost = useAnchorHost({ broadcast: messaging.broadcast });
+  const anchorStudent = useAnchorStudent({ send: messaging.send });
 
   useEffect(() => {
     messageRouterRef.current = (message: AppMessage) => {
@@ -57,6 +61,10 @@ export default function App() {
           });
         } else if (message.type === 'ARENA_END') {
           arenaStudent.handleArenaEnd(message.payload as { leaderboard: LeaderboardEntry[] });
+        } else if (message.type === 'TOPIC_UPDATE') {
+          anchorStudent.handleTopicUpdate(message.payload as { topic: Topic; topicChanged: boolean });
+        } else if (message.type === 'GLOSSARY_UPDATE') {
+          anchorStudent.handleGlossaryUpdate(message.payload as { terms: GlossaryEntry[] });
         }
       }
       console.log('[App] received message:', message.type, message);
@@ -71,6 +79,8 @@ export default function App() {
     arenaStudent.handleQuestion,
     arenaStudent.handleLeaderboard,
     arenaStudent.handleArenaEnd,
+    anchorStudent.handleTopicUpdate,
+    anchorStudent.handleGlossaryUpdate,
   ]);
 
   if (!zoom.isConfigured && !zoom.error) {
@@ -82,20 +92,42 @@ export default function App() {
   }
 
   if (zoom.error) {
+    const isAppNotSupport = zoom.error.startsWith('APP_NOT_SUPPORT:');
+    const displayMessage = isAppNotSupport ? zoom.error.replace(/^APP_NOT_SUPPORT:\s*/, '') : zoom.error;
     return (
       <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div className="card" style={{ textAlign: 'center', maxWidth: 320 }}>
-          <p style={{ color: 'var(--zoom-error)' }}>SDK Error: {zoom.error}</p>
-          <p style={{ color: 'var(--zoom-text-secondary)', fontSize: 12, marginTop: 8 }}>
-            Make sure you're running this inside a Zoom meeting.
-          </p>
+        <div className="card" style={{ textAlign: 'left', maxWidth: 420 }}>
+          <p style={{ color: 'var(--zoom-error)', fontWeight: 600 }}>SDK Error</p>
+          <p style={{ color: 'var(--zoom-text)', fontSize: 14, marginTop: 8 }}>{displayMessage}</p>
+          {isAppNotSupport ? (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--zoom-border)', fontSize: 13, color: 'var(--zoom-text-secondary)' }}>
+              <p style={{ fontWeight: 600, marginBottom: 8 }}>Fix in Zoom Marketplace:</p>
+              <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.6 }}>
+                <li>Open your app → <strong>Build</strong> → <strong>Surface</strong>.</li>
+                <li>Under <strong>In-Client App Features</strong>, find <strong>Zoom App SDK</strong>. If it says “You have 0 APIs added for this app”, click <strong>Add API</strong> and add the APIs your app needs (e.g. user context, in-meeting messaging, authorize).</li>
+                <li>Under “Select WHERE to use your app”, ensure <strong>In-Meeting</strong> is ON.</li>
+                <li>Add your app URL to <strong>Domain Whitelist URL</strong>. Add OAuth redirect URL and scope <code>zoomapp:inmeeting</code> as in the manual.</li>
+              </ol>
+            </div>
+          ) : (
+            <p style={{ color: 'var(--zoom-text-secondary)', fontSize: 12, marginTop: 12 }}>
+              Make sure you're running this inside a Zoom meeting.
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  if (!auth.isAuthenticated) {
-    return <AuthView onLogin={auth.login} isLoading={auth.isLoading} error={auth.error} />;
+  // Sign-in is optional: app works with Zoom meeting context only. Sign-in enables saving bookmarks to your account.
+  if (!hasSeenWelcome) {
+    return (
+      <WelcomeView
+        userName={zoom.userName}
+        isHost={zoom.isHost}
+        onContinue={() => setHasSeenWelcome(true)}
+      />
+    );
   }
 
   if (zoom.isHost) {
@@ -126,6 +158,14 @@ export default function App() {
         onArenaShowLeaderboard={arenaHost.showLeaderboard}
         onArenaNextQuestion={arenaHost.nextQuestion}
         onArenaReset={arenaHost.resetArena}
+        anchorTopics={anchorHost.topics}
+        anchorCurrentTopicId={anchorHost.currentTopicId}
+        anchorGlossary={anchorHost.glossary}
+        anchorIsPolling={anchorHost.isPolling}
+        anchorError={anchorHost.error}
+        onAnchorStartPolling={anchorHost.startPolling}
+        onAnchorStopPolling={anchorHost.stopPolling}
+        onAnchorPollNow={anchorHost.pollTranscript}
       />
     );
   }
@@ -134,6 +174,9 @@ export default function App() {
     <StudentView
       userName={zoom.userName}
       connected={messaging.connected}
+      isSignedIn={auth.isAuthenticated}
+      onSignIn={auth.login}
+      signInLoading={auth.isLoading}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}
@@ -149,6 +192,11 @@ export default function App() {
       arenaExplanation={arenaStudent.explanation}
       arenaFinalLeaderboard={arenaStudent.finalLeaderboard}
       onArenaSelectAndSubmit={arenaStudent.selectAndSubmit}
+      anchorTopics={anchorStudent.topics}
+      anchorCurrentTopicId={anchorStudent.currentTopicId}
+      anchorGlossary={anchorStudent.glossary}
+      onBookmark={anchorStudent.bookmarkCurrentTopic}
+      authUserId={auth.user?.id ?? null}
     />
   );
 }
