@@ -43,6 +43,9 @@ export function WelcomeView({ userName, isHost, onContinue }: WelcomeViewProps) 
       <div className="welcome-view">
         <div className="welcome-header">
           <h1 className="welcome-title">Zoom Momentum</h1>
+          <p style={{ fontSize: 13, color: 'var(--zoom-text-secondary)', margin: '4px 0 8px' }}>
+            Active learning for virtual classrooms
+          </p>
           <p className="welcome-greeting">
             {firstName ? `Welcome, ${firstName}` : 'Welcome'}
           </p>
@@ -66,7 +69,11 @@ export function WelcomeView({ userName, isHost, onContinue }: WelcomeViewProps) 
           ))}
         </div>
 
-        <button className="btn btn-primary welcome-cta" onClick={onContinue}>
+        <button
+          className="btn btn-primary welcome-cta"
+          onClick={onContinue}
+          onKeyDown={e => { if (e.key === 'Enter') onContinue(); }}
+        >
           {isHost ? 'Open Dashboard' : 'Join Session'}
         </button>
       </div>
