@@ -5,6 +5,7 @@ import { useMessaging } from './hooks/useMessaging';
 import { usePulseHost, usePulseStudent } from './hooks/usePulse';
 import { useArenaHost, useArenaStudent } from './hooks/useArena';
 import { useAnchorHost, useAnchorStudent } from './hooks/useLiveAnchor';
+import { useZoomEvents } from './hooks/useZoomEvents';
 import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
@@ -14,6 +15,7 @@ export default function App() {
   const zoom = useZoomSdk();
   const auth = useZoomAuth();
   const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+  const [studentActiveSpeaker, setStudentActiveSpeaker] = useState<string | null>(null);
 
   const messageRouterRef = useRef<(msg: AppMessage) => void>(() => {});
 
@@ -34,6 +36,16 @@ export default function App() {
   const anchorHost = useAnchorHost({ broadcast: messaging.broadcast });
   const anchorStudent = useAnchorStudent({ send: messaging.send });
 
+  const handleMeetingEnd = useCallback(() => {
+    console.log('[App] Meeting ended');
+  }, []);
+
+  const zoomEvents = useZoomEvents({
+    isHost: zoom.isHost,
+    broadcast: messaging.broadcast,
+    onMeetingEnd: handleMeetingEnd,
+  });
+
   useEffect(() => {
     messageRouterRef.current = (message: AppMessage) => {
       if (zoom.isHost) {
@@ -45,7 +57,9 @@ export default function App() {
           arenaHost.handleAnswer(message.senderId, payload.name, payload.optionIndex, payload.questionIndex);
         }
       } else {
-        if (message.type === 'POLL_START') {
+        if (message.type === 'FULL_STATE') {
+          zoomEvents.handleFullState(message.payload);
+        } else if (message.type === 'POLL_START') {
           pulseStudent.handlePollStart(message.payload as Poll);
         } else if (message.type === 'POLL_RESULTS') {
           pulseStudent.handlePollResults(message.payload as Poll);
@@ -65,12 +79,25 @@ export default function App() {
           anchorStudent.handleTopicUpdate(message.payload as { topic: Topic; topicChanged: boolean });
         } else if (message.type === 'GLOSSARY_UPDATE') {
           anchorStudent.handleGlossaryUpdate(message.payload as { terms: GlossaryEntry[] });
+        } else if (message.type === 'AUTO_BOOKMARK') {
+          // Auto-create bookmark when host detects important cues
+          const abPayload = message.payload as { topic: string; cues: string[]; timestamp: number };
+          console.log('[App] Auto-bookmark triggered:', abPayload.topic, abPayload.cues);
+          if (zoom.meetingId && zoom.participantId) {
+            anchorStudent.bookmarkCurrentTopic(zoom.meetingId, zoom.participantId);
+          }
+        } else if (message.type === 'SPEAKER_SPOTLIGHT') {
+          const spPayload = message.payload as { speakerName: string; participantId: string; timestamp: number };
+          setStudentActiveSpeaker(spPayload.speakerName);
+          console.log('[App] Speaker spotlight:', spPayload.speakerName);
         }
       }
       console.log('[App] received message:', message.type, message);
     };
   }, [
     zoom.isHost,
+    zoom.meetingId,
+    zoom.participantId,
     pulseHost.handleResponse,
     pulseStudent.handlePollStart,
     pulseStudent.handlePollResults,
@@ -81,6 +108,8 @@ export default function App() {
     arenaStudent.handleArenaEnd,
     anchorStudent.handleTopicUpdate,
     anchorStudent.handleGlossaryUpdate,
+    anchorStudent.bookmarkCurrentTopic,
+    zoomEvents.handleFullState,
   ]);
 
   if (!zoom.isConfigured && !zoom.error) {
@@ -197,6 +226,10 @@ export default function App() {
       anchorGlossary={anchorStudent.glossary}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
       authUserId={auth.user?.id ?? null}
+      meetingEnded={zoomEvents.meetingEnded}
+      lateJoinInfo={zoomEvents.lateJoinInfo}
+      onDismissLateJoin={zoomEvents.dismissLateJoinInfo}
+      activeSpeaker={studentActiveSpeaker}
     />
   );
 }
