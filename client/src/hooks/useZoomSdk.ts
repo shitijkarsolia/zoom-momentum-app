@@ -44,21 +44,29 @@ export function useZoomSdk(): ZoomContext {
     try {
       const configResponse = await zoomSdk.config({
         capabilities: [...SDK_CAPABILITIES],
+        version: '0.16.0',
       });
 
       const userContext = await zoomSdk.getUserContext();
+
+      // configResponse may contain meetingUUID at runtime even if not in the TS type
+      const meetingUUID = (configResponse as any).meetingUUID ?? '';
 
       setContext({
         isHost: userContext.role === 'host' || userContext.role === 'coHost',
         userName: userContext.screenName ?? '',
         participantId: userContext.participantUUID ?? '',
-        meetingId: configResponse.meetingUUID ?? '',
+        meetingId: meetingUUID,
         runningContext: configResponse.runningContext ?? 'inMeeting',
         isConfigured: true,
         error: null,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to configure Zoom SDK';
+      const rawMessage = err instanceof Error ? err.message : 'Failed to configure Zoom SDK';
+      const isAppNotSupport = /80004|app_not_support/i.test(rawMessage);
+      const message = isAppNotSupport
+        ? 'APP_NOT_SUPPORT: Your Marketplace app must be a Zoom App (In-Meeting App) with the In-Meeting side panel enabled. Meeting SDK and Video SDK app types cannot use the Zoom Apps SDK.'
+        : rawMessage;
       setContext((prev) => ({ ...prev, error: message }));
     }
   }, []);
