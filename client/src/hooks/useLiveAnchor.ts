@@ -100,7 +100,31 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
         });
       }
 
-      // 5. Process glossary terms
+      // 5. Detect cues for auto-bookmark
+      if (text && text.trim().length >= 20) {
+        try {
+          const cueRes = await fetch('/api/ai/detect-cues', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: text }),
+          });
+          if (cueRes.ok) {
+            const cueResult = await cueRes.json();
+            if (cueResult.hasCue) {
+              const currentTopicTitle = result.topic?.title ?? state.topics.find(t => t.id === state.currentTopicId)?.title ?? 'Unknown';
+              broadcast('AUTO_BOOKMARK', {
+                topic: currentTopicTitle,
+                cues: cueResult.cues,
+                timestamp: Date.now(),
+              });
+            }
+          }
+        } catch (cueErr) {
+          console.error('[anchor] detect-cues error:', cueErr);
+        }
+      }
+
+      // 6. Process glossary terms
       if (Array.isArray(result.glossaryTerms) && result.glossaryTerms.length > 0) {
         const newTerms: GlossaryEntry[] = result.glossaryTerms.map((t: any) => ({
           term: t.term,

@@ -1,9 +1,21 @@
 import { Router } from 'express';
-import OpenAI from 'openai';
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { config } from '../config.js';
 
-const openai = new OpenAI({ apiKey: config.openai.apiKey, baseURL: config.openai.baseUrl });
-const AI_MODEL = 'claude-sonnet-4.5';
+const bedrock = new BedrockRuntimeClient({ region: config.aws.region });
+const MODEL_ID = 'meta.llama3-70b-instruct-v1:0';
+
+async function callAI(prompt: string, opts?: { temperature?: number; maxTokens?: number }): Promise<string> {
+  const resp = await bedrock.send(new ConverseCommand({
+    modelId: MODEL_ID,
+    messages: [{ role: 'user', content: [{ text: prompt }] }],
+    inferenceConfig: {
+      maxTokens: opts?.maxTokens ?? 1000,
+      temperature: opts?.temperature ?? 0.7,
+    },
+  }));
+  return resp.output?.message?.content?.[0]?.text ?? '';
+}
 
 export const aiRouter = Router();
 
@@ -42,16 +54,7 @@ Requirements:
 - If no topic is given, ask a general engagement/comprehension question
 - The question must work for any academic subject`;
 
-    const completion = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 300,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from AI');
-
+    const content = await callAI(prompt, { temperature: 0.7, maxTokens: 300 });
     const parsed = extractJSON(content);
     if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length < 2) {
       throw new Error('Invalid poll format from AI');
@@ -102,16 +105,7 @@ Guidelines:
 - Keep all text concise — this is rendered in a narrow sidebar panel
 - This must work for ANY academic subject (science, history, literature, business, etc.)`;
 
-    const completion = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 600,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from AI');
-
+    const content = await callAI(prompt, { temperature: 0.3, maxTokens: 600 });
     const parsed = extractJSON(content);
     if (typeof parsed.topicChanged !== 'boolean' || !parsed.topic?.title) {
       throw new Error('Invalid topic-segment format from AI');
@@ -165,16 +159,7 @@ Requirements:
 - Questions must be relevant to the provided topic/transcript
 - If no topic is given, create diverse general-knowledge questions`;
 
-    const completion = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1500,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from AI');
-
+    const content = await callAI(prompt, { temperature: 0.7, maxTokens: 1500 });
     const parsed = extractJSON(content);
     if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
       throw new Error('Invalid quiz format from AI');
@@ -225,16 +210,7 @@ Requirements:
 - Resources should be well-known and relevant (e.g., Khan Academy, Crash Course, relevant textbooks)
 - This must work for ANY academic subject — do not assume math/science`;
 
-    const completion = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1500,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from AI');
-
+    const content = await callAI(prompt, { temperature: 0.7, maxTokens: 1500 });
     const parsed = extractJSON(content);
     if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
       throw new Error('Invalid recovery pack format');
@@ -267,16 +243,7 @@ Respond with ONLY a JSON object:
 
 Look for signals like: "this is important", "remember this", "this will be on the exam", "pay attention to this", "key concept", "make sure you understand", emphasis through repetition, etc.`;
 
-    const completion = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.2,
-      max_tokens: 300,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from AI');
-
+    const content = await callAI(prompt, { temperature: 0.2, maxTokens: 300 });
     const parsed = extractJSON(content);
     res.json({ hasCue: !!parsed.hasCue, cues: Array.isArray(parsed.cues) ? parsed.cues : [] });
   } catch (err) {

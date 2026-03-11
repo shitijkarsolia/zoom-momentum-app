@@ -6,6 +6,8 @@ import { authRouter } from './routes/auth.js';
 import { aiRouter } from './routes/ai.js';
 import { transcriptRouter } from './routes/transcript.js';
 import { bookmarkRouter } from './routes/bookmarks.js';
+import { rtmsRouter } from './routes/rtms.js';
+import { shutdownAllSessions } from './services/rtms-ingest.js';
 
 const app = express();
 
@@ -41,6 +43,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/transcript', transcriptRouter);
 app.use('/api/bookmarks', bookmarkRouter);
+app.use('/api/rtms', rtmsRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -50,5 +53,14 @@ app.get('/api/health', (_req, res) => {
 app.listen(config.port, () => {
   console.log(`[server] running on http://localhost:${config.port}`);
 });
+
+// Graceful shutdown — close RTMS sessions
+function shutdown(signal: string) {
+  console.log(`[server] ${signal} received, shutting down RTMS sessions...`);
+  shutdownAllSessions();
+  process.exit(0);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 export default app;

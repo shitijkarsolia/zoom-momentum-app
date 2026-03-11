@@ -111,6 +111,12 @@ export function DevPreview() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [studentBookmarks, setStudentBookmarks] = useState<{ topic: string; timestamp: number }[]>([]);
 
+  // --- Events Simulation State ---
+  const [simLateJoinInfo, setSimLateJoinInfo] = useState<{ topicCount: number; latestTopic: string } | null>(null);
+  const [simMeetingEnded, setSimMeetingEnded] = useState(false);
+  const [simAutoBookmarkToast, setSimAutoBookmarkToast] = useState(false);
+  const [simActiveSpeaker, setSimActiveSpeaker] = useState<string | null>(null);
+
   const hostTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const studentTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const anchorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -397,15 +403,66 @@ export function DevPreview() {
 
   return (
     <div style={{ display: 'flex', gap: 16, padding: 16, minHeight: '100vh', background: 'var(--zoom-bg)' }}>
-      <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 200, display: 'flex', gap: 8 }}>
+      <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 200, display: 'flex', gap: 8, flexWrap: 'wrap', maxWidth: 600, justifyContent: 'flex-end' }}>
         <button className={`btn ${mode === 'host' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setMode('host')} style={{ fontSize: 12 }}>Host View</button>
         <button className={`btn ${mode === 'student' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setMode('student')} style={{ fontSize: 12 }}>Student View</button>
-        {!showPostClass && (
+        {!showPostClass && !simMeetingEnded && (
           <button className="btn btn-secondary" onClick={handleEndClass}
             style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
             End Class
+          </button>
+        )}
+        {!showPostClass && !simMeetingEnded && (
+          <>
+            <button className="btn btn-secondary" onClick={() => {
+              setSimLateJoinInfo({ topicCount: 3, latestTopic: 'Advanced Applications' });
+            }} style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
+              Sim Late Join
+            </button>
+            <button className="btn btn-secondary" onClick={async () => {
+              setSimMeetingEnded(true);
+              setRecoveryLoading(true);
+              const bookmarksForAI = studentBookmarks.length > 0
+                ? studentBookmarks
+                : anchorTopics.slice(0, 2).map(t => ({ topic: t.title, timestamp: t.startTime }));
+              try {
+                const res = await fetch('/api/ai/recovery-pack', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    bookmarks: bookmarksForAI,
+                    topics: anchorTopics.map(t => ({ title: t.title, bullets: t.bullets })),
+                  }),
+                });
+                const data = await res.json();
+                setRecoveryItems(data.items ?? []);
+              } catch { setRecoveryItems([]); }
+              finally { setRecoveryLoading(false); }
+            }} style={{ fontSize: 11, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
+              Sim Meeting End
+            </button>
+            <button className="btn btn-secondary" onClick={() => {
+              setSimAutoBookmarkToast(true);
+              setTimeout(() => setSimAutoBookmarkToast(false), 3000);
+            }} style={{ fontSize: 11, background: '#dbeafe', color: '#1d4ed8', border: '1px solid #93c5fd' }}>
+              Sim Auto-Bookmark
+            </button>
+            <button className="btn btn-secondary" onClick={() => {
+              setSimActiveSpeaker(simActiveSpeaker ? null : 'Prof. Smith');
+            }} style={{ fontSize: 11, background: '#e0e7ff', color: '#3730a3', border: '1px solid #a5b4fc' }}>
+              {simActiveSpeaker ? 'Clear Speaker' : 'Sim Speaker'}
+            </button>
+          </>
+        )}
+        {(simMeetingEnded || showPostClass) && (
+          <button className="btn btn-secondary" onClick={() => {
+            setSimMeetingEnded(false);
+            setShowPostClass(false);
+            setRecoveryItems([]);
+          }} style={{ fontSize: 12, background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' }}>
+            Reset to Live
           </button>
         )}
       </div>
@@ -421,6 +478,19 @@ export function DevPreview() {
                 recoveryItems={recoveryItems}
                 isLoading={recoveryLoading}
                 onDismiss={() => { setShowPostClass(false); setRecoveryItems([]); }}
+              />
+            </div>
+          </div>
+        ) : simMeetingEnded && mode === 'student' ? (
+          <div className="app-container" style={{ minHeight: 'auto' }}>
+            <div className="card" style={{ flex: 1 }}>
+              <PostClassSummary
+                meetingTitle="Lecture Session"
+                topics={anchorTopics}
+                glossary={anchorGlossary}
+                recoveryItems={recoveryItems}
+                isLoading={recoveryLoading}
+                onDismiss={() => { setSimMeetingEnded(false); setRecoveryItems([]); }}
               />
             </div>
           </div>
@@ -507,11 +577,28 @@ export function DevPreview() {
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="status-bar">
               <span style={{ fontWeight: 600 }}>Momentum</span>
-              <div className="status-indicator">
-                <div className="status-dot connected" />
-                <span>Dev Preview</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {simActiveSpeaker && (
+                  <span style={{ fontSize: 11, color: 'var(--zoom-brand)', fontWeight: 500 }}>
+                    Speaking: {simActiveSpeaker}
+                  </span>
+                )}
+                <div className="status-indicator">
+                  <div className="status-dot connected" />
+                  <span>Dev Preview</span>
+                </div>
               </div>
             </div>
+            {simLateJoinInfo && (
+              <div className="card" style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#e8f0fe', borderLeft: '3px solid #0E71EB' }}>
+                <div style={{ fontSize: 13 }}>
+                  <strong>You joined late.</strong> {simLateJoinInfo.topicCount} topics covered so far. Latest: <em>{simLateJoinInfo.latestTopic}</em>
+                </div>
+                <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11, marginLeft: 8, flexShrink: 0 }} onClick={() => setSimLateJoinInfo(null)}>
+                  Dismiss
+                </button>
+              </div>
+            )}
             <div className="card" style={{ padding: '8px 0 0' }}>
               <div className="tabs">
                 <button className={`tab ${anchorStudentTab === 'timeline' ? 'active' : ''}`}
@@ -548,6 +635,9 @@ export function DevPreview() {
             )}
             {bookmarkToast && (
               <div className="bookmark-toast">Bookmarked</div>
+            )}
+            {simAutoBookmarkToast && (
+              <div className="bookmark-toast" style={{ background: '#1d4ed8' }}>Auto-bookmarked: instructor cue detected</div>
             )}
           </div>
         )}

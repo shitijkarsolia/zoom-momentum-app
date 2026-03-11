@@ -30,8 +30,9 @@ export const config = {
     secret: required('SESSION_SECRET'),
   },
 
-  openai: {
-    baseUrl: optional('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
-    apiKey: optional('OPENAI_API_KEY', ''),
+  aws: {
+    region: optional('AWS_REGION', 'us-east-1'),
   },
+
+  zoom_secret_token: optional('ZOOM_SECRET_TOKEN', ''),
 } as const;
