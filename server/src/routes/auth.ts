@@ -114,6 +114,80 @@ authRouter.post('/callback', async (req, res) => {
   }
 });
 
+// Step 2b: Handle GET redirect from Zoom OAuth consent screen
+authRouter.get('/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+
+    if (!code || typeof code !== 'string') {
+      res.status(400).send('Missing authorization code');
+      return;
+    }
+
+    // Exchange code for access token (no PKCE verifier for browser redirect flow)
+    const tokenRes = await fetch('https://zoom.us/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(
+          `${config.zoom.clientId}:${config.zoom.clientSecret}`,
+        ).toString('base64')}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: config.zoom.redirectUrl,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text();
+      console.error('[auth] GET callback token exchange failed:', err);
+      res.status(401).send('Token exchange failed');
+      return;
+    }
+
+    const tokens = (await tokenRes.json()) as { access_token: string };
+
+    // Fetch user profile
+    const profileRes = await fetch('https://api.zoom.us/v2/users/me', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+
+    if (!profileRes.ok) {
+      res.status(401).send('Failed to fetch user profile');
+      return;
+    }
+
+    const profile = (await profileRes.json()) as {
+      id: string;
+      display_name: string;
+      email: string;
+      role_name: string;
+    };
+
+    // Upsert user in database
+    const user = await prisma.user.upsert({
+      where: { zoomUserId: profile.id },
+      update: { displayName: profile.display_name, email: profile.email },
+      create: {
+        zoomUserId: profile.id,
+        displayName: profile.display_name,
+        email: profile.email,
+        role: profile.role_name === 'Owner' ? 'host' : 'student',
+      },
+    });
+
+    req.session.userId = user.id;
+
+    // Redirect to the app root after successful auth
+    res.redirect('/');
+  } catch (err) {
+    console.error('[auth] GET callback error:', err);
+    res.status(500).send('Internal server error');
+  }
+});
+
 // Step 3: Get current user
 authRouter.get('/me', async (req, res) => {
   if (!req.session.userId) {

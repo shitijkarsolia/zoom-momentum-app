@@ -1,4 +1,8 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env from project root (parent of server/)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 function required(key: string): string {
   const value = process.env[key];
@@ -27,6 +31,6 @@ export const config = {
   },
 
   openai: {
-    apiKey: required('OPENAI_API_KEY'),
+    apiKey: optional('OPENAI_API_KEY', ''),
   },
 } as const;
