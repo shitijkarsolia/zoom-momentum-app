@@ -97,9 +97,12 @@ export function HostDashboard({
     <div className="app-container">
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum — Host</span>
-        <div className="status-indicator">
-          <div className={`status-dot ${connected ? 'connected' : ''}`} />
-          <span>{connected ? 'Connected' : 'Connecting…'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Participants: --</span>
+          <div className="status-indicator">
+            <div className={`status-dot ${connected ? 'connected' : ''}`} />
+            <span>{connected ? 'Connected' : 'Connecting…'}</span>
+          </div>
         </div>
       </div>
 
@@ -110,18 +113,51 @@ export function HostDashboard({
             onClick={() => setActiveTab('pulse')}
           >
             Pulse
+            {pulsePhase === 'live' && (
+              <span style={{
+                display: 'inline-block',
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--zoom-error, #e53935)',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+              }} />
+            )}
           </button>
           <button
             className={`tab ${activeTab === 'arena' ? 'active' : ''}`}
             onClick={() => setActiveTab('arena')}
           >
             Arena
+            {(arenaPhase === 'question' || arenaPhase === 'leaderboard') && (
+              <span style={{
+                display: 'inline-block',
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--zoom-error, #e53935)',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+              }} />
+            )}
           </button>
           <button
             className={`tab ${activeTab === 'anchor' ? 'active' : ''}`}
             onClick={() => setActiveTab('anchor')}
           >
             Anchor
+            {anchorIsPolling && (
+              <span style={{
+                display: 'inline-block',
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--zoom-success, #43a047)',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+              }} />
+            )}
           </button>
         </div>
       </div>

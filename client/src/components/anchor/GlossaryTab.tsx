@@ -20,7 +20,7 @@ export function GlossaryTab({ glossary }: GlossaryTabProps) {
 
   return (
     <div>
-      <h2 className="card-title">Glossary &amp; Formulas</h2>
+      <h2 className="card-title">Glossary &amp; Formulas ({glossary.length})</h2>
       <input
         type="text"
         className="glossary-search"
@@ -32,7 +32,7 @@ export function GlossaryTab({ glossary }: GlossaryTabProps) {
           padding: '8px 12px',
           borderRadius: 8,
           border: '1px solid var(--zoom-border)',
-          background: 'var(--zoom-surface)',
+          background: 'var(--zoom-bg)',
           color: 'var(--zoom-text)',
           fontSize: 13,
           marginBottom: 12,
@@ -40,11 +40,14 @@ export function GlossaryTab({ glossary }: GlossaryTabProps) {
         }}
       />
       {sorted.length === 0 ? (
-        <p style={{ color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
-          {glossary.length === 0
-            ? 'Key terms and formulas will accumulate here during the lecture.'
-            : 'No matching terms found.'}
-        </p>
+        <div className="empty-state">
+          <div className="empty-state-icon">&#128218;</div>
+          <p className="empty-state-text">
+            {glossary.length === 0
+              ? 'Key terms and formulas will accumulate here during the lecture.'
+              : 'No matching terms found.'}
+          </p>
+        </div>
       ) : (
         <div className="glossary-list">
           {sorted.map((entry, i) => (

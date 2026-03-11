@@ -15,9 +15,12 @@ export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) 
     return (
       <div>
         <h2 className="card-title">Live Anchor</h2>
-        <p style={{ color: 'var(--zoom-text-secondary)' }}>
-          Topic summaries will appear here as the lecture progresses.
-        </p>
+        <div className="empty-state">
+          <div className="empty-state-icon">&#9776;</div>
+          <p className="empty-state-text">
+            Topic summaries will appear here as the lecture progresses.
+          </p>
+        </div>
       </div>
     );
   }

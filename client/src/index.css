@@ -66,6 +66,7 @@ body {
 
 .status-dot.connected {
   background: var(--zoom-success);
+  box-shadow: 0 0 4px rgba(46, 164, 79, 0.4);
 }
 
 .card {
@@ -92,7 +93,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 
 .btn-primary {
@@ -104,10 +105,30 @@ body {
   background: var(--zoom-blue-dark);
 }
 
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary:disabled {
+  background: #7fa8ff;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary:disabled:hover {
+  background: #7fa8ff;
+}
+
 .btn-secondary {
   background: var(--zoom-bg);
   color: var(--zoom-text);
   border: 1px solid var(--zoom-border);
+}
+
+.btn-secondary:hover {
+  background: #edeef2;
+  border-color: #d0d0d6;
 }
 
 .loading {
@@ -135,6 +156,11 @@ body {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  transition: color 0.2s, border-bottom-color 0.2s;
+}
+
+.tab:hover:not(.active) {
+  color: var(--zoom-text);
 }
 
 .tab.active {
@@ -200,6 +226,12 @@ body {
   background: var(--zoom-card);
   border: 1px solid var(--zoom-border);
   border-radius: var(--zoom-radius);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.welcome-feature:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .welcome-feature-number {
@@ -498,6 +530,7 @@ body {
   justify-content: center;
   z-index: 100;
   padding: 16px;
+  animation: fade-in 0.2s ease-out;
 }
 
 .poll-card {
@@ -674,7 +707,7 @@ body {
   height: 100%;
   background: var(--zoom-blue);
   border-radius: 4px;
-  transition: width 0.4s ease-out;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   min-width: 2px;
 }
 
@@ -842,6 +875,7 @@ body {
   justify-content: center;
   z-index: 100;
   padding: 16px;
+  animation: fade-in 0.2s ease-out;
 }
 
 .arena-student-card {
@@ -1078,12 +1112,23 @@ body {
   border-radius: var(--zoom-radius);
   border: 1px solid var(--zoom-border);
   background: var(--zoom-card);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  animation: slide-in 0.3s ease-out;
+}
+
+.topic-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .topic-card-current {
   border-color: var(--zoom-blue);
   box-shadow: 0 0 0 1px var(--zoom-blue);
+  background: linear-gradient(135deg, #f0f4ff 0%, var(--zoom-card) 100%);
+}
+
+.topic-card-current:hover {
+  transform: none;
 }
 
 .current-indicator {
@@ -1110,6 +1155,12 @@ body {
   border-radius: var(--zoom-radius);
   border: 1px solid var(--zoom-border);
   background: var(--zoom-card);
+  animation: slide-in 0.3s ease-out;
+  transition: border-color 0.2s;
+}
+
+.glossary-entry:hover {
+  border-color: #c0c0cc;
 }
 
 /* Host anchor controls */
@@ -1212,7 +1263,14 @@ body {
   background: var(--zoom-bg);
   border-radius: var(--zoom-radius);
   padding: 12px;
+  animation: slide-in 0.3s ease-out both;
 }
+
+.recovery-item:nth-child(1) { animation-delay: 0ms; }
+.recovery-item:nth-child(2) { animation-delay: 60ms; }
+.recovery-item:nth-child(3) { animation-delay: 120ms; }
+.recovery-item:nth-child(4) { animation-delay: 180ms; }
+.recovery-item:nth-child(5) { animation-delay: 240ms; }
 
 .recovery-item-header {
   display: flex;
@@ -1393,4 +1451,169 @@ body {
   font-size: 11px;
   margin-left: 4px;
   opacity: 0.7;
+}
+
+/* === Keyframe Animations === */
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* === Empty States === */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--zoom-text-secondary);
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.empty-state-text {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* === Late Join Banner === */
+
+.late-join-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--zoom-radius);
+  font-size: 13px;
+  color: #1e40af;
+  animation: slide-in 0.3s ease-out;
+}
+
+.late-join-banner button {
+  background: none;
+  border: none;
+  color: #1e40af;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 16px;
+}
+
+/* === Active Speaker Indicator === */
+
+.active-speaker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--zoom-success);
+  font-weight: 500;
+  animation: fade-in 0.3s ease-out;
+}
+
+.active-speaker-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--zoom-success);
+  animation: pulse-glow 2s infinite;
+}
+
+/* === Auto-Bookmark Toast === */
+
+.auto-bookmark-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--zoom-success);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 100;
+  animation: toast-fade 3s ease-in-out forwards;
+  box-shadow: 0 4px 12px rgba(46, 164, 79, 0.3);
+}
+
+/* === Scrollbar Styling === */
+
+.timeline-list::-webkit-scrollbar,
+.glossary-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.timeline-list::-webkit-scrollbar-track,
+.glossary-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-list::-webkit-scrollbar-thumb,
+.glossary-list::-webkit-scrollbar-thumb {
+  background: var(--zoom-border);
+  border-radius: 2px;
+}
+
+.timeline-list::-webkit-scrollbar-thumb:hover,
+.glossary-list::-webkit-scrollbar-thumb:hover {
+  background: #c0c0cc;
+}
+
+/* Firefox thin scrollbar */
+.timeline-list,
+.glossary-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--zoom-border) transparent;
+}
+
+/* === Focus States for Accessibility === */
+
+.btn:focus-visible,
+.tab:focus-visible,
+.poll-option:focus-visible,
+.arena-option-btn:focus-visible {
+  outline: 2px solid var(--zoom-blue);
+  outline-offset: 2px;
+}
+
+input:focus-visible {
+  outline: 2px solid var(--zoom-blue);
+  outline-offset: 1px;
+}
+
+/* === Reduced Motion === */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
