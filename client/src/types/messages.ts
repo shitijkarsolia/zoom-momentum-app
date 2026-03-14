@@ -17,7 +17,11 @@ export type MessageType =
   // Professor's Pulse
   | 'POLL_START'
   | 'POLL_RESPONSE'
-  | 'POLL_RESULTS';
+  | 'POLL_RESULTS'
+  // Zoom SDK Events
+  | 'LATE_JOIN_SUMMARY'
+  | 'SPEAKER_SPOTLIGHT'
+  | 'AUTO_BOOKMARK';
 
 export interface AppMessage {
   type: MessageType;

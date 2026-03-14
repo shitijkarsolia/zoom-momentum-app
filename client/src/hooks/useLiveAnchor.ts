@@ -100,7 +100,31 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
         });
       }
 
-      // 5. Process glossary terms
+      // 5. Detect cues for auto-bookmark
+      if (text && text.trim().length >= 20) {
+        try {
+          const cueRes = await fetch('/api/ai/detect-cues', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: text }),
+          });
+          if (cueRes.ok) {
+            const cueResult = await cueRes.json();
+            if (cueResult.hasCue) {
+              const currentTopicTitle = result.topic?.title ?? state.topics.find(t => t.id === state.currentTopicId)?.title ?? 'Unknown';
+              broadcast('AUTO_BOOKMARK', {
+                topic: currentTopicTitle,
+                cues: cueResult.cues,
+                timestamp: Date.now(),
+              });
+            }
+          }
+        } catch (cueErr) {
+          console.error('[anchor] detect-cues error:', cueErr);
+        }
+      }
+
+      // 6. Process glossary terms
       if (Array.isArray(result.glossaryTerms) && result.glossaryTerms.length > 0) {
         const newTerms: GlossaryEntry[] = result.glossaryTerms.map((t: any) => ({
           term: t.term,
@@ -182,10 +206,18 @@ interface AnchorStudentState {
   topics: Topic[];
   currentTopicId: string;
   glossary: GlossaryEntry[];
+  bookmarks: AnchorBookmark[];
 }
 
 interface UseAnchorStudentOptions {
   send: (type: MessageType, payload: unknown) => void;
+}
+
+export interface AnchorBookmark {
+  topic: string;
+  timestamp: number;
+  isAuto: boolean;
+  transcriptSnippet?: string;
 }
 
 export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
@@ -193,6 +225,7 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     topics: [],
     currentTopicId: '',
     glossary: [],
+    bookmarks: [],
   });
 
   const handleTopicUpdate = useCallback((payload: { topic: Topic; topicChanged: boolean }) => {
@@ -221,10 +254,20 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     });
   }, []);
 
-  const bookmarkCurrentTopic = useCallback(async (meetingId: string, userId: string) => {
+  const bookmarkCurrentTopic = useCallback(async (
+    meetingId: string,
+    userId: string,
+    options?: {
+      topicOverride?: string;
+      isAuto?: boolean;
+      transcriptSnippet?: string;
+      timestamp?: number;
+    },
+  ) => {
     if (!userId) return false;
     const topic = state.topics.find(t => t.id === state.currentTopicId);
-    const topicLabel = topic ? topic.title : 'I\'m Confused';
+    const topicLabel = options?.topicOverride || (topic ? topic.title : 'I\'m Confused');
+    const timestamp = options?.timestamp ?? Date.now();
     try {
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
@@ -233,9 +276,22 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
           meetingId,
           userId,
           topic: topicLabel,
-          timestamp: Date.now(),
+          timestamp,
+          transcriptSnippet: options?.transcriptSnippet,
+          isAuto: options?.isAuto ?? false,
         }),
       });
+      if (res.ok) {
+        setState(prev => ({
+          ...prev,
+          bookmarks: [...prev.bookmarks, {
+            topic: topicLabel,
+            timestamp,
+            isAuto: options?.isAuto ?? false,
+            transcriptSnippet: options?.transcriptSnippet,
+          }],
+        }));
+      }
       return res.ok;
     } catch (err) {
       console.error('[anchor] bookmark error:', err);
@@ -247,6 +303,7 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     topics: state.topics,
     currentTopicId: state.currentTopicId,
     glossary: state.glossary,
+    bookmarks: state.bookmarks,
     handleTopicUpdate,
     handleGlossaryUpdate,
     bookmarkCurrentTopic,

@@ -11,14 +11,31 @@ export function TopicCard({ topic, isCurrent, onBookmark }: TopicCardProps) {
   const timeLabel = elapsed < 1 ? 'Just now' : `${elapsed}m ago`;
 
   return (
-    <div className={`topic-card ${isCurrent ? 'topic-card-current' : ''}`}>
+    <div
+      className={`topic-card ${isCurrent ? 'topic-card-current' : ''}`}
+      style={isCurrent ? { borderLeft: '3px solid var(--zoom-blue)' } : undefined}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
           {isCurrent && <span className="current-indicator" />}
           {topic.title}
         </h3>
-        <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', flexShrink: 0 }}>
-          {timeLabel}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {topic.bullets.length > 0 && (
+            <span style={{
+              fontSize: 10,
+              color: 'var(--zoom-text-secondary)',
+              background: 'var(--zoom-bg)',
+              padding: '1px 6px',
+              borderRadius: 8,
+              fontWeight: 500,
+            }}>
+              {topic.bullets.length} key point{topic.bullets.length !== 1 ? 's' : ''}
+            </span>
+          )}
+          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>
+            {timeLabel}
+          </span>
         </span>
       </div>
       {topic.bullets.length > 0 && (

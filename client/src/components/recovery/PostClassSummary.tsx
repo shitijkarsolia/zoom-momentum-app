@@ -41,10 +41,24 @@ export function PostClassSummary({
           <span className="stat-number">{glossary.length}</span>
           <span className="stat-label">Terms Learned</span>
         </div>
+        {recoveryItems.length > 0 && (
+          <div className="stat-card">
+            <span className="stat-number">{recoveryItems.length}</span>
+            <span className="stat-label">Bookmarks</span>
+          </div>
+        )}
+        {topics.length >= 2 && (
+          <div className="stat-card">
+            <span className="stat-number">
+              {Math.round(((topics[topics.length - 1]?.startTime ?? 0) - (topics[0]?.startTime ?? 0)) / 60_000)}m
+            </span>
+            <span className="stat-label">Duration</span>
+          </div>
+        )}
       </div>
 
       {topics.length > 0 && (
-        <div className="post-class-section">
+        <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
           <h3 className="post-class-section-title">Topics Covered</h3>
           <div className="post-class-topics">
             {topics.map(topic => (
@@ -62,7 +76,7 @@ export function PostClassSummary({
       )}
 
       {glossary.length > 0 && (
-        <div className="post-class-section">
+        <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
           <h3 className="post-class-section-title">Key Terms</h3>
           <div className="post-class-terms">
             {glossary.slice(0, 6).map((entry, i) => (
@@ -75,7 +89,7 @@ export function PostClassSummary({
         </div>
       )}
 
-      <div className="post-class-section">
+      <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
           <h3 className="post-class-section-title">Your Recovery Pack</h3>
         {isLoading ? (
           <div className="recovery-loading">

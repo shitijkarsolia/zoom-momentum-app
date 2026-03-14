@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { resolveMeetingId } from '../services/meeting-resolver.js';
 
 const prisma = new PrismaClient();
 export const bookmarkRouter = Router();
@@ -14,10 +15,28 @@ bookmarkRouter.post('/', async (req, res) => {
       return;
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) {
+      res.status(400).json({ error: 'Invalid userId' });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, {
+      createIfMissing: true,
+      defaultTitle: 'Lecture Session',
+    });
+    if (!resolvedMeetingId) {
+      res.status(400).json({ error: 'Invalid meetingId' });
+      return;
+    }
+
     const bookmark = await prisma.bookmark.create({
       data: {
         userId,
-        meetingId,
+        meetingId: resolvedMeetingId,
         timestamp: BigInt(timestamp ?? Date.now()),
         topic,
         transcriptSnippet: transcriptSnippet ?? null,
@@ -42,8 +61,14 @@ bookmarkRouter.get('/', async (req, res) => {
       return;
     }
 
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json([]);
+      return;
+    }
+
     const bookmarks = await prisma.bookmark.findMany({
-      where: { meetingId, userId },
+      where: { meetingId: resolvedMeetingId, userId },
       orderBy: { createdAt: 'asc' },
     });
 
