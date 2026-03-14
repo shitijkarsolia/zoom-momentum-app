@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { resolveMeetingId } from './meeting-resolver.js';
 
 const prisma = new PrismaClient();
 
@@ -183,25 +184,18 @@ async function storeSegment(
   const session = activeSessions.get(meetingUuid);
   const seqNo = session ? ++session.seqCounter : Date.now();
 
-  // Try to find a Meeting record by zoomMeetingId; if none exists, log and skip.
-  // Segments arriving before the host opens the app are expected — we still
-  // store them using the zoom meeting UUID as a lookup key. The transcript
-  // route already accepts a meetingId string (the internal UUID), so we need
-  // to resolve it first.
-  const meeting = await prisma.meeting.findUnique({
-    where: { zoomMeetingId: meetingUuid },
+  const meetingId = await resolveMeetingId(meetingUuid, {
+    createIfMissing: true,
+    defaultTitle: 'RTMS Session',
   });
-
-  if (!meeting) {
-    // No Meeting record yet — this is normal if RTMS starts before the host
-    // opens the side panel. Log a debug message and discard the segment.
-    console.log(`[rtms-ingest] No Meeting record for zoom UUID ${meetingUuid}, skipping segment`);
+  if (!meetingId) {
+    console.error(`[rtms-ingest] Failed to resolve meeting for zoom UUID ${meetingUuid}`);
     return;
   }
 
   await prisma.transcriptSegment.create({
     data: {
-      meetingId: meeting.id,
+      meetingId,
       speaker: data.speaker,
       text: data.text,
       timestamp: BigInt(data.timestamp ?? Date.now()),

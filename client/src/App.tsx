@@ -9,7 +9,9 @@ import { useZoomEvents } from './hooks/useZoomEvents';
 import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
-import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry } from './types/messages';
+import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry, AppState } from './types/messages';
+
+const ARENA_TIME_LIMIT_SEC = 15;
 
 export default function App() {
   const zoom = useZoomSdk();
@@ -58,7 +60,44 @@ export default function App() {
         }
       } else {
         if (message.type === 'FULL_STATE') {
-          zoomEvents.handleFullState(message.payload);
+          const payload = message.payload as AppState | null;
+          zoomEvents.handleFullState(payload);
+
+          if (!payload) return;
+
+          const fullStatePoll = payload.pulse?.activePoll;
+          if (fullStatePoll) {
+            if (fullStatePoll.results || typeof fullStatePoll.totalResponses === 'number') {
+              pulseStudent.handlePollResults(fullStatePoll as Poll);
+            } else {
+              pulseStudent.handlePollStart(fullStatePoll as Poll);
+            }
+          }
+
+          const arenaQuestions = payload.arena?.questions ?? [];
+          const arenaIndex = payload.arena?.currentQuestion ?? 0;
+          const arenaQuestion = arenaQuestions[arenaIndex];
+          if (arenaQuestion) {
+            arenaStudent.handleArenaStart();
+            arenaStudent.handleQuestion({
+              index: arenaIndex,
+              total: arenaQuestions.length,
+              question: arenaQuestion.question,
+              options: arenaQuestion.options,
+              timeLimitSec: ARENA_TIME_LIMIT_SEC,
+            });
+          } else if (payload.arena?.leaderboard?.length) {
+            arenaStudent.handleArenaEnd({ leaderboard: payload.arena.leaderboard });
+          }
+
+          if (Array.isArray(payload.liveAnchor?.topics)) {
+            for (const topic of payload.liveAnchor.topics) {
+              anchorStudent.handleTopicUpdate({ topic, topicChanged: true });
+            }
+          }
+          if (Array.isArray(payload.liveAnchor?.glossary) && payload.liveAnchor.glossary.length > 0) {
+            anchorStudent.handleGlossaryUpdate({ terms: payload.liveAnchor.glossary });
+          }
         } else if (message.type === 'POLL_START') {
           pulseStudent.handlePollStart(message.payload as Poll);
         } else if (message.type === 'POLL_RESULTS') {
@@ -81,10 +120,24 @@ export default function App() {
           anchorStudent.handleGlossaryUpdate(message.payload as { terms: GlossaryEntry[] });
         } else if (message.type === 'AUTO_BOOKMARK') {
           // Auto-create bookmark when host detects important cues
-          const abPayload = message.payload as { topic: string; cues: string[]; timestamp: number };
+          const abPayload = message.payload as {
+            topic: string;
+            cues: Array<{ phrase?: string; reason?: string }>;
+            timestamp: number;
+          };
           console.log('[App] Auto-bookmark triggered:', abPayload.topic, abPayload.cues);
-          if (zoom.meetingId && zoom.participantId) {
-            anchorStudent.bookmarkCurrentTopic(zoom.meetingId, zoom.participantId);
+          const authUserId = auth.user?.id;
+          if (zoom.meetingId && authUserId) {
+            const cueSnippet = Array.isArray(abPayload.cues)
+              ? abPayload.cues.map((cue) => cue?.phrase ?? cue?.reason ?? '').filter(Boolean).join(' | ')
+              : undefined;
+            anchorStudent.bookmarkCurrentTopic(zoom.meetingId, authUserId, {
+              isAuto: true,
+              topicOverride: abPayload.topic,
+              transcriptSnippet: cueSnippet || undefined,
+            });
+          } else {
+            console.log('[App] Auto-bookmark skipped: user is not signed in');
           }
         } else if (message.type === 'SPEAKER_SPOTLIGHT') {
           const spPayload = message.payload as { speakerName: string; participantId: string; timestamp: number };
@@ -109,7 +162,54 @@ export default function App() {
     anchorStudent.handleTopicUpdate,
     anchorStudent.handleGlossaryUpdate,
     anchorStudent.bookmarkCurrentTopic,
+    auth.user?.id,
     zoomEvents.handleFullState,
+  ]);
+
+  useEffect(() => {
+    if (!zoom.isHost) return;
+
+    const isArenaActive = arenaHost.phase === 'question' || arenaHost.phase === 'leaderboard';
+    const appPhase: AppState['phase'] = isArenaActive ? 'arena' : 'lecture';
+
+    const stateSnapshot: AppState = {
+      phase: appPhase,
+      arena: {
+        active: isArenaActive,
+        currentQuestion: arenaHost.currentIndex,
+        questions: arenaHost.questions,
+        answers: new Map(),
+        leaderboard: arenaHost.leaderboard,
+      },
+      liveAnchor: {
+        topics: anchorHost.topics,
+        currentTopicId: anchorHost.currentTopicId,
+        glossary: anchorHost.glossary,
+      },
+      pulse: {
+        activePoll: pulseHost.activePoll,
+        pollHistory: pulseHost.activePoll ? [pulseHost.activePoll] : [],
+      },
+      meeting: {
+        id: zoom.meetingId,
+        startTime: 0,
+        participantCount: 0,
+      },
+    };
+
+    messaging.setState(stateSnapshot);
+  }, [
+    zoom.isHost,
+    zoom.meetingId,
+    messaging.setState,
+    arenaHost.phase,
+    arenaHost.currentIndex,
+    arenaHost.questions,
+    arenaHost.leaderboard,
+    anchorHost.topics,
+    anchorHost.currentTopicId,
+    anchorHost.glossary,
+    pulseHost.activePoll,
   ]);
 
   if (!zoom.isConfigured && !zoom.error) {
@@ -224,8 +324,10 @@ export default function App() {
       anchorTopics={anchorStudent.topics}
       anchorCurrentTopicId={anchorStudent.currentTopicId}
       anchorGlossary={anchorStudent.glossary}
+      anchorBookmarks={anchorStudent.bookmarks}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
       authUserId={auth.user?.id ?? null}
+      meetingId={zoom.meetingId}
       meetingEnded={zoomEvents.meetingEnded}
       lateJoinInfo={zoomEvents.lateJoinInfo}
       onDismissLateJoin={zoomEvents.dismissLateJoinInfo}

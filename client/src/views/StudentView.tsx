@@ -7,6 +7,7 @@ import { GlossaryTab } from '../components/anchor/GlossaryTab';
 import { PostClassSummary } from '../components/recovery/PostClassSummary';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { Poll, Topic, GlossaryEntry } from '../types/messages';
+import type { AnchorBookmark } from '../hooks/useLiveAnchor';
 
 const TAB_INFO = {
   timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
@@ -22,6 +23,7 @@ interface StudentViewProps {
   onSignIn?: () => void;
   signInLoading?: boolean;
   authUserId?: string | null;
+  meetingId: string;
   // Pulse props
   activePoll: Poll | null;
   selectedOption: number | null;
@@ -48,6 +50,7 @@ interface StudentViewProps {
   anchorTopics: Topic[];
   anchorCurrentTopicId: string;
   anchorGlossary: GlossaryEntry[];
+  anchorBookmarks: AnchorBookmark[];
   onBookmark: (meetingId: string, userId: string) => Promise<boolean>;
   // Events props (wired by Events teammate)
   meetingEnded?: boolean;
@@ -68,6 +71,7 @@ export function StudentView({
   onSignIn,
   signInLoading = false,
   authUserId = null,
+  meetingId,
   activePoll,
   selectedOption,
   hasAnswered,
@@ -86,6 +90,7 @@ export function StudentView({
   anchorTopics,
   anchorCurrentTopicId,
   anchorGlossary,
+  anchorBookmarks,
   onBookmark,
   meetingEnded = false,
   lateJoinInfo,
@@ -100,10 +105,22 @@ export function StudentView({
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
-    if (!meetingEnded) return;
+    if (!meetingEnded || !authUserId || !meetingId) return;
     let cancelled = false;
     setRecoveryLoading(true);
-    const bookmarks = anchorTopics.map(t => ({ topic: t.title, timestamp: t.startTime }));
+    const bookmarks = anchorBookmarks.map((bookmark) => ({
+      topic: bookmark.topic,
+      timestamp: bookmark.timestamp,
+      transcriptSnippet: bookmark.transcriptSnippet,
+      isAuto: bookmark.isAuto,
+    }));
+
+    if (bookmarks.length === 0) {
+      setRecoveryItems([]);
+      setRecoveryLoading(false);
+      return;
+    }
+
     fetch('/api/ai/recovery-pack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,7 +134,7 @@ export function StudentView({
       .catch(() => { if (!cancelled) setRecoveryItems([]); })
       .finally(() => { if (!cancelled) setRecoveryLoading(false); });
     return () => { cancelled = true; };
-  }, [meetingEnded, anchorTopics]);
+  }, [meetingEnded, authUserId, meetingId, anchorBookmarks, anchorTopics]);
 
   const showArena = arenaPhase !== 'waiting' || arenaCurrentQuestion !== null;
 
@@ -127,12 +144,17 @@ export function StudentView({
       setTimeout(() => setBookmarkToast(null), 2800);
       return;
     }
-    const ok = await onBookmark('current-meeting', authUserId);
+    if (!meetingId) {
+      setBookmarkToast('Meeting not detected');
+      setTimeout(() => setBookmarkToast(null), 2200);
+      return;
+    }
+    const ok = await onBookmark(meetingId, authUserId);
     if (ok) {
       setBookmarkToast(BOOKMARK_SAVED);
       setTimeout(() => setBookmarkToast(null), 2200);
     }
-  }, [onBookmark, authUserId]);
+  }, [onBookmark, authUserId, meetingId]);
 
   // Show PostClassSummary when meeting has ended
   if (meetingEnded) {

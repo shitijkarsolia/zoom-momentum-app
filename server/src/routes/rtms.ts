@@ -14,7 +14,7 @@ export const rtmsRouter = Router();
 // ---------------------------------------------------------------------------
 
 function verifyWebhookSignature(req: { headers: Record<string, any>; body: any }): boolean {
-  const secret = config.zoom.clientSecret;
+  const secret = config.zoom_secret_token || config.zoom.clientSecret;
 
   const signature = req.headers['x-zm-signature'] as string | undefined;
   const timestamp = req.headers['x-zm-request-timestamp'] as string | undefined;
