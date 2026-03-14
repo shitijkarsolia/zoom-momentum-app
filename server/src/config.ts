@@ -1,4 +1,8 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env from project root (parent of server/)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 function required(key: string): string {
   const value = process.env[key];
@@ -26,8 +30,9 @@ export const config = {
     secret: required('SESSION_SECRET'),
   },
 
-  openai: {
-    baseUrl: optional('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
-    apiKey: required('OPENAI_API_KEY'),
+  aws: {
+    region: optional('AWS_REGION', 'us-east-1'),
   },
+
+  zoom_secret_token: optional('ZOOM_SECRET_TOKEN', ''),
 } as const;
