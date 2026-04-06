@@ -73,6 +73,14 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 - Cross-region inference profile IDs required (`us.` prefix)
 - IAM role: `zoom-momentum-ec2-role`
 
+## Zoom SDK Integration (IMPORTANT)
+
+- **Do NOT use `import zoomSdk from '@zoom/appssdk'`** — the npm package creates a separate SDK instance that lacks the native bridge in ZoomWebKit. This causes `config()` to timeout.
+- **Use `(window as any).zoomSdk`** — the CDN script tag (`sdk.js`) in `index.html` creates the global `window.zoomSdk` which has the native bridge connected to the Zoom client.
+- The `index.html` must include `<script src="https://appssdk.zoom.us/sdk.js"></script>` before the app bundle.
+- All four hooks (`useZoomSdk`, `useMessaging`, `useZoomAuth`, `useZoomEvents`) use `window.zoomSdk` with a guard for when running outside Zoom (DevPreview).
+- Server must serve production build via Express (port 3001) with ngrok tunneling to 3001 — not through Vite dev server.
+
 ## Known Bugs
 
 1. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.

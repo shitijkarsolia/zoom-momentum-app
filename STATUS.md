@@ -4,11 +4,13 @@ Last updated: April 6, 2026
 
 ## Current State
 
-The app builds and runs locally. All core features are code-complete and tested in DevPreview with real CS50 lecture data. One blocker remains: the app won't load inside a real Zoom meeting.
+The app builds, runs locally, and **loads inside a real Zoom meeting**. All core features are code-complete and tested in DevPreview with real CS50 lecture data. The SDK config timeout blocker has been resolved.
 
-### Blocker
+### Resolved Blockers
 
-**SDK Config Timeout** — The app times out when loading inside the Zoom side panel (`config took longer than 10000ms`). It worked briefly with one ngrok URL, then broke after URL changes. Needs: verify all Marketplace settings match the static ngrok domain, re-add app via Local Test, check browser console inside Zoom for specific errors.
+1. ~~**SDK Config Timeout**~~ — Fixed. Root cause: the npm `@zoom/appssdk` package creates a separate SDK instance without the native bridge in ZoomWebKit. Solution: use `window.zoomSdk` from the CDN script tag instead. Server must serve production build via Express (not Vite dev server).
+
+2. ~~**Mock Transcript FK Bug**~~ — Fixed. `transcript.ts` now uses `meeting-resolver` + upsert.
 
 ---
 
@@ -34,7 +36,7 @@ The app builds and runs locally. All core features are code-complete and tested 
 
 ## Known Bugs
 
-1. **[Critical] SDK config timeout** — App won't load inside Zoom meeting side panel.
+1. ~~**[Critical] SDK config timeout**~~ — FIXED. Used `window.zoomSdk` instead of npm import.
 2. **[Medium] Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
 3. **[Medium] AI topic-segment silent failure** — `ai.ts` returns a fake success response when the AI call fails.
 4. **[Medium] Anchor topic dedup** — AI sometimes generates slightly different titles for the same topic across polls. Substring matching helps but isn't perfect.
