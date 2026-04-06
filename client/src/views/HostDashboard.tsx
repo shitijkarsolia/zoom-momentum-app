@@ -38,7 +38,9 @@ interface HostDashboardProps {
   arenaCountdown: number;
   arenaLeaderboard: LeaderboardEntry[];
   arenaError: string | null;
+  arenaQuestions: Question[];
   onArenaFetchQuestions: (topic?: string) => void;
+  onArenaUpdateQuestion: (index: number, updates: Partial<Question>) => void;
   onArenaStartGame: () => void;
   onArenaShowLeaderboard: () => void;
   onArenaNextQuestion: () => void;
@@ -77,7 +79,9 @@ export function HostDashboard({
   arenaCountdown,
   arenaLeaderboard,
   arenaError,
+  arenaQuestions,
   onArenaFetchQuestions,
+  onArenaUpdateQuestion,
   onArenaStartGame,
   onArenaShowLeaderboard,
   onArenaNextQuestion,
@@ -198,7 +202,9 @@ export function HostDashboard({
             countdown={arenaCountdown}
             leaderboard={arenaLeaderboard}
             error={arenaError}
+            questions={arenaQuestions}
             onFetchQuestions={onArenaFetchQuestions}
+            onUpdateQuestion={onArenaUpdateQuestion}
             onStartGame={onArenaStartGame}
             onShowLeaderboard={onArenaShowLeaderboard}
             onNextQuestion={onArenaNextQuestion}

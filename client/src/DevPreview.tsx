@@ -22,9 +22,12 @@ const HOST_TAB_INFO: Record<string, string> = {
   anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
 };
 const STUDENT_TAB_INFO: Record<string, string> = {
-  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
+  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "Mark for Review" to bookmark moments for review after class.',
   glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
+  transcript: 'Live transcript of the lecture, updated every 10 seconds. Key terms are highlighted.',
 };
+import { BookmarkList } from './components/anchor/BookmarkList';
+import { TranscriptTab } from './components/anchor/TranscriptTab';
 import type { ArenaHostPhase, ArenaStudentPhase } from './hooks/useArena';
 
 interface RecoveryItem {
@@ -102,7 +105,7 @@ export function DevPreview() {
   const [anchorCurrentTopicId, setAnchorCurrentTopicId] = useState('');
   const [anchorGlossary, setAnchorGlossary] = useState<GlossaryEntry[]>([]);
   const [anchorIsPolling, setAnchorIsPolling] = useState(false);
-  const [anchorStudentTab, setAnchorStudentTab] = useState<'timeline' | 'glossary'>('timeline');
+  const [anchorStudentTab, setAnchorStudentTab] = useState<'timeline' | 'glossary' | 'transcript'>('timeline');
   const [bookmarkToast, setBookmarkToast] = useState(false);
 
   // --- Recovery State ---
@@ -408,6 +411,9 @@ export function DevPreview() {
           onClick={() => setMode('host')} style={{ fontSize: 12 }}>Host View</button>
         <button className={`btn ${mode === 'student' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setMode('student')} style={{ fontSize: 12 }}>Student View</button>
+        <span style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', alignSelf: 'center', maxWidth: 140 }}>
+          Toggle views here. In Zoom, host and students run on separate devices.
+        </span>
         {!showPostClass && !simMeetingEnded && (
           <button className="btn btn-secondary" onClick={handleEndClass}
             style={{ fontSize: 12, background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
@@ -539,7 +545,22 @@ export function DevPreview() {
                   countdown={arenaHostCountdown}
                   leaderboard={arenaLeaderboard}
                   error={arenaError}
+                  questions={arenaQuestions}
                   onFetchQuestions={handleFetchQuestions}
+                  onUpdateQuestion={(index, updates) => {
+                    setArenaQuestions(prev => {
+                      const next = [...prev];
+                      const existing = next[index];
+                      if (!existing) return prev;
+                      next[index] = {
+                        question: updates.question ?? existing.question,
+                        options: updates.options ?? existing.options,
+                        correctIndex: updates.correctIndex ?? existing.correctIndex,
+                        explanation: updates.explanation ?? existing.explanation,
+                      };
+                      return next;
+                    });
+                  }}
                   onStartGame={handleStartGame}
                   onShowLeaderboard={handleShowLeaderboard}
                   onNextQuestion={handleNextQuestion}
@@ -605,11 +626,13 @@ export function DevPreview() {
                   onClick={() => setAnchorStudentTab('timeline')}>Timeline</button>
                 <button className={`tab ${anchorStudentTab === 'glossary' ? 'active' : ''}`}
                   onClick={() => setAnchorStudentTab('glossary')}>Glossary</button>
+                <button className={`tab ${anchorStudentTab === 'transcript' ? 'active' : ''}`}
+                  onClick={() => setAnchorStudentTab('transcript')}>Transcript</button>
               </div>
             </div>
             <div className="card" style={{ flex: 1 }}>
               <div className="tab-info-bar">
-                <FeatureInfo title={anchorStudentTab === 'timeline' ? 'Timeline' : 'Glossary'} description={STUDENT_TAB_INFO[anchorStudentTab] ?? ''} />
+                <FeatureInfo title={anchorStudentTab === 'timeline' ? 'Timeline' : anchorStudentTab === 'glossary' ? 'Glossary' : 'Transcript'} description={STUDENT_TAB_INFO[anchorStudentTab] ?? ''} />
               </div>
               {anchorStudentTab === 'timeline' ? (
                 <div>
@@ -623,11 +646,14 @@ export function DevPreview() {
                     style={{ marginTop: 12, width: '100%' }}
                     onClick={handleBookmark}
                   >
-                    I'm Confused
+                    Mark for Review
                   </button>
+                  <BookmarkList bookmarks={studentBookmarks.map(b => ({ ...b, isAuto: false }))} />
                 </div>
-              ) : (
+              ) : anchorStudentTab === 'glossary' ? (
                 <GlossaryTab glossary={anchorGlossary} />
+              ) : (
+                <TranscriptTab meetingId="mock-meeting-001" glossary={anchorGlossary} />
               )}
             </div>
             {studentResults && (

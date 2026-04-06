@@ -12,7 +12,9 @@ interface ArenaHostProps {
   countdown: number;
   leaderboard: LeaderboardEntry[];
   error: string | null;
+  questions: Question[];
   onFetchQuestions: (topic?: string) => void;
+  onUpdateQuestion: (index: number, updates: Partial<Question>) => void;
   onStartGame: () => void;
   onShowLeaderboard: () => void;
   onNextQuestion: () => void;
@@ -28,32 +30,38 @@ export function ArenaHost({
   countdown,
   leaderboard,
   error,
+  questions,
   onFetchQuestions,
+  onUpdateQuestion,
   onStartGame,
   onShowLeaderboard,
   onNextQuestion,
   onReset,
 }: ArenaHostProps) {
   const [topic, setTopic] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   if (phase === 'idle' || phase === 'loading') {
     return (
       <div className="arena-host">
-        <h2 className="card-title">Warm-Up Arena</h2>
+        <h2 className="card-title">Arena</h2>
         <p className="arena-description">
-          Launch a trivia game to review last lecture's material before class begins.
+          Generate a timed quiz for your students. AI creates questions from any topic — review material, test comprehension, or just have fun.
         </p>
 
         <div className="arena-topic-input">
-          <label htmlFor="arena-topic">Topic (optional)</label>
+          <label htmlFor="arena-topic">Topic</label>
           <input
             id="arena-topic"
             type="text"
-            placeholder="e.g., 'Cell Biology — mitosis and meiosis'"
+            placeholder="e.g., 'Binary and ASCII encoding' or 'Chapter 3 review'"
             value={topic}
             onChange={e => setTopic(e.target.value)}
             disabled={phase === 'loading'}
           />
+          <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
+            Leave blank for general knowledge questions. Be specific for better results.
+          </p>
         </div>
 
         {error && <p className="poll-error">{error}</p>}
@@ -78,16 +86,95 @@ export function ArenaHost({
   if (phase === 'ready') {
     return (
       <div className="arena-host">
-        <h2 className="card-title">Quiz Ready</h2>
-        <p className="arena-description">
-          {totalQuestions} questions loaded. Students will see questions one at a time with a {15}s timer.
+        <h2 className="card-title">Review Questions</h2>
+        <p className="arena-description" style={{ marginBottom: 12 }}>
+          {questions.length} questions ready. Review and edit before starting. Students get 15 seconds per question.
         </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          {questions.map((q, qi) => (
+            <div key={qi} style={{ border: '1px solid var(--zoom-border)', borderRadius: 8, padding: 12 }}>
+              {editingIndex === qi ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={q.question}
+                    onChange={e => onUpdateQuestion(qi, { question: e.target.value })}
+                    style={{ fontSize: 13, padding: '6px 8px', borderRadius: 4, border: '1px solid var(--zoom-border)' }}
+                  />
+                  {q.options.map((opt, oi) => (
+                    <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 11, fontWeight: 600, width: 20, textAlign: 'center',
+                          color: oi === q.correctIndex ? 'var(--zoom-success, #43a047)' : 'var(--zoom-text-secondary)',
+                        }}
+                      >
+                        {String.fromCharCode(65 + oi)}
+                      </span>
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={e => {
+                          const newOptions = [...q.options];
+                          newOptions[oi] = e.target.value;
+                          onUpdateQuestion(qi, { options: newOptions });
+                        }}
+                        style={{ flex: 1, fontSize: 12, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--zoom-border)' }}
+                      />
+                      <button
+                        type="button"
+                        style={{
+                          fontSize: 10, padding: '2px 6px', borderRadius: 4, cursor: 'pointer',
+                          background: oi === q.correctIndex ? 'var(--zoom-success, #43a047)' : 'var(--zoom-bg)',
+                          color: oi === q.correctIndex ? '#fff' : 'var(--zoom-text-secondary)',
+                          border: '1px solid var(--zoom-border)',
+                        }}
+                        onClick={() => onUpdateQuestion(qi, { correctIndex: oi })}
+                      >
+                        {oi === q.correctIndex ? 'Correct' : 'Set correct'}
+                      </button>
+                    </div>
+                  ))}
+                  <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 8px', alignSelf: 'flex-end' }} onClick={() => setEditingIndex(null)}>
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <div style={{ cursor: 'pointer' }} onClick={() => setEditingIndex(qi)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>
+                      <span style={{ color: 'var(--zoom-text-secondary)', marginRight: 6 }}>Q{qi + 1}.</span>
+                      {q.question}
+                    </p>
+                    <span style={{ fontSize: 10, color: 'var(--zoom-brand)', flexShrink: 0, marginLeft: 8 }}>Edit</span>
+                  </div>
+                  <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {q.options.map((opt, oi) => (
+                      <span
+                        key={oi}
+                        style={{
+                          fontSize: 11, padding: '2px 8px', borderRadius: 4,
+                          background: oi === q.correctIndex ? 'var(--zoom-success, #43a047)' : 'var(--zoom-bg)',
+                          color: oi === q.correctIndex ? '#fff' : 'var(--zoom-text)',
+                        }}
+                      >
+                        {String.fromCharCode(65 + oi)}) {opt}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="arena-ready-actions">
           <button className="btn btn-secondary" onClick={onReset}>
-            Back
+            Regenerate
           </button>
           <button className="btn btn-primary" onClick={onStartGame}>
-            Start Trivia
+            Start Game
           </button>
         </div>
       </div>
@@ -117,10 +204,13 @@ export function ArenaHost({
 
         <div className="arena-live-stats">
           <span>{responseCount} {responseCount === 1 ? 'answer' : 'answers'} received</span>
-          <button className="btn btn-primary" onClick={onShowLeaderboard}>
-            Show Results
+          <button className="btn btn-secondary" onClick={onShowLeaderboard} style={{ fontSize: 12 }}>
+            Skip to Results
           </button>
         </div>
+        <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
+          Auto-advances when timer ends
+        </p>
       </div>
     );
   }
@@ -136,6 +226,9 @@ export function ArenaHost({
         <button className="btn btn-primary arena-next-btn" onClick={onNextQuestion}>
           {isLast ? 'Final Results' : `Next Question (Q${currentIndex + 2})`}
         </button>
+        <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
+          Auto-advances in 5 seconds
+        </p>
       </div>
     );
   }

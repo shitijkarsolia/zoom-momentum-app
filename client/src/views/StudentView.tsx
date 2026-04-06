@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { PollCard } from '../components/pulse/PollCard';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaStudent } from '../components/arena/ArenaStudent';
@@ -7,11 +7,15 @@ import { GlossaryTab } from '../components/anchor/GlossaryTab';
 import { PostClassSummary } from '../components/recovery/PostClassSummary';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { Poll, Topic, GlossaryEntry } from '../types/messages';
+import { BookmarkList } from '../components/anchor/BookmarkList';
 import type { AnchorBookmark } from '../hooks/useLiveAnchor';
 
+import { TranscriptTab } from '../components/anchor/TranscriptTab';
+
 const TAB_INFO = {
-  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
+  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "Mark for Review" to bookmark moments for review after class.',
   glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
+  transcript: 'Live transcript of the lecture, updated every 10 seconds. Key terms are highlighted.',
 } as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
@@ -62,7 +66,7 @@ interface StudentViewProps {
 const BOOKMARK_SAVED = 'Bookmarked';
 const BOOKMARK_SIGN_IN = 'Sign in to save bookmarks';
 
-type StudentTab = 'timeline' | 'glossary';
+type StudentTab = 'timeline' | 'glossary' | 'transcript';
 
 export function StudentView({
   userName,
@@ -99,6 +103,17 @@ export function StudentView({
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+  const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
+
+  // Auto-dismiss poll results after 8s
+  const pollResultsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (pollResults) {
+      setPollResultsDismissed(false);
+      pollResultsTimerRef.current = setTimeout(() => setPollResultsDismissed(true), 8000);
+      return () => { if (pollResultsTimerRef.current) clearTimeout(pollResultsTimerRef.current); };
+    }
+  }, [pollResults]);
 
   // --- Recovery state for meeting end ---
   const [recoveryItems, setRecoveryItems] = useState<{ topic: string; explanation: string; practice: string; resource: string }[]>([]);
@@ -232,12 +247,21 @@ export function StudentView({
           >
             Glossary
           </button>
+          <button
+            className={`tab ${activeTab === 'transcript' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transcript')}
+          >
+            Transcript
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
         <div className="tab-info-bar">
-          <FeatureInfo title={activeTab === 'timeline' ? 'Timeline' : 'Glossary'} description={TAB_INFO[activeTab]} />
+          <FeatureInfo
+            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : 'Transcript'}
+            description={TAB_INFO[activeTab]}
+          />
         </div>
         {activeTab === 'timeline' && (
           <div>
@@ -251,12 +275,16 @@ export function StudentView({
               style={{ marginTop: 12, width: '100%' }}
               onClick={handleBookmark}
             >
-              I'm Confused
+              Mark for Review
             </button>
+            <BookmarkList bookmarks={anchorBookmarks} />
           </div>
         )}
         {activeTab === 'glossary' && (
           <GlossaryTab glossary={anchorGlossary} />
+        )}
+        {activeTab === 'transcript' && (
+          <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} />
         )}
       </div>
 
@@ -264,8 +292,8 @@ export function StudentView({
         <div className="bookmark-toast">{bookmarkToast}</div>
       )}
 
-      {pollResults && (
-        <div className="card">
+      {pollResults && !pollResultsDismissed && (
+        <div className="card poll-results-fade">
           <PollResults poll={pollResults} />
         </div>
       )}
