@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import zoomSdk from '@zoom/appssdk';
 import type { AppMessage, AppState, MessageType } from '../types/messages';
+
+const zoomSdk = (window as any).zoomSdk as any | undefined;
 
 interface UseMessagingOptions {
   isHost: boolean;
@@ -45,7 +46,7 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
     };
 
     // Listen for incoming messages
-    zoomSdk.onMessage((message) => {
+    zoomSdk.onMessage((message: any) => {
       try {
         const raw = typeof message.payload === 'string' ? message.payload : JSON.stringify(message.payload);
         const parsed: AppMessage = JSON.parse(raw);

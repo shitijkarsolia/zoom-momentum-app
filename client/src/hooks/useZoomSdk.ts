@@ -1,5 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
-import zoomSdk from '@zoom/appssdk';
+
+// Use the global zoomSdk from the CDN script tag (sdk.js) which has the native bridge.
+// The npm @zoom/appssdk package creates a separate instance without the bridge in ZoomWebKit.
+// Falls back to undefined outside Zoom (DevPreview handles this via main.tsx routing).
+const zoomSdk = (window as any).zoomSdk as any | undefined;
 
 interface ZoomContext {
   isHost: boolean;
@@ -41,6 +45,10 @@ export function useZoomSdk(): ZoomContext {
   });
 
   const configure = useCallback(async () => {
+    if (!zoomSdk) {
+      setContext((prev) => ({ ...prev, error: 'Zoom SDK not available (running outside Zoom)' }));
+      return;
+    }
     try {
       const configResponse = await zoomSdk.config({
         capabilities: [...SDK_CAPABILITIES],
