@@ -48,6 +48,15 @@ No test framework or linter is currently configured.
 ### Mock Transcript (`mock-transcript/`)
 - Fetches real CS50 Lecture 0 SRT from Harvard CDN, parses into ~700 chunks, POSTs to `/api/transcript/segment` every 3 seconds
 
+### Product Page (`product-page/`)
+- **index.html** — Static landing page (single file, no build step)
+- Fonts: Playfair Display (headings), Plus Jakarta Sans (body), Space Mono (decorative)
+- Color scheme: `#0044CC` (blue bg), `#d4b84a` (gold accents), white text
+- Sections: Hero, Features, Demo (video placeholder), How It Works, For Who, About (NEXT Lab + Zoom Fellows), Tech Stack, CTA, Footer
+- Assets: `assets/` folder with ASU and Zoom logos
+- Serve locally: `cd product-page && python3 -m http.server 8080`
+- Glassmorphism cards, scroll-reveal animations, always-sticky nav
+
 ### Message Protocol
 All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` with a standardized envelope containing `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`.
 
