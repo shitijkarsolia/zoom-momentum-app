@@ -40,7 +40,7 @@ interface RecoveryItem {
 type PreviewMode = 'host' | 'student';
 type FeatureTab = 'pulse' | 'arena' | 'anchor';
 
-const QUESTION_TIME = 15;
+const QUESTION_TIME = 10;
 
 export function DevPreview() {
   const [mode, setMode] = useState<PreviewMode>('host');
@@ -186,15 +186,22 @@ export function DevPreview() {
     setAnchorTopics([]); setAnchorCurrentTopicId(''); setAnchorGlossary([]);
   }, [handleAnchorStopPolling]);
 
-  const handleBookmark = useCallback(() => {
-    const currentTopic = anchorTopics.find(t => t.id === anchorCurrentTopicId);
+  const handleBookmark = useCallback((topicId?: string) => {
+    const topic = topicId
+      ? anchorTopics.find(t => t.id === topicId)
+      : anchorTopics.find(t => t.id === anchorCurrentTopicId);
+    const topicTitle = topic?.title ?? 'Current topic';
+    // Prevent duplicate bookmarks for same topic within 5 seconds
+    const now = Date.now();
+    const isDuplicate = studentBookmarks.some(b => b.topic === topicTitle && now - b.timestamp < 5000);
+    if (isDuplicate) return;
     setStudentBookmarks(prev => [...prev, {
-      topic: currentTopic?.title ?? 'Current topic',
-      timestamp: Date.now(),
+      topic: topicTitle,
+      timestamp: now,
     }]);
     setBookmarkToast(true);
     setTimeout(() => setBookmarkToast(false), 2200);
-  }, [anchorTopics, anchorCurrentTopicId]);
+  }, [anchorTopics, anchorCurrentTopicId, studentBookmarks]);
 
   const handleEndClass = useCallback(async () => {
     setRecoveryLoading(true);
@@ -309,13 +316,21 @@ export function DevPreview() {
     }
   }, []);
 
+  const handleShowLeaderboardRef = useRef<() => void>(() => {});
+  const handleNextQuestionRef = useRef<() => void>(() => {});
+
   const startCountdowns = useCallback((seconds: number) => {
     clearTimers();
     setArenaHostCountdown(seconds);
     setArenaStudentCountdown(seconds);
     hostTimerRef.current = setInterval(() => {
       setArenaHostCountdown(prev => {
-        if (prev <= 1) { if (hostTimerRef.current) clearInterval(hostTimerRef.current); return 0; }
+        if (prev <= 1) {
+          if (hostTimerRef.current) clearInterval(hostTimerRef.current);
+          // Auto-show leaderboard when timer ends
+          setTimeout(() => handleShowLeaderboardRef.current(), 100);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -370,6 +385,9 @@ export function DevPreview() {
     setArenaStudentLeaderboard(fakeEntries);
     setArenaCorrectIndex(q?.correctIndex ?? 0);
     setArenaExplanation(q?.explanation ?? '');
+
+    // Auto-advance to next question after 5s
+    setTimeout(() => handleNextQuestionRef.current(), 5000);
   }, [arenaQuestions, arenaCurrentIndex, arenaStudentSelected, clearTimers]);
 
   const handleNextQuestion = useCallback(() => {
@@ -392,6 +410,10 @@ export function DevPreview() {
     setArenaExplanation('');
     startCountdowns(QUESTION_TIME);
   }, [arenaCurrentIndex, arenaQuestions, arenaLeaderboard, startCountdowns]);
+
+  // Keep refs in sync for auto-advance timers
+  useEffect(() => { handleShowLeaderboardRef.current = handleShowLeaderboard; }, [handleShowLeaderboard]);
+  useEffect(() => { handleNextQuestionRef.current = handleNextQuestion; }, [handleNextQuestion]);
 
   const handleArenaReset = useCallback(() => {
     clearTimers();
@@ -650,12 +672,12 @@ export function DevPreview() {
                   <Timeline
                     topics={anchorTopics}
                     currentTopicId={anchorCurrentTopicId}
-                    onBookmark={() => handleBookmark()}
+                    onBookmark={(topicId: string) => handleBookmark(topicId)}
                   />
                   <button
                     className="btn btn-secondary"
                     style={{ marginTop: 12, width: '100%' }}
-                    onClick={handleBookmark}
+                    onClick={() => handleBookmark()}
                   >
                     Mark for Review
                   </button>

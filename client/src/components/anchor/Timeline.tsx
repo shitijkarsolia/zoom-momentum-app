@@ -14,7 +14,6 @@ export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) 
   if (sorted.length === 0) {
     return (
       <div>
-        <h2 className="card-title">Live Anchor</h2>
         <div className="empty-state">
           <div className="empty-state-icon">&#9776;</div>
           <p className="empty-state-text">
@@ -27,7 +26,6 @@ export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) 
 
   return (
     <div>
-      <h2 className="card-title">Live Anchor</h2>
       <div className="timeline-list">
         {sorted.map(topic => (
           <TopicCard
