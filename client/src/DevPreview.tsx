@@ -137,12 +137,22 @@ export function DevPreview() {
 
         if (result.topic?.title) {
           const now = Date.now();
-          const topicId = result.topicChanged ? `topic-${now}` : (anchorCurrentTopicId || `topic-${now}`);
+          // Check if a topic with a similar title already exists to avoid duplicates
+          const existingByTitle = anchorTopics.find(t =>
+            t.title.toLowerCase() === result.topic.title.toLowerCase() ||
+            t.title.toLowerCase().includes(result.topic.title.toLowerCase()) ||
+            result.topic.title.toLowerCase().includes(t.title.toLowerCase())
+          );
+          const topicId = existingByTitle
+            ? existingByTitle.id
+            : result.topicChanged
+              ? `topic-${now}`
+              : (anchorCurrentTopicId || `topic-${now}`);
           const newTopic: Topic = {
             id: topicId,
             title: result.topic.title,
             bullets: result.topic.bullets ?? [],
-            startTime: now,
+            startTime: existingByTitle?.startTime ?? now,
           };
           setAnchorTopics(prev => {
             const existing = prev.findIndex(t => t.id === topicId);
