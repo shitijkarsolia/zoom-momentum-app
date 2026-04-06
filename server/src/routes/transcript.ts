@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { resolveMeetingId } from '../services/meeting-resolver.js';
 
 const prisma = new PrismaClient();
 export const transcriptRouter = Router();
@@ -14,9 +15,29 @@ transcriptRouter.post('/segment', async (req, res) => {
       return;
     }
 
-    const segment = await prisma.transcriptSegment.create({
-      data: {
-        meetingId,
+    const resolvedMeetingId = await resolveMeetingId(meetingId, {
+      createIfMissing: true,
+      defaultTitle: 'Lecture Session',
+    });
+    if (!resolvedMeetingId) {
+      res.status(400).json({ error: 'Failed to resolve meetingId' });
+      return;
+    }
+
+    const segment = await prisma.transcriptSegment.upsert({
+      where: {
+        meetingId_seqNo: {
+          meetingId: resolvedMeetingId,
+          seqNo: BigInt(seqNo ?? 0),
+        },
+      },
+      update: {
+        speaker: speaker ?? 'Unknown',
+        text,
+        timestamp: BigInt(timestamp ?? Date.now()),
+      },
+      create: {
+        meetingId: resolvedMeetingId,
         speaker: speaker ?? 'Unknown',
         text,
         timestamp: BigInt(timestamp ?? Date.now()),
@@ -40,10 +61,16 @@ transcriptRouter.get('/buffer', async (req, res) => {
       return;
     }
 
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ buffer: '', segmentCount: 0 });
+      return;
+    }
+
     const segments = await prisma.transcriptSegment.findMany({
-      where: { meetingId },
+      where: { meetingId: resolvedMeetingId },
       orderBy: { seqNo: 'desc' },
-      take: 50, // Get recent segments, trim to ~300 words
+      take: 50,
     });
 
     const buffer = segments
@@ -51,7 +78,6 @@ transcriptRouter.get('/buffer', async (req, res) => {
       .map((s) => s.text)
       .join(' ');
 
-    // Trim to approximately 300 words
     const words = buffer.split(/\s+/);
     const trimmed = words.slice(-300).join(' ');
 

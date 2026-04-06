@@ -35,7 +35,7 @@ export default function App() {
   const pulseStudent = usePulseStudent({ send: messaging.send });
   const arenaHost = useArenaHost({ broadcast: messaging.broadcast });
   const arenaStudent = useArenaStudent({ send: messaging.send, participantName: zoom.userName });
-  const anchorHost = useAnchorHost({ broadcast: messaging.broadcast });
+  const anchorHost = useAnchorHost({ broadcast: messaging.broadcast, meetingId: zoom.meetingId });
   const anchorStudent = useAnchorStudent({ send: messaging.send });
 
   const handleMeetingEnd = useCallback(() => {
