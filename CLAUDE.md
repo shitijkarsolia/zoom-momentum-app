@@ -31,8 +31,8 @@ No test framework or linter is currently configured.
   - `useZoomAuth` — OAuth PKCE flow
   - `useMessaging` — `connect()`/`postMessage()`/`onMessage()` with sequence-numbered state sync
   - `usePulse` / `useArena` — Feature-specific state management
-- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs), `StudentView` (Timeline/Glossary tabs), `AuthView`
-- **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard)
+- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs), `StudentView` (Timeline/Glossary/Transcript tabs), `AuthView`
+- **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard), `anchor/` (timeline, glossary, transcript, bookmarks), `recovery/` (post-class summary)
 - **Types** — `messages.ts` defines the full message protocol and state types
 
 ### Server (`server/src/`)
@@ -46,7 +46,7 @@ No test framework or linter is currently configured.
 - **Database** — Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema in `server/prisma/schema.prisma` with models: User, Meeting, TranscriptSegment, Bookmark, QuizSet, RecoveryPack
 
 ### Mock Transcript (`mock-transcript/`)
-- Simulates Zoom RTMS by POSTing fake lecture chunks to `/api/transcript/segment` every 3 seconds
+- Fetches real CS50 Lecture 0 SRT from Harvard CDN, parses into ~700 chunks, POSTs to `/api/transcript/segment` every 3 seconds
 
 ### Message Protocol
 All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` with a standardized envelope containing `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`.
@@ -66,9 +66,7 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 
 ## Known Bugs
 
-1. **transcript.ts FK bug** — Inserts with raw meetingId, no Meeting record exists for mock data. Use `meeting-resolver.ts` (already used by bookmarks + RTMS).
-2. **useLiveAnchor missing meetingId** — Fetches `/api/transcript/buffer` without `meetingId` query param → 400 error.
-3. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
-4. **AI topic-segment silent failure** — Returns fake success on AI error instead of surfacing the failure.
-5. **RTMS secret fallback** — `config.zoom_secret_token` returns `''` from `optional()`, so `||` fallback silently uses `clientSecret`.
-6. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
+1. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
+2. **AI topic-segment silent failure** — Returns fake success on AI error instead of surfacing the failure.
+3. **RTMS secret fallback** — `config.zoom_secret_token` returns `''` from `optional()`, so `||` fallback silently uses `clientSecret`.
+4. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
