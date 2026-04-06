@@ -13,7 +13,8 @@ interface ArenaHostProps {
   leaderboard: LeaderboardEntry[];
   error: string | null;
   questions: Question[];
-  onFetchQuestions: (topic?: string) => void;
+  meetingId?: string;
+  onFetchQuestions: (topic?: string, transcript?: string) => void;
   onUpdateQuestion: (index: number, updates: Partial<Question>) => void;
   onStartGame: () => void;
   onShowLeaderboard: () => void;
@@ -31,6 +32,7 @@ export function ArenaHost({
   leaderboard,
   error,
   questions,
+  meetingId,
   onFetchQuestions,
   onUpdateQuestion,
   onStartGame,
@@ -40,6 +42,40 @@ export function ArenaHost({
 }: ArenaHostProps) {
   const [topic, setTopic] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [tailorInput, setTailorInput] = useState('');
+  const [fetchingTranscript, setFetchingTranscript] = useState(false);
+
+  const handleGenerate = async () => {
+    let transcript = '';
+    if (meetingId) {
+      setFetchingTranscript(true);
+      try {
+        const res = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(meetingId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          transcript = data.buffer || '';
+        }
+      } catch { /* silent */ }
+      setFetchingTranscript(false);
+    }
+    onFetchQuestions(topic || undefined, transcript || undefined);
+  };
+
+  const handleTailorRegenerate = async () => {
+    let transcript = '';
+    if (meetingId) {
+      try {
+        const res = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(meetingId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          transcript = data.buffer || '';
+        }
+      } catch { /* silent */ }
+    }
+    const combinedTopic = [topic, tailorInput].filter(Boolean).join('. ');
+    onFetchQuestions(combinedTopic || undefined, transcript || undefined);
+    setTailorInput('');
+  };
 
   if (phase === 'idle' || phase === 'loading') {
     return (
@@ -68,12 +104,12 @@ export function ArenaHost({
 
         <button
           className="btn btn-primary"
-          onClick={() => onFetchQuestions(topic || undefined)}
-          disabled={phase === 'loading'}
+          onClick={handleGenerate}
+          disabled={phase === 'loading' || fetchingTranscript}
         >
-          {phase === 'loading' ? (
+          {phase === 'loading' || fetchingTranscript ? (
             <>
-              <span className="spinner" /> Generating Questions…
+              <span className="spinner" /> {fetchingTranscript ? 'Fetching transcript…' : 'Generating Questions…'}
             </>
           ) : (
             'Generate Quiz'
@@ -169,8 +205,31 @@ export function ArenaHost({
           ))}
         </div>
 
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', display: 'block', marginBottom: 4 }}>
+            Tailor these questions (optional)
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              placeholder="e.g., 'Focus more on binary math' or 'Make them harder'"
+              value={tailorInput}
+              onChange={e => setTailorInput(e.target.value)}
+              style={{ flex: 1, fontSize: 12, padding: '6px 8px', borderRadius: 4, border: '1px solid var(--zoom-border)' }}
+            />
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
+              onClick={handleTailorRegenerate}
+              disabled={!tailorInput.trim()}
+            >
+              Tailor
+            </button>
+          </div>
+        </div>
+
         <div className="arena-ready-actions">
-          <button className="btn btn-secondary" onClick={onReset}>
+          <button className="btn btn-secondary" onClick={handleGenerate}>
             Regenerate
           </button>
           <button className="btn btn-primary" onClick={onStartGame}>

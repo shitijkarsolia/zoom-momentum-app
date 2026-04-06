@@ -56,13 +56,13 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
   const showLeaderboardRef = useRef<() => void>(() => {});
   const nextQuestionRef = useRef<() => void>(() => {});
 
-  const fetchQuestions = useCallback(async (topic?: string) => {
+  const fetchQuestions = useCallback(async (topic?: string, transcript?: string) => {
     setState(prev => ({ ...prev, phase: 'loading', error: null }));
     try {
       const res = await fetch('/api/ai/quiz-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, questionCount: 5 }),
+        body: JSON.stringify({ topic, transcript, questionCount: 5 }),
       });
       if (!res.ok) throw new Error('Failed to generate quiz');
       const data = await res.json();
