@@ -15,11 +15,12 @@ interface AnchorHostState {
 
 interface UseAnchorHostOptions {
   broadcast: (type: MessageType, payload: unknown) => void;
+  meetingId: string;
 }
 
 const POLL_INTERVAL_MS = 30_000; // 30 seconds
 
-export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
+export function useAnchorHost({ broadcast, meetingId }: UseAnchorHostOptions) {
   const [state, setState] = useState<AnchorHostState>({
     topics: [],
     currentTopicId: '',
@@ -34,15 +35,16 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
 
   const pollTranscript = useCallback(async () => {
     if (pollingRef.current) return;
+    if (!meetingId) return; // no meeting context (browser/dev mode)
     pollingRef.current = true;
 
     try {
       // 1. Fetch the rolling transcript buffer
-      const bufferRes = await fetch('/api/transcript/buffer');
+      const bufferRes = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(meetingId)}`);
       if (!bufferRes.ok) throw new Error('Failed to fetch transcript buffer');
-      const { text } = await bufferRes.json();
+      const { buffer } = await bufferRes.json();
 
-      if (!text || text.trim().length < 20) {
+      if (!buffer || buffer.trim().length < 20) {
         pollingRef.current = false;
         return; // not enough transcript yet
       }
@@ -56,7 +58,7 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
       const segRes = await fetch('/api/ai/topic-segment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: text, previousTopic }),
+        body: JSON.stringify({ transcript: buffer, previousTopic }),
       });
       if (!segRes.ok) throw new Error('Topic segment request failed');
       const result = await segRes.json();
@@ -101,12 +103,12 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
       }
 
       // 5. Detect cues for auto-bookmark
-      if (text && text.trim().length >= 20) {
+      if (buffer && buffer.trim().length >= 20) {
         try {
           const cueRes = await fetch('/api/ai/detect-cues', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transcript: text }),
+            body: JSON.stringify({ transcript: buffer }),
           });
           if (cueRes.ok) {
             const cueResult = await cueRes.json();
@@ -149,7 +151,7 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
     } finally {
       pollingRef.current = false;
     }
-  }, [broadcast, state.currentTopicId, state.topics]);
+  }, [broadcast, meetingId, state.currentTopicId, state.topics]);
 
   const startPolling = useCallback(() => {
     if (timerRef.current) return;
