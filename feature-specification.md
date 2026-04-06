@@ -2,7 +2,7 @@
 
 **Project:** Zoom Momentum  
 **Platform:** Zoom Apps SDK + RTMS + External LLM  
-**Last Updated:** February 15, 2026
+**Last Updated:** April 6, 2026
 
 ---
 
@@ -486,9 +486,8 @@ graph TB
 | **Backend** | Node.js + Express | OAuth, AI proxy, WebSocket server, REST API |
 | **RTMS Service** | `@zoom/rtms` SDK (separate Node.js process) | Real-time transcript ingestion |
 | **Database** | SQLite (dev) / PostgreSQL (prod) via Prisma | Transcripts, bookmarks, recovery packs |
-| **AI** | OpenAI API (`gpt-4o-mini`) | Topic segmentation, quiz gen, recovery packs |
-| **Tunnel / URL** | Your server domain (tunnel or deployed) | Expose server for webhooks/OAuth |
-| **Containerization** | Docker Compose (optional) | Run all services together |
+| **AI** | AWS Bedrock (Llama 3 70B via Converse API) | Topic segmentation, quiz gen, recovery packs |
+| **Tunnel / URL** | ngrok (static domain) or EC2 | Expose server for webhooks/OAuth |
 
 ---
 
@@ -525,9 +524,58 @@ graph TB
 
 1. **RTMS Access** - Required for live transcript features (Live Anchor, Recovery Agent, Auto-Bookmarks)
 2. **Zoom OAuth** - Required for user identification and data scoping
-3. **Collaborate Mode** - Required for synchronized state (Arena, Live Anchor)
-4. **OpenAI API Key** - Required for all AI features
-5. **Poll Messaging** - Uses standard `postMessage`/`onMessage` APIs
+3. **AWS Bedrock Access** - Required for all AI features (IAM role on EC2)
+4. **Zoom SDK Messaging** - `connect` + `sendMessage` for all host↔student communication
+
+---
+
+## Architectural Decisions (Feb 2026)
+
+### Decision 1: Use `connect` + `sendMessage` — Skip Collaborate Mode
+Use only `connect()` + `sendMessage()`. Simpler, well-documented, sufficient for host-broadcasts-state pattern. Students must manually open the app from the Apps panel.
+
+### Decision 2: All Detection Events Are Host-Only
+`onParticipantChange`, `getMeetingParticipants`, and `onActiveSpeakerChange` are host-only. All detection logic runs on the host and results are broadcast to students.
+
+### Decision 3: Sequence-Numbered Messages
+Every message carries a monotonically increasing `seq` number to handle delivery order. Prevents answer-before-question race conditions in Arena.
+
+### Decision 4: Build Non-RTMS Features First
+Build order: Pulse → Arena → Live Anchor (mock transcript) → Recovery → Wire up real RTMS. This avoids needing a live Zoom meeting for every dev iteration.
+
+### Decision 5: `sendMessage` Payload Budget
+Payload limit is <512KB per message. A `FULL_STATE` with 20 topics, 100 glossary entries, and leaderboard fits under 50KB. No chunking needed.
+
+---
+
+## Build Order
+
+```
+1. App Skeleton + OAuth
+2. Messaging Layer (connect/sendMessage/seq)
+3. Professor's Pulse (no RTMS needed)
+4. Warm-Up Arena (no RTMS needed)
+5. Mock Transcript Pipeline
+6. Live Anchor + Glossary (requires transcript)
+7. Auto-Bookmarks (requires transcript)
+8. Recovery Agent (requires bookmarks + transcript)
+9. Smart Spotlight (requires active speaker events)
+10. Late Joiner Catch-Up (requires participant events)
+11. Post-Class Summary (requires meeting end detection)
+```
+
+Steps 1-7 are complete. Steps 8-11 are code-complete but untested in a live meeting.
+
+---
+
+## Authentication Flow
+
+1. Frontend calls `GET /api/auth/authorize` → gets `codeChallenge` + `state`
+2. Frontend registers `zoomSdk.onAuthorized()` listener BEFORE calling `zoomSdk.authorize()`
+3. Zoom shows native OAuth consent UI
+4. `onAuthorized` fires with `{ code }` → frontend sends to `POST /api/auth/callback`
+5. Backend exchanges code for tokens, creates/updates user, returns session cookie
+6. Frontend stores auth state, renders host or student view based on role
 
 ---
 

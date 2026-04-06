@@ -54,4 +54,21 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 ## Key Config
 
 - `client/vite.config.ts` — Proxies `/api/*` requests to `localhost:3001`
-- `.env` — Requires `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`, `ZOOM_REDIRECT_URI`, `OPENAI_API_KEY` (see `.env.example`)
+- `.env` — Requires `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`, `ZOOM_REDIRECT_URL`, `ZOOM_SECRET_TOKEN`, `SESSION_SECRET`, `DATABASE_URL`, `AWS_REGION`, `PORT`, `CLIENT_URL` (see `.env.example`)
+
+## AI Backend
+
+- AWS Bedrock, region `us-east-1`
+- Current model: `meta.llama3-70b-instruct-v1:0` (Llama 3 70B via Converse API)
+- Also available: `us.anthropic.claude-sonnet-4-20250514-v1:0`, `us.anthropic.claude-haiku-4-5-20251001-v1:0`
+- Cross-region inference profile IDs required (`us.` prefix)
+- IAM role: `zoom-momentum-ec2-role`
+
+## Known Bugs
+
+1. **transcript.ts FK bug** — Inserts with raw meetingId, no Meeting record exists for mock data. Use `meeting-resolver.ts` (already used by bookmarks + RTMS).
+2. **useLiveAnchor missing meetingId** — Fetches `/api/transcript/buffer` without `meetingId` query param → 400 error.
+3. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
+4. **AI topic-segment silent failure** — Returns fake success on AI error instead of surfacing the failure.
+5. **RTMS secret fallback** — `config.zoom_secret_token` returns `''` from `optional()`, so `||` fallback silently uses `clientSecret`.
+6. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
