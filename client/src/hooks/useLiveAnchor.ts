@@ -67,15 +67,23 @@ export function useAnchorHost({ broadcast, meetingId }: UseAnchorHostOptions) {
 
       // 4. Process topic
       if (result.topic?.title) {
-        const topicId = result.topicChanged
-          ? `topic-${now}`
-          : state.currentTopicId || `topic-${now}`;
+        // Check if a topic with similar title already exists to avoid duplicates
+        const existingByTitle = state.topics.find(t =>
+          t.title.toLowerCase() === result.topic.title.toLowerCase() ||
+          t.title.toLowerCase().includes(result.topic.title.toLowerCase()) ||
+          result.topic.title.toLowerCase().includes(t.title.toLowerCase())
+        );
+        const topicId = existingByTitle
+          ? existingByTitle.id
+          : result.topicChanged
+            ? `topic-${now}`
+            : state.currentTopicId || `topic-${now}`;
 
         const newTopic: Topic = {
           id: topicId,
           title: result.topic.title,
           bullets: result.topic.bullets ?? [],
-          startTime: result.topicChanged ? now : (state.topics.find(t => t.id === topicId)?.startTime ?? now),
+          startTime: existingByTitle?.startTime ?? (result.topicChanged ? now : (state.topics.find(t => t.id === topicId)?.startTime ?? now)),
         };
 
         setState(prev => {
