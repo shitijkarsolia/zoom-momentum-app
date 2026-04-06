@@ -4,7 +4,7 @@ import type { Question, LeaderboardEntry, MessageType } from '../types/messages'
 export type ArenaHostPhase = 'idle' | 'loading' | 'ready' | 'question' | 'leaderboard' | 'finished';
 export type ArenaStudentPhase = 'waiting' | 'question' | 'answered' | 'leaderboard' | 'finished';
 
-const QUESTION_TIME_SEC = 15;
+const QUESTION_TIME_SEC = 10;
 const LEADERBOARD_DISPLAY_SEC = 5;
 
 // --- Host Hook ---

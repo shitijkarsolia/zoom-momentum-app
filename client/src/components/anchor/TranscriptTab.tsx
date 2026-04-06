@@ -89,7 +89,7 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId }: T
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--zoom-text-secondary)', marginBottom: 4 }}>
             Topics Covered
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxHeight: 80, overflowY: 'auto' }}>
             {topics.map(t => {
               const time = new Date(t.startTime);
               const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}`;

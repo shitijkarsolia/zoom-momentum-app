@@ -245,7 +245,7 @@ export function ArenaHost({
       <div className="arena-host">
         <div className="arena-question-header">
           <span className="arena-q-number">Q{currentIndex + 1}/{totalQuestions}</span>
-          <span className={`arena-countdown ${countdown <= 5 ? 'urgent' : ''}`}>
+          <span className={`arena-countdown ${countdown <= 3 ? 'urgent' : ''}`}>
             {countdown}s
           </span>
         </div>
@@ -263,9 +263,21 @@ export function ArenaHost({
 
         <div className="arena-live-stats">
           <span>{responseCount} {responseCount === 1 ? 'answer' : 'answers'} received</span>
-          <button className="btn btn-secondary" onClick={onShowLeaderboard} style={{ fontSize: 12 }}>
-            Skip to Results
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {currentIndex > 0 && (
+              <button className="btn btn-secondary" onClick={onShowLeaderboard} style={{ fontSize: 11, padding: '4px 8px' }}>
+                Prev
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={onShowLeaderboard} style={{ fontSize: 12 }}>
+              Skip to Results
+            </button>
+            {currentIndex < totalQuestions - 1 && (
+              <button className="btn btn-secondary" onClick={onNextQuestion} style={{ fontSize: 11, padding: '4px 8px' }}>
+                Next
+              </button>
+            )}
+          </div>
         </div>
         <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
           Auto-advances when timer ends
