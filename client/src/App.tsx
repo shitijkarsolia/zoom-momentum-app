@@ -282,7 +282,9 @@ export default function App() {
         arenaCountdown={arenaHost.countdown}
         arenaLeaderboard={arenaHost.leaderboard}
         arenaError={arenaHost.error}
+        arenaQuestions={arenaHost.questions}
         onArenaFetchQuestions={arenaHost.fetchQuestions}
+        onArenaUpdateQuestion={arenaHost.updateQuestion}
         onArenaStartGame={arenaHost.startGame}
         onArenaShowLeaderboard={arenaHost.showLeaderboard}
         onArenaNextQuestion={arenaHost.nextQuestion}
