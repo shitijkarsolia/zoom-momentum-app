@@ -284,7 +284,7 @@ export function StudentView({
           <GlossaryTab glossary={anchorGlossary} />
         )}
         {activeTab === 'transcript' && (
-          <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} />
+          <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
         )}
       </div>
 

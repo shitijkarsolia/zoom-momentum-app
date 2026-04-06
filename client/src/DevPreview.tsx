@@ -40,26 +40,6 @@ interface RecoveryItem {
 type PreviewMode = 'host' | 'student';
 type FeatureTab = 'pulse' | 'arena' | 'anchor';
 
-const MOCK_TOPICS: Topic[] = [
-  {
-    id: 'topic-1',
-    title: 'Opening Discussion',
-    bullets: ['Recap of last lecture', 'Today\'s learning objectives', 'Overview of key concepts'],
-    startTime: Date.now() - 600_000,
-  },
-  {
-    id: 'topic-2',
-    title: 'Core Concepts',
-    bullets: ['Main ideas introduced', 'Supporting details and examples', 'Connections to prior knowledge'],
-    startTime: Date.now() - 300_000,
-  },
-];
-
-const MOCK_GLOSSARY: GlossaryEntry[] = [
-  { term: 'Key Concept', definition: 'A fundamental idea covered in today\'s lecture', timestamp: Date.now() - 600_000 },
-  { term: 'Example', definition: 'A concrete illustration used to explain the concept', timestamp: Date.now() - 300_000 },
-];
-
 const QUESTION_TIME = 15;
 
 export function DevPreview() {
@@ -135,47 +115,66 @@ export function DevPreview() {
   // --- Anchor Handlers ---
   const handleAnchorStartPolling = useCallback(() => {
     setAnchorIsPolling(true);
-    setAnchorTopics([MOCK_TOPICS[0]!]);
-    setAnchorCurrentTopicId(MOCK_TOPICS[0]!.id);
-    setAnchorGlossary([MOCK_GLOSSARY[0]!]);
 
-    anchorTimerRef.current = setInterval(() => {
-      setAnchorTopics(prev => {
-        if (prev.length >= MOCK_TOPICS.length) {
-          // Only add the Chain Rule topic once
-          const advancedId = 'topic-advanced';
-          if (prev.some(t => t.id === advancedId)) {
-            return prev;
-          }
-          const newTopic: Topic = {
-            id: advancedId,
-            title: 'Advanced Applications',
-            bullets: ['Applying concepts to new problems', 'Common pitfalls and misconceptions', 'Practice strategies'],
-            startTime: Date.now(),
-          };
-          setAnchorCurrentTopicId(newTopic.id);
-          setAnchorGlossary(g => {
-            if (g.some(entry => entry.term.toLowerCase() === 'application')) return g;
-            return [...g, {
-              term: 'Application',
-              definition: 'Using learned concepts to solve new problems',
-              timestamp: Date.now(),
-            }];
-          });
-          return [...prev, newTopic];
-        }
-        const next = MOCK_TOPICS[prev.length]!;
-        setAnchorCurrentTopicId(next.id);
-        setAnchorGlossary(g => {
-          const newTerms = MOCK_GLOSSARY.slice(prev.length, prev.length + 1);
-          const existing = new Set(g.map(e => e.term.toLowerCase()));
-          const unique = newTerms.filter(t => !existing.has(t.term.toLowerCase()));
-          return unique.length > 0 ? [...g, ...unique] : g;
+    const pollTranscript = async () => {
+      try {
+        const bufRes = await fetch('/api/transcript/buffer?meetingId=mock-meeting-001');
+        if (!bufRes.ok) return;
+        const { buffer } = await bufRes.json();
+        if (!buffer || buffer.trim().length < 20) return;
+
+        const previousTopic = anchorCurrentTopicId
+          ? anchorTopics.find(t => t.id === anchorCurrentTopicId)?.title ?? ''
+          : '';
+
+        const segRes = await fetch('/api/ai/topic-segment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript: buffer, previousTopic }),
         });
-        return [...prev, next];
-      });
-    }, 8000);
-  }, []);
+        if (!segRes.ok) return;
+        const result = await segRes.json();
+
+        if (result.topic?.title) {
+          const now = Date.now();
+          const topicId = result.topicChanged ? `topic-${now}` : (anchorCurrentTopicId || `topic-${now}`);
+          const newTopic: Topic = {
+            id: topicId,
+            title: result.topic.title,
+            bullets: result.topic.bullets ?? [],
+            startTime: now,
+          };
+          setAnchorTopics(prev => {
+            const existing = prev.findIndex(t => t.id === topicId);
+            const updated = [...prev];
+            if (existing >= 0) updated[existing] = newTopic;
+            else updated.push(newTopic);
+            return updated;
+          });
+          setAnchorCurrentTopicId(topicId);
+        }
+
+        if (Array.isArray(result.glossaryTerms) && result.glossaryTerms.length > 0) {
+          const newTerms: GlossaryEntry[] = result.glossaryTerms.map((t: { term: string; definition: string; formula?: string }) => ({
+            term: t.term,
+            definition: t.definition,
+            formula: t.formula || undefined,
+            timestamp: Date.now(),
+          }));
+          setAnchorGlossary(prev => {
+            const existing = new Set(prev.map(g => g.term.toLowerCase()));
+            const unique = newTerms.filter(t => !existing.has(t.term.toLowerCase()));
+            return unique.length > 0 ? [...prev, ...unique] : prev;
+          });
+        }
+      } catch (err) {
+        console.error('[DevPreview] anchor poll error:', err);
+      }
+    };
+
+    pollTranscript();
+    anchorTimerRef.current = setInterval(pollTranscript, 15000);
+  }, [anchorCurrentTopicId, anchorTopics]);
 
   const handleAnchorStopPolling = useCallback(() => {
     setAnchorIsPolling(false);
@@ -281,14 +280,25 @@ export function DevPreview() {
   }, []);
 
   // --- Arena Handlers ---
-  const handleFetchQuestions = useCallback(async (topic?: string) => {
+  const handleFetchQuestions = useCallback(async (topic?: string, transcript?: string) => {
     setArenaHostPhase('loading');
     setArenaError(null);
     try {
+      // If no transcript provided, fetch from mock meeting
+      let transcriptText = transcript;
+      if (!transcriptText) {
+        try {
+          const bufRes = await fetch('/api/transcript/buffer?meetingId=mock-meeting-001');
+          if (bufRes.ok) {
+            const bufData = await bufRes.json();
+            transcriptText = bufData.buffer || '';
+          }
+        } catch { /* silent */ }
+      }
       const res = await fetch('/api/ai/quiz-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, questionCount: 5 }),
+        body: JSON.stringify({ topic, transcript: transcriptText, questionCount: 5 }),
       });
       const data = await res.json();
       setArenaQuestions(data.questions);
@@ -546,6 +556,7 @@ export function DevPreview() {
                   leaderboard={arenaLeaderboard}
                   error={arenaError}
                   questions={arenaQuestions}
+                  meetingId="mock-meeting-001"
                   onFetchQuestions={handleFetchQuestions}
                   onUpdateQuestion={(index, updates) => {
                     setArenaQuestions(prev => {
@@ -653,7 +664,7 @@ export function DevPreview() {
               ) : anchorStudentTab === 'glossary' ? (
                 <GlossaryTab glossary={anchorGlossary} />
               ) : (
-                <TranscriptTab meetingId="mock-meeting-001" glossary={anchorGlossary} />
+                <TranscriptTab meetingId="mock-meeting-001" glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
               )}
             </div>
             {studentResults && (

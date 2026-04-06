@@ -283,6 +283,7 @@ export default function App() {
         arenaLeaderboard={arenaHost.leaderboard}
         arenaError={arenaHost.error}
         arenaQuestions={arenaHost.questions}
+        arenaMeetingId={zoom.meetingId}
         onArenaFetchQuestions={arenaHost.fetchQuestions}
         onArenaUpdateQuestion={arenaHost.updateQuestion}
         onArenaStartGame={arenaHost.startGame}
