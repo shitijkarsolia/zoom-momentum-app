@@ -2,8 +2,6 @@
 
 A Zoom Apps SDK application that transforms passive virtual classrooms into active learning environments. Momentum runs as an in-meeting side panel, giving professors real-time engagement tools and giving students a dynamic topic timeline, glossary, and post-class review.
 
-**Live deployment:** `https://zoom.shitijmathur.tech`
-
 ---
 
 ## How It Works
@@ -104,14 +102,14 @@ Zoom Desktop Client
               +-- Student? -> StudentView
 
 Both connect to:
-  Express Backend (EC2 at zoom.shitijmathur.tech:3001)
+  Express Backend (localhost:3001, or EC2)
     +-- /api/auth       -> Zoom OAuth PKCE
     +-- /api/ai         -> AI endpoints (poll, quiz, topic, recovery, cues)
     +-- /api/transcript  -> Transcript storage + rolling buffer
     +-- /api/bookmarks   -> Bookmark CRUD
-    +-- /api/rtms        -> RTMS webhook handler (pending)
+    +-- /api/rtms        -> RTMS webhook + stream client
 
-  AI Provider (Kiro API at kiro.shitijmathur.tech, OpenAI-compatible)
+  AI Provider (AWS Bedrock — Llama 3 70B via Converse API)
   SQLite Database (via Prisma ORM)
 ```
 
@@ -138,15 +136,15 @@ All real-time communication uses the Zoom SDK's `sendMessage` / `onMessage`:
 
 ## Deployment
 
-The app runs on an **EC2 instance** at `zoom.shitijmathur.tech` with HTTPS.
+The app runs on an **EC2 instance** with a static ngrok tunnel for development.
 
 ### Zoom Marketplace Configuration
 
 The Zoom App is registered and configured on [marketplace.zoom.us](https://marketplace.zoom.us):
 
-- **Home URL:** `https://zoom.shitijmathur.tech`
-- **Redirect URL:** `https://zoom.shitijmathur.tech/api/auth/callback`
-- **Webhook URL:** `https://zoom.shitijmathur.tech/api/rtms/webhook`
+- **Home URL:** `https://your-tunnel.ngrok-free.dev`
+- **Redirect URL:** `https://your-tunnel.ngrok-free.dev/api/auth/callback`
+- **Webhook URL:** `https://your-tunnel.ngrok-free.dev/api/rtms/webhook`
 - **RTMS:** Enabled (1-year trial through Feb 2027)
 - **OAuth Scopes:** `zoomapp:inmeeting`, `meeting:read:meeting`, `user:read`
 
@@ -156,11 +154,11 @@ The Zoom App is registered and configured on [marketplace.zoom.us](https://marke
 |---|---|
 | `ZOOM_CLIENT_ID` | From Zoom Marketplace app |
 | `ZOOM_CLIENT_SECRET` | From Zoom Marketplace app |
-| `ZOOM_REDIRECT_URL` | `https://zoom.shitijmathur.tech/api/auth/callback` |
+| `ZOOM_REDIRECT_URL` | OAuth callback URL (must match Marketplace) |
+| `ZOOM_SECRET_TOKEN` | For RTMS webhook HMAC verification |
 | `SESSION_SECRET` | Random secret for express-session |
 | `DATABASE_URL` | `file:./dev.db` (SQLite) or PostgreSQL connection string |
-| `OPENAI_API_KEY` | API key for the AI provider |
-| `OPENAI_BASE_URL` | `https://kiro.shitijmathur.tech/v1` (or OpenAI default) |
+| `AWS_REGION` | AWS region for Bedrock (`us-east-1`) |
 | `PORT` | Server port (default: 3001) |
 | `CLIENT_URL` | Frontend URL (default: `http://localhost:5173`) |
 
@@ -265,38 +263,43 @@ zoom-momentum/
 | Frontend | React 18 + Vite + TypeScript + @zoom/appssdk |
 | Backend | Express + TypeScript + Prisma |
 | Database | SQLite (dev) / PostgreSQL (prod) |
-| AI | Kiro API (OpenAI-compatible, configurable via `OPENAI_BASE_URL`) |
-| Hosting | EC2 with HTTPS (`zoom.shitijmathur.tech`) |
+| AI | AWS Bedrock (Llama 3 70B via Converse API, us-east-1) |
+| Hosting | EC2 (dev via ngrok tunnel) |
 | Transcript | Zoom RTMS (real-time media streams) |
 
 ---
 
 ## Status
 
+For detailed progress, bugs, and next steps, see [STATUS.md](STATUS.md).
+
 ### Done
 
 - [x] Zoom OAuth PKCE authentication
 - [x] Host/student role detection and routing
 - [x] Welcome/onboarding screen with role-specific feature descriptions
-- [x] Feature info tooltips (?) on every tab
-- [x] Professor's Pulse — AI poll generation, preview/edit, launch, results bar chart
+- [x] Professor's Pulse — AI poll generation, preview/edit, launch, results
 - [x] Warm-Up Arena — AI quiz generation, 15s countdown, scoring, leaderboard
 - [x] Live Anchor — AI transcript analysis, topic timeline, searchable glossary
 - [x] Recovery Agent — bookmarks, post-class summary, AI recovery pack
-- [x] Detect Cues endpoint — AI detection of professor emphasis phrases
-- [x] Messaging layer with sequence numbers and late-joiner sync protocol
+- [x] Auto-bookmark broadcast — AI cue detection triggers bookmarks for students
+- [x] Speaker Spotlight — `onActiveSpeakerChange` broadcasts active speaker
+- [x] Late Joiner catch-up — `FULL_STATE` sync on participant join
+- [x] Meeting end detection — `onRunningContextChange` triggers recovery flow
+- [x] RTMS integration — webhook handler + stream client (code complete, untested live)
+- [x] Messaging layer with sequence numbers and late-joiner sync
 - [x] DevPreview for browser-based testing without Zoom
-- [x] Subject-agnostic AI prompts (tested with history, biology, economics)
+- [x] AI switched to AWS Bedrock (Llama 3 70B)
 - [x] Mock transcript service for development
-- [x] Clean emoji-free UI with Zoom brand colors
-- [x] EC2 deployment with HTTPS
-- [x] Zoom Marketplace app configured with RTMS enabled
+- [x] EC2 deployment with DCV remote desktop
 
-### Pending
+### Blocked / Pending
 
-- [ ] **RTMS integration** (Tasks 18-19) — Build `/api/rtms/webhook` handler and `@zoom/rtms` WebSocket ingestion to replace mock transcript with live lecture audio/text
-- [ ] **Auto-bookmark broadcast** (Task 28) — When detect-cues finds professor emphasis, host broadcasts auto-bookmarks to all students
-- [ ] **Smart Spotlight** (Task 29) — Use `onActiveSpeakerChange` to auto-spotlight students asking questions
-- [ ] **Late Joiner catch-up** (Task 14) — Use `onParticipantChange` to send `FULL_STATE` to new participants
-- [ ] **Post-meeting detection** (Task 31 partial) — Use `onRunningContextChange` to trigger recovery pack when meeting ends
-- [ ] **Production database** — Migrate from SQLite to PostgreSQL for production
+- [ ] SDK config timeout — app won't load inside Zoom meeting
+- [ ] Mock transcript FK bug — anchor pipeline never tested with real data
+- [ ] End-to-end test in a real Zoom meeting
+- [ ] RTMS live transcript test
+- [ ] Guest mode testing (second account)
+- [ ] Production database (PostgreSQL)
+- [ ] Test framework and linter
+- [ ] CI/CD pipeline

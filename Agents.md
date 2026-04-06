@@ -132,11 +132,11 @@ cd server && npx prisma migrate dev --name init && cd ..
 ```
 ZOOM_CLIENT_ID=your_zoom_client_id
 ZOOM_CLIENT_SECRET=your_zoom_client_secret
-ZOOM_REDIRECT_URL=https://your-server-domain/api/auth/callback
+ZOOM_REDIRECT_URL=https://your-tunnel.ngrok-free.dev/api/auth/callback
+ZOOM_SECRET_TOKEN=your_zoom_secret_token
 SESSION_SECRET=any-random-string
 DATABASE_URL=file:./dev.db
-OPENAI_API_KEY=your_openai_key
-OPENAI_BASE_URL=https://kiro.shitijmathur.tech/v1
+AWS_REGION=us-east-1
 PORT=3001
 CLIENT_URL=http://localhost:5173
 ```
@@ -236,10 +236,10 @@ SQLite via Prisma. After install, run `cd server && npx prisma migrate dev --nam
 The frontend is a Zoom Apps SDK side-panel app. `main.tsx` checks `navigator.userAgent` for `ZoomApps` or the URL for `zoomapp` to detect if we're inside Zoom. Outside Zoom, `DevPreview` renders automatically. To force the real `App` (even outside Zoom), add `?app=1`. The Zoom SDK script (`sdk.js`) is loaded globally via `index.html` so `window.zoomSdk` exists even outside Zoom — do NOT use `window.zoomSdk` for detection.
 
 ### AI integration
-The server uses an OpenAI-compatible API (configured via `OPENAI_BASE_URL` and `OPENAI_API_KEY`). All AI endpoints return 500 on failure instead of hardcoded fallbacks — there is no subject-specific fallback content. Prompts are fully subject-agnostic and work for any academic discipline.
+The server uses AWS Bedrock (Llama 3 70B via Converse API, region `us-east-1`). Claude Sonnet and Haiku are also available. All AI endpoints return 500 on failure instead of hardcoded fallbacks — there is no subject-specific fallback content. Prompts are fully subject-agnostic and work for any academic discipline.
 
 ### Deployment
-The app runs on EC2 at `zoom.shitijmathur.tech` with HTTPS. The Zoom Marketplace app is fully configured with OAuth redirect URL and RTMS webhook URL pointing to this domain. AI is served by Kiro API at `kiro.shitijmathur.tech`.
+The app runs on EC2 with a static ngrok tunnel (`your-tunnel.ngrok-free.dev`) for development. The Zoom Marketplace app is configured with OAuth redirect URL and RTMS webhook URL pointing to the ngrok domain.
 
 ### Transcript foreign key caveat
 The mock transcript service POSTs to `/api/transcript/segment` with `meetingId: "mock-meeting-001"`. This requires a matching `Meeting` record in the DB, or it will 500 due to a Prisma foreign key constraint. A meeting must be created first (e.g., via the auth/OAuth flow which creates user and meeting records).
