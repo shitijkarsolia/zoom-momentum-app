@@ -77,33 +77,40 @@ aiRouter.post('/topic-segment', async (req, res) => {
   }
 
   try {
-    const prompt = `You are an AI assistant that analyzes live lecture transcripts in real time. Your job is to identify the current topic being discussed and extract key terms for a student-facing sidebar.
+    const prompt = `You are an AI assistant analyzing a live university lecture transcript. Your job is to help students follow along by identifying what's being taught and extracting useful study material.
 
 ${previousTopic ? `The previous topic was: "${previousTopic}"` : 'This is the beginning of the lecture.'}
 
 Here is the most recent transcript excerpt:
 "${transcript.slice(0, 2000)}"
 
-Analyze this and respond with ONLY a JSON object — no markdown, no explanation:
+Respond with ONLY a JSON object — no markdown, no explanation:
 {
   "topicChanged": true or false,
   "topic": {
-    "title": "Concise topic title (3-6 words)",
-    "bullets": ["Key takeaway 1", "Key takeaway 2", "Key takeaway 3"]
+    "title": "Descriptive topic title (e.g., 'How Computers Represent Text Using ASCII')",
+    "bullets": ["Specific fact or concept explained", "Example the professor gave", "Key insight or takeaway"]
   },
   "glossaryTerms": [
-    {"term": "Term", "definition": "Brief definition", "formula": "formula if applicable, otherwise null"}
+    {"term": "Term", "definition": "Clear, study-worthy definition (1-2 sentences)", "formula": "formula if applicable, otherwise null"}
   ]
 }
 
 Guidelines:
-- Set topicChanged to true only if the lecturer clearly shifted to a new subject or sub-topic
-- Even when topicChanged is false, update the bullets to reflect the latest content
-- Include 2-4 concise bullet points summarizing the current discussion
-- Extract 0-3 technical terms, definitions, or formulas that were mentioned
-- The formula field is optional — include only for STEM subjects where applicable
-- Keep all text concise — this is rendered in a narrow sidebar panel
-- This must work for ANY academic subject (science, history, literature, business, etc.)`;
+- Set topicChanged to true only if the lecturer clearly shifted to a new subject
+- Topic title should be descriptive enough that a student can recall what was covered (8-12 words)
+- Bullets must be SPECIFIC to what was actually said — not generic summaries
+  - Good: "ASCII uses 7-8 bits to represent 128-256 characters including letters, digits, and symbols"
+  - Bad: "Computers use binary to represent characters"
+  - Good: "Professor demonstrated counting to 7 using 3 bits with volunteer fingers"
+  - Bad: "Binary representation was discussed"
+- Include concrete examples, numbers, or analogies the professor used
+- Include 2-4 bullets per topic
+- Glossary definitions should be detailed enough to study from — not just 2-3 words
+  - Good: "ASCII — American Standard Code for Information Interchange. A character encoding standard that maps numbers (0-127) to letters, digits, punctuation, and control characters. For example, 'A' = 65, 'a' = 97."
+  - Bad: "ASCII — Character encoding standard"
+- Extract 0-3 glossary terms that were actually explained in the transcript
+- Keep text concise but informative — this renders in a narrow sidebar panel`;
 
     const content = await callAI(prompt, { temperature: 0.3, maxTokens: 600 });
     const parsed = extractJSON(content);

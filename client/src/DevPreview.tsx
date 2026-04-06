@@ -506,7 +506,7 @@ export function DevPreview() {
       </div>
 
       <div style={{ flex: 1, maxWidth: 420, margin: '0 auto' }}>
-        {showPostClass ? (
+        {showPostClass && mode === 'student' ? (
           <div className="app-container" style={{ minHeight: 'auto' }}>
             <div className="card" style={{ flex: 1 }}>
               <PostClassSummary
@@ -517,6 +517,39 @@ export function DevPreview() {
                 isLoading={recoveryLoading}
                 onDismiss={() => { setShowPostClass(false); setRecoveryItems([]); }}
               />
+            </div>
+          </div>
+        ) : showPostClass && mode === 'host' ? (
+          <div className="app-container" style={{ minHeight: 'auto' }}>
+            <div className="card" style={{ padding: 16 }}>
+              <h2 className="card-title">Class Ended</h2>
+              <p style={{ fontSize: 13, color: 'var(--zoom-text-secondary)', marginBottom: 16 }}>
+                Students are receiving their personalized recovery packs.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--zoom-bg)', borderRadius: 6 }}>
+                  <span style={{ fontSize: 13 }}>Topics Covered</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{anchorTopics.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--zoom-bg)', borderRadius: 6 }}>
+                  <span style={{ fontSize: 13 }}>Glossary Terms</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{anchorGlossary.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--zoom-bg)', borderRadius: 6 }}>
+                  <span style={{ fontSize: 13 }}>Student Bookmarks</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{studentBookmarks.length}</span>
+                </div>
+              </div>
+              {anchorTopics.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--zoom-text-secondary)', marginBottom: 6 }}>Topics</p>
+                  {anchorTopics.map(t => (
+                    <div key={t.id} style={{ fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--zoom-border, #e0e0e0)' }}>
+                      {t.title} — {t.bullets.length} key points
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : simMeetingEnded && mode === 'student' ? (
