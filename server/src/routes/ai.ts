@@ -1,21 +1,5 @@
 import { Router } from 'express';
-import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
-import { config } from '../config.js';
-
-const bedrock = new BedrockRuntimeClient({ region: config.aws.region });
-const MODEL_ID = 'meta.llama3-70b-instruct-v1:0';
-
-async function callAI(prompt: string, opts?: { temperature?: number; maxTokens?: number }): Promise<string> {
-  const resp = await bedrock.send(new ConverseCommand({
-    modelId: MODEL_ID,
-    messages: [{ role: 'user', content: [{ text: prompt }] }],
-    inferenceConfig: {
-      maxTokens: opts?.maxTokens ?? 1000,
-      temperature: opts?.temperature ?? 0.7,
-    },
-  }));
-  return resp.output?.message?.content?.[0]?.text ?? '';
-}
+import { callAI } from '../ai-client.js';
 
 export const aiRouter = Router();
 
