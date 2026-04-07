@@ -44,14 +44,16 @@ npm run dev -w mock-transcript
 ### Client (`client/src/`)
 - **App.tsx** — Entry point with role-based routing (host vs student via Zoom SDK role detection)
 - **Hooks** — Core logic lives in hooks:
-  - `useZoomSdk` — SDK init, role detection, meeting context
+  - `useZoomSdk` — SDK init, role detection, meeting context, RTMS start/stop
   - `useZoomAuth` — OAuth PKCE flow
-  - `useMessaging` — `connect()`/`postMessage()`/`onMessage()` with sequence-numbered state sync (CURRENTLY BROKEN — see Known Issues)
+  - `useMessaging` — WebSocket relay client with auto-reconnect, sequence-numbered state sync
   - `usePulse` / `useArena` / `useLiveAnchor` — Feature-specific state management
   - `useZoomEvents` — Active speaker, meeting end, late joiner detection
-- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs), `StudentView` (Timeline/Glossary/Transcript tabs), `WelcomeView`, `AuthView`
+  - `useDemoMode` — Auto-detects demo mode (outside Zoom), provides mock meetingId
+- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs + TranscriptTab), `StudentView` (Timeline/Glossary/Transcript tabs), `WelcomeView`, `AuthView`
 - **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard), `anchor/` (timeline, glossary, transcript, bookmarks), `recovery/` (post-class summary), `shared/` (feature info)
-- **DevPreview.tsx** — Browser-only simulation mode with real AI + CS50 transcript data
+- **DevPreview.tsx** — REMOVED. Replaced by demo mode in App.tsx
+- **Demo Mode** — Auto-enabled when running outside Zoom. Role switcher + simulation buttons (late join, meeting end, speaker). Transcript source toggle (Live/Mock) available inside Zoom only.
 - **Types** — `messages.ts` defines the full message protocol and state types
 
 ### Server (`server/src/`)
@@ -66,6 +68,8 @@ npm run dev -w mock-transcript
 - **Services:**
   - `meeting-resolver.ts` — Auto-creates Meeting records from Zoom UUIDs or mock IDs
   - `rtms-ingest.ts` — RTMS WebSocket client, transcript storage, session lifecycle
+  - `websocket.ts` — WebSocket relay server for host↔student messaging (rooms by meetingId)
+  - `ai-client.ts` — Tiered AI client with failover (CREATE AI gemini-pro → claude-3-opus → Bedrock)
 - **Database** — Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema in `server/prisma/schema.prisma`
 
 ### Mock Transcript (`mock-transcript/`)
@@ -77,7 +81,11 @@ npm run dev -w mock-transcript
 - Serve locally: `cd product-page && python3 -m http.server 8080`
 
 ### Message Protocol
-All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` with a standardized envelope containing `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`. **NOTE: This is currently broken — see Known Issues.**
+All host↔student communication uses WebSocket relay through Express (`/ws` endpoint). The server manages rooms by meetingId and relays messages between all connected clients. Message envelope contains `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`.
+
+- Server: `server/src/services/websocket.ts` — room management, message relay, heartbeat
+- Client: `client/src/hooks/useMessaging.ts` — WebSocket client with auto-reconnect
+- Vite proxy: `client/vite.config.ts` proxies `/ws` to `ws://localhost:3001`
 
 ## Key Config
 
@@ -104,30 +112,25 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 
 - **Do NOT use `import zoomSdk from '@zoom/appssdk'`** — the npm package creates a separate SDK instance that lacks the native bridge in ZoomWebKit. This causes `config()` to timeout.
 - **Use `(window as any).zoomSdk`** — the CDN script tag (`sdk.js`) in `index.html` creates the global `window.zoomSdk` which has the native bridge connected to the Zoom client.
-- All four hooks (`useZoomSdk`, `useMessaging`, `useZoomAuth`, `useZoomEvents`) use `window.zoomSdk` with a guard for when running outside Zoom (DevPreview).
+- All four hooks (`useZoomSdk`, `useMessaging`, `useZoomAuth`, `useZoomEvents`) use `window.zoomSdk` with a guard for when running outside Zoom (demo mode).
+- `useMessaging` uses WebSocket relay (not SDK messaging) — works both inside and outside Zoom.
 - Server must serve production build via Express (port 3001) with ngrok tunneling to 3001 — Vite dev server does NOT work inside Zoom.
 - OWASP headers (Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy, Content-Security-Policy) are REQUIRED — Zoom blocks rendering without all four.
 
 ## Known Issues (Priority Order)
 
-### P0: Host↔Student Messaging Broken
-- `zoomSdk.connect()` resolves, `onConnect` fires on both host and attendee
-- `zoomSdk.postMessage()` resolves with `{"message":"Success"}` on both sides
-- But `onMessage` NEVER fires — neither side receives messages
-- The native bridge (`native2js`) shows no message delivery events
-- **Root cause found:** The SDK docs state: *"Apps that first call the `connect` API will be able to broadcast messages to instances of the same app in the main client."* This means `postMessage`/`onMessage` is designed for communication between the **in-meeting** and **main client** instances of the SAME user's app — NOT between different participants' app instances. It was never meant for host↔student messaging.
-- The reference app (Arlo at `/home/ubuntu/arlo`) confirms this — it uses WebSockets through the backend (`MeetingContext.js` connects to `/ws?meeting_id=...`) for all inter-participant communication.
-- **Fix: Replace `useMessaging` with a WebSocket relay through Express.** Server manages rooms by meetingId, relays messages between all connected clients in the same meeting.
+### Resolved
+- ~~**P0: Host↔Student Messaging**~~ — FIXED. Replaced Zoom SDK `postMessage`/`onMessage` with WebSocket relay through Express.
+- ~~**RTMS secret fallback**~~ — FIXED. Proper empty-string check before falling back to clientSecret.
+- ~~**"Analyze Now" button**~~ — FIXED. Removed from Anchor tab.
 
-### P1: Other Bugs
+### Open Bugs
 1. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
 2. **AI topic-segment silent failure** — Returns fake success on AI error instead of surfacing the failure.
 3. **AI topic dedup** — Similar titles sometimes create duplicate topics across polling cycles.
-4. **RTMS secret fallback** — `config.zoom_secret_token` returns `''` from `optional()`, so `||` fallback silently uses `clientSecret`.
-5. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
-6. **Participant count** — Hardcoded "Participants: --" in HostDashboard, never wired to `getMeetingParticipants()`.
-7. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
-8. **"Analyze Now" button** — Confusing alongside "Start AI" on Anchor tab. Should be removed.
+4. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
+5. **Participant count** — Hardcoded "Participants: --" in HostDashboard, never wired to `getMeetingParticipants()`.
+6. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
 
 ## Git Config
 - user.name: `shitijkarsolia`

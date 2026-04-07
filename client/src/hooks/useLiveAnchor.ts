@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Topic, GlossaryEntry } from '../types/messages';
 import type { MessageType } from '../types/messages';
+import { startRTMS, stopRTMS } from './useZoomSdk';
 
 // --------------- Host Hook ---------------
 
@@ -16,11 +17,12 @@ interface AnchorHostState {
 interface UseAnchorHostOptions {
   broadcast: (type: MessageType, payload: unknown) => void;
   meetingId: string;
+  isInZoom: boolean;
 }
 
 const POLL_INTERVAL_MS = 30_000; // 30 seconds
 
-export function useAnchorHost({ broadcast, meetingId }: UseAnchorHostOptions) {
+export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostOptions) {
   const [state, setState] = useState<AnchorHostState>({
     topics: [],
     currentTopicId: '',
@@ -167,21 +169,32 @@ export function useAnchorHost({ broadcast, meetingId }: UseAnchorHostOptions) {
     }
   }, [broadcast, meetingId, state.currentTopicId, state.topics]);
 
-  const startPolling = useCallback(() => {
+  const startPolling = useCallback(async () => {
     if (timerRef.current) return;
     setState(prev => ({ ...prev, isPolling: true }));
+
+    if (isInZoom) {
+      const ok = await startRTMS();
+      console.log(`[anchor] RTMS start ${ok ? 'succeeded' : 'failed (will poll anyway)'}`);
+    }
+
     // Poll immediately, then on interval
     pollTranscript();
     timerRef.current = setInterval(pollTranscript, POLL_INTERVAL_MS);
-  }, [pollTranscript]);
+  }, [pollTranscript, isInZoom]);
 
-  const stopPolling = useCallback(() => {
+  const stopPolling = useCallback(async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
     setState(prev => ({ ...prev, isPolling: false }));
-  }, []);
+
+    if (isInZoom) {
+      const ok = await stopRTMS();
+      console.log(`[anchor] RTMS stop ${ok ? 'succeeded' : 'failed'}`);
+    }
+  }, [isInZoom]);
 
   // Cleanup on unmount
   useEffect(() => {

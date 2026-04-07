@@ -4,17 +4,13 @@ Last updated: April 7, 2026
 
 ## Current State
 
-The app builds, runs locally, and **loads inside a real Zoom meeting**. All core features are code-complete and tested in DevPreview with real CS50 lecture data. The SDK config timeout is resolved. **The main blocker is host↔student messaging** — both sides connect but messages don't deliver via the Zoom SDK.
-
-### Active Blocker
-
-**Host↔Student Messaging** — `zoomSdk.postMessage()` resolves with Success on both host and attendee, but `onMessage` never fires on either side. The native bridge works (config, connect, getUserContext all succeed), but message delivery doesn't happen. The reference app (Arlo) doesn't use SDK messaging at all — it uses WebSockets through the backend. **Recommended fix: switch to WebSocket relay.**
+The app builds, runs locally, and **loads inside a real Zoom meeting**. All core features are code-complete. RTMS live transcription tested and working. **Host↔student messaging now works via WebSocket relay.** AI backend uses CREATE AI (gemini-pro → claude-3-opus) with Bedrock fallback. Demo mode auto-enables outside Zoom for browser testing.
 
 ### Resolved Blockers
 
-1. ~~**SDK Config Timeout**~~ — Fixed. Root cause: the npm `@zoom/appssdk` package creates a separate SDK instance without the native bridge in ZoomWebKit. Solution: use `window.zoomSdk` from the CDN script tag. Server must serve production build via Express (not Vite dev server).
-
-2. ~~**Mock Transcript FK Bug**~~ — Fixed. `transcript.ts` now uses `meeting-resolver` + upsert.
+1. ~~**SDK Config Timeout**~~ — Fixed. Use `window.zoomSdk` from CDN, not npm import.
+2. ~~**Mock Transcript FK Bug**~~ — Fixed. `transcript.ts` uses `meeting-resolver` + upsert.
+3. ~~**Host↔Student Messaging**~~ — Fixed. Replaced Zoom SDK `postMessage`/`onMessage` with WebSocket relay through Express. SDK messaging was designed for same-user instances only.
 
 ---
 
@@ -27,56 +23,53 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 | Live Anchor (Lecture Analysis) | Complete, tested | Real AI analysis of CS50 transcript, topic detection, glossary extraction |
 | Auto-Bookmarks (Cue Detection) | Complete | AI detects emphasis cues, broadcasts to students |
 | Student Bookmarks | Complete, tested | Mark for Review button, expandable bookmark list with metadata |
-| Live Transcript Tab | Complete, tested | Real-time transcript with topic headers, glossary term highlighting |
+| Live Transcript Tab | Complete, tested | Host + student both see real-time transcript with glossary highlighting |
 | Recovery Pack (Post-Class) | Complete, tested | Student gets personalized review; Host gets engagement stats |
 | OAuth PKCE | Complete | Full Zoom OAuth flow with session |
-| RTMS Integration | Complete (untested) | Webhook + stream client. Needs live meeting test |
+| RTMS Integration | Complete, tested | Start AI button triggers `startRTMS()`, webhook + stream client, live-tested |
 | SDK Events | Complete | Active speaker, late joiner, meeting end |
-| Message Protocol | Code complete, BROKEN | `postMessage` succeeds but `onMessage` never fires. Needs WebSocket replacement. |
-| DevPreview | Complete, tested | Full browser simulation with real AI + CS50 transcript |
+| WebSocket Messaging | Complete, tested | Server relay with rooms by meetingId, auto-reconnect, state sync |
+| Demo Mode | Complete, tested | Auto-enabled outside Zoom, role switcher, sim buttons, transcript toggle |
 | Mock Transcript | Complete, tested | Fetches real CS50 Lecture 0 SRT (700 chunks) from Harvard CDN |
 | SDK Config | Fixed | Uses `window.zoomSdk` from CDN, not npm import |
+| AI Backend | Complete | CREATE AI (gemini-pro/claude-3-opus) with Bedrock fallback |
 
 ---
 
 ## Known Bugs
 
-1. ~~**[Critical] SDK config timeout**~~ — FIXED. Used `window.zoomSdk` instead of npm import.
-2. **[Critical] Messaging broken** — `postMessage` succeeds but `onMessage` never fires. Need to switch to WebSocket relay.
+1. ~~**[Critical] SDK config timeout**~~ — FIXED.
+2. ~~**[Critical] Messaging broken**~~ — FIXED. WebSocket relay.
 3. **[Medium] Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
 4. **[Medium] AI topic-segment silent failure** — `ai.ts` returns a fake success response when the AI call fails.
 5. **[Medium] Anchor topic dedup** — AI sometimes generates slightly different titles for the same topic.
-6. **[Low] RTMS secret fallback** — `rtms.ts` falls back to `clientSecret` if `zoom_secret_token` is empty string.
+6. ~~**[Low] RTMS secret fallback**~~ — FIXED.
 7. **[Low] BigInt serialization** — `transcript.ts` returns segments without converting BigInt fields to strings.
 8. **[Low] Startup race** — mock-transcript chunk #1 always fails with ECONNREFUSED.
 9. **[Low] Participant count** — Hardcoded "Participants: --" in host UI.
 10. **[Low] Sign-in button** — Does nothing on participant side in Zoom context.
-11. **[Low] "Analyze Now" button** — Confusing alongside "Start AI", should be removed.
+11. ~~**[Low] "Analyze Now" button**~~ — FIXED. Removed.
 
 ---
 
 ## What's Left
 
-### Priority 0 — Fix Messaging (BLOCKER)
-- Switch from Zoom SDK `postMessage`/`onMessage` to WebSocket relay through Express
-- Arlo reference app at `/home/ubuntu/arlo` uses this approach (see `MeetingContext.js`)
-- Server needs a WebSocket server (e.g., `ws` package) that relays messages between connected clients in the same meeting
-- Client `useMessaging` hook needs to connect via WebSocket instead of `zoomSdk.connect()`
-- Meeting ID from `zoomSdk.getUserContext()` or `getMeetingContext()` used to scope WebSocket rooms
+### Priority 0 — DONE
+- ~~Switch messaging to WebSocket relay~~ — DONE. Server relay + client rewrite.
+- ~~RTMS integration~~ — DONE. Start AI triggers `startRTMS()`, live-tested.
+- ~~Demo mode~~ — DONE. Auto-enabled outside Zoom, DevPreview removed.
 
 ### Priority 1 — End-to-End in Zoom
-- Test all features inside a real Zoom meeting (host + student) once messaging works
-- Test RTMS with live transcription
+- Test all features inside a real Zoom meeting (host + student) with WebSocket messaging
+- ~~Test RTMS with live transcription~~ — DONE
 - Test guest mode with second Zoom account
 
 ### Priority 2 — Code Quality
 - Create shared PrismaClient singleton
-- Fix RTMS secret fallback logic
 - Fix BigInt serialization in transcript route
 - Fix AI silent failure in topic-segment
 - Improve anchor topic dedup (fuzzy matching)
 - Wire participant count to `getMeetingParticipants()`
-- Remove "Analyze Now" button from Anchor
 - Add test framework (Vitest)
 - Add linter (ESLint)
 

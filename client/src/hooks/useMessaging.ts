@@ -1,8 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import type { AppMessage, AppState, MessageType } from '../types/messages';
 
-const zoomSdk = (window as any).zoomSdk as any | undefined;
-
 interface UseMessagingOptions {
   isHost: boolean;
   participantId: string;
@@ -14,82 +12,85 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
   const seqRef = useRef(0);
   const stateRef = useRef<AppState | null>(null);
   const onMessageRef = useRef(onMessage);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const meetingIdRef = useRef('');
 
-  // Keep callback ref fresh without re-subscribing
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
+  // Extract meetingId from URL params (demo mode) or wait for it to be set
   useEffect(() => {
-    if (!zoomSdk) return;
-    let mounted = true;
+    const params = new URLSearchParams(window.location.search);
+    const demoMeetingId = params.get('demo') === '1' ? 'mock-meeting-001' : '';
+    if (demoMeetingId) {
+      meetingIdRef.current = demoMeetingId;
+    }
+  }, []);
 
-    const init = async () => {
-      try {
-        console.log('[useMessaging] calling connect()...');
-        await zoomSdk.connect();
-        console.log('[useMessaging] connected!');
-        if (mounted) {
-          setConnected(true);
-        }
+  const connectWs = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isDemoMode = params.get('demo') === '1';
+    const meetingId = meetingIdRef.current || (isDemoMode ? 'mock-meeting-001' : '');
 
-        // If student, request current state on connect
-        if (!isHost) {
-          const requestMsg: AppMessage = {
-            type: 'REQUEST_STATE',
-            payload: null,
-            seq: 0,
-            timestamp: Date.now(),
-            senderId: participantId,
-            senderRole: 'student',
-          };
-          await zoomSdk.postMessage({ payload: JSON.stringify(requestMsg) });
-          console.log('[useMessaging] sent REQUEST_STATE');
-        }
-      } catch (err) {
-        console.error('[useMessaging] connect failed:', err);
+    if (!meetingId) {
+      console.log('[useMessaging] No meetingId yet, deferring connection');
+      return;
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const role = isHost ? 'host' : 'student';
+    const url = `${protocol}//${host}/ws?meetingId=${encodeURIComponent(meetingId)}&role=${role}&participantId=${encodeURIComponent(participantId || 'anon')}`;
+
+    console.log(`[useMessaging] Connecting to ${url}`);
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('[useMessaging] WebSocket connected');
+      setConnected(true);
+
+      // Student: request current state on connect
+      if (!isHost) {
+        const requestMsg: AppMessage = {
+          type: 'REQUEST_STATE',
+          payload: null,
+          seq: 0,
+          timestamp: Date.now(),
+          senderId: participantId,
+          senderRole: 'student',
+        };
+        ws.send(JSON.stringify(requestMsg));
+        console.log('[useMessaging] sent REQUEST_STATE');
       }
     };
 
-    // Listen for incoming messages
-    try {
-      zoomSdk.onMessage((message: any) => {
-        try {
-          const raw = typeof message.payload === 'string' ? message.payload : JSON.stringify(message.payload);
-          const parsed: AppMessage = JSON.parse(raw);
-          console.log('[useMessaging] received:', parsed.type);
-
-          // Host auto-responds to state requests
-          if (isHost && parsed.type === 'REQUEST_STATE' && stateRef.current) {
-            const fullState: AppMessage = {
-              type: 'FULL_STATE',
-              payload: stateRef.current,
-              seq: ++seqRef.current,
-              timestamp: Date.now(),
-              senderId: participantId,
-              senderRole: 'host',
-            };
-            zoomSdk.postMessage({ payload: JSON.stringify(fullState) });
-            console.log('[useMessaging] sent FULL_STATE');
-            return;
-          }
-
-          onMessageRef.current(parsed);
-        } catch (err) {
-          console.error('[useMessaging] failed to parse message:', err);
-        }
-      });
-      console.log('[useMessaging] onMessage listener registered');
-    } catch (err) {
-      console.error('[useMessaging] onMessage registration failed:', err);
-    }
-
-    // Host: detect new participants and auto-send state
-    if (isHost) {
+    ws.onmessage = (event) => {
       try {
-        zoomSdk.onParticipantChange(() => {
-          console.log('[useMessaging] participant changed');
-          if (stateRef.current) {
+        const parsed: AppMessage = JSON.parse(event.data);
+        console.log('[useMessaging] received:', parsed.type);
+
+        // Host auto-responds to state requests
+        if (isHost && parsed.type === 'REQUEST_STATE' && stateRef.current) {
+          const fullState: AppMessage = {
+            type: 'FULL_STATE',
+            payload: stateRef.current,
+            seq: ++seqRef.current,
+            timestamp: Date.now(),
+            senderId: participantId,
+            senderRole: 'host',
+          };
+          ws.send(JSON.stringify(fullState));
+          console.log('[useMessaging] sent FULL_STATE');
+          return;
+        }
+
+        // Skip server-generated messages like PARTICIPANT_JOINED
+        if ((parsed as any).senderRole === 'server') {
+          // If host, broadcast full state to catch up new participants
+          if (isHost && (parsed as any).type === 'PARTICIPANT_JOINED' && stateRef.current) {
             const fullState: AppMessage = {
               type: 'FULL_STATE',
               payload: stateRef.current,
@@ -98,40 +99,78 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
               senderId: participantId,
               senderRole: 'host',
             };
-            zoomSdk.postMessage({ payload: JSON.stringify(fullState) });
+            ws.send(JSON.stringify(fullState));
+            console.log('[useMessaging] sent FULL_STATE for new participant');
           }
-        });
+          return;
+        }
+
+        onMessageRef.current(parsed);
       } catch (err) {
-        console.error('[useMessaging] onParticipantChange failed:', err);
+        console.error('[useMessaging] failed to parse message:', err);
       }
-    }
+    };
 
-    init();
+    ws.onclose = () => {
+      console.log('[useMessaging] WebSocket disconnected');
+      setConnected(false);
+      wsRef.current = null;
 
-    return () => {
-      mounted = false;
+      // Auto-reconnect after 3s
+      reconnectTimer.current = setTimeout(() => {
+        console.log('[useMessaging] Reconnecting...');
+        connectWs();
+      }, 3000);
+    };
+
+    ws.onerror = (err) => {
+      console.error('[useMessaging] WebSocket error:', err);
     };
   }, [isHost, participantId]);
 
-  // Send a message (used by students for answers/responses)
+  // Set meetingId from Zoom SDK and connect
+  const setMeetingId = useCallback((id: string) => {
+    if (id && id !== meetingIdRef.current) {
+      meetingIdRef.current = id;
+      // If not connected yet, connect now
+      if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+        connectWs();
+      }
+    }
+  }, [connectWs]);
+
+  useEffect(() => {
+    connectWs();
+
+    return () => {
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      if (wsRef.current) {
+        wsRef.current.onclose = null; // prevent reconnect on intentional close
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [connectWs]);
+
   const send = useCallback(
     (type: MessageType, payload: unknown) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
       const msg: AppMessage = {
         type,
         payload,
-        seq: 0, // students don't sequence
+        seq: 0,
         timestamp: Date.now(),
         senderId: participantId,
         senderRole: isHost ? 'host' : 'student',
       };
-      zoomSdk.postMessage({ payload: JSON.stringify(msg) });
+      wsRef.current.send(JSON.stringify(msg));
     },
     [isHost, participantId],
   );
 
-  // Host-only: broadcast with sequence number
   const broadcast = useCallback(
     (type: MessageType, payload: unknown) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
       seqRef.current += 1;
       const msg: AppMessage = {
         type,
@@ -141,15 +180,14 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
         senderId: participantId,
         senderRole: 'host',
       };
-      zoomSdk.postMessage({ payload: JSON.stringify(msg) });
+      wsRef.current.send(JSON.stringify(msg));
     },
     [participantId],
   );
 
-  // Host: update canonical state reference
   const setState = useCallback((newState: AppState) => {
     stateRef.current = newState;
   }, []);
 
-  return { connected, send, broadcast, setState };
+  return { connected, send, broadcast, setState, setMeetingId };
 }

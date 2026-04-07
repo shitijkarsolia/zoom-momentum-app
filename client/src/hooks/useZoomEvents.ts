@@ -66,11 +66,23 @@ export function useZoomEvents({ isHost, broadcast, onMeetingEnd }: UseZoomEvents
 
   const dismissLateJoinInfo = useCallback(() => setLateJoinInfo(null), []);
 
+  const simulateLateJoin = useCallback((info: { topicCount: number; latestTopic: string }) => {
+    setLateJoinInfo(info);
+    setTimeout(() => setLateJoinInfo(null), 8000);
+  }, []);
+
+  const simulateMeetingEnd = useCallback(() => {
+    setMeetingEnded(true);
+    onMeetingEnd();
+  }, [onMeetingEnd]);
+
   return {
     meetingEnded,
     lateJoinInfo,
     activeSpeaker,
     handleFullState,
     dismissLateJoinInfo,
+    simulateLateJoin,
+    simulateMeetingEnd,
   };
 }

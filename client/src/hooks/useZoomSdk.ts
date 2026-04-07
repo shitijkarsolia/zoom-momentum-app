@@ -31,6 +31,10 @@ const SDK_CAPABILITIES = [
   'promptAuthorize',
   'showNotification',
   'sendMessageToChat',
+  'startRTMS',
+  'stopRTMS',
+  'getRTMSStatus',
+  'onRTMSStatusChange',
 ] as const;
 
 export function useZoomSdk(): ZoomContext {
@@ -92,4 +96,38 @@ export function useZoomSdk(): ZoomContext {
   }, [configure]);
 
   return context;
+}
+
+/** Start RTMS transcript stream (only works inside Zoom) */
+export async function startRTMS(): Promise<boolean> {
+  if (!zoomSdk) return false;
+  try {
+    await zoomSdk.callZoomApi('startRTMS', {
+      audioOptions: { rawAudio: false },
+      transcriptOptions: { caption: true },
+    });
+    console.log('[useZoomSdk] RTMS started');
+    return true;
+  } catch (err: any) {
+    // 10308 = RTMS already running — treat as success
+    if (err?.code === '10308') {
+      console.log('[useZoomSdk] RTMS already running');
+      return true;
+    }
+    console.error('[useZoomSdk] startRTMS failed:', err);
+    return false;
+  }
+}
+
+/** Stop RTMS transcript stream (only works inside Zoom) */
+export async function stopRTMS(): Promise<boolean> {
+  if (!zoomSdk) return false;
+  try {
+    await zoomSdk.callZoomApi('stopRTMS', {});
+    console.log('[useZoomSdk] RTMS stopped');
+    return true;
+  } catch (err) {
+    console.error('[useZoomSdk] stopRTMS failed:', err);
+    return false;
+  }
 }

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { resolveMeetingId } from './meeting-resolver.js';
+import { config } from '../config.js';
 
 const prisma = new PrismaClient();
 
@@ -142,6 +143,8 @@ export async function startRTMSSession(payload: RTMSStartPayload): Promise<void>
       meeting_uuid,
       rtms_stream_id,
       server_urls,
+      client: config.zoom.clientId,
+      secret: config.zoom.clientSecret,
     });
     console.log(`[rtms-ingest] Join result: ${result}`);
   } catch (error) {

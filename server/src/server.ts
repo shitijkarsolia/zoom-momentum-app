@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import path from 'path';
+import { createServer } from 'http';
 import { config } from './config.js';
 import { authRouter } from './routes/auth.js';
 import { aiRouter } from './routes/ai.js';
@@ -9,6 +10,7 @@ import { transcriptRouter } from './routes/transcript.js';
 import { bookmarkRouter } from './routes/bookmarks.js';
 import { rtmsRouter } from './routes/rtms.js';
 import { shutdownAllSessions } from './services/rtms-ingest.js';
+import { initWebSocketServer } from './services/websocket.js';
 
 const app = express();
 
@@ -67,7 +69,10 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-app.listen(config.port, () => {
+const httpServer = createServer(app);
+initWebSocketServer(httpServer);
+
+httpServer.listen(config.port, () => {
   console.log(`[server] running on http://localhost:${config.port}`);
 });
 
