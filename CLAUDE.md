@@ -10,7 +10,7 @@ Zoom Momentum is a Zoom Apps SDK in-meeting side panel app that transforms passi
 
 ```bash
 npm run dev              # Run client (port 5173) + server (port 3001) concurrently
-npm run dev:mock         # Same as above + mock-transcript service (fake lecture chunks)
+npm run dev:mock         # Same as above + mock-transcript service (CS50 lecture chunks)
 npm run build            # Build both client and server
 npm run db:migrate       # Run Prisma migrations (server workspace)
 npm run db:studio        # Open Prisma Studio GUI
@@ -22,47 +22,67 @@ npm run build -w server  # Compile server TypeScript to dist/
 
 No test framework or linter is currently configured.
 
+## Running in Zoom (Production Build)
+
+The app must be served as a production build through Express for Zoom to work:
+```bash
+# 1. Build client
+npm run build -w client
+
+# 2. Start ngrok pointing to Express (port 3001, NOT 5173)
+ngrok http 3001 --url=your-tunnel.ngrok-free.dev
+
+# 3. Start server (serves both API + static client build)
+npm run dev -w server
+
+# 4. Optionally start mock transcript
+npm run dev -w mock-transcript
+```
+
 ## Architecture
 
 ### Client (`client/src/`)
 - **App.tsx** — Entry point with role-based routing (host vs student via Zoom SDK role detection)
 - **Hooks** — Core logic lives in hooks:
-  - `useZoomSdk` — SDK init, role detection
+  - `useZoomSdk` — SDK init, role detection, meeting context
   - `useZoomAuth` — OAuth PKCE flow
-  - `useMessaging` — `connect()`/`postMessage()`/`onMessage()` with sequence-numbered state sync
-  - `usePulse` / `useArena` — Feature-specific state management
-- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs), `StudentView` (Timeline/Glossary/Transcript tabs), `AuthView`
-- **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard), `anchor/` (timeline, glossary, transcript, bookmarks), `recovery/` (post-class summary)
+  - `useMessaging` — `connect()`/`postMessage()`/`onMessage()` with sequence-numbered state sync (CURRENTLY BROKEN — see Known Issues)
+  - `usePulse` / `useArena` / `useLiveAnchor` — Feature-specific state management
+  - `useZoomEvents` — Active speaker, meeting end, late joiner detection
+- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs), `StudentView` (Timeline/Glossary/Transcript tabs), `WelcomeView`, `AuthView`
+- **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard), `anchor/` (timeline, glossary, transcript, bookmarks), `recovery/` (post-class summary), `shared/` (feature info)
+- **DevPreview.tsx** — Browser-only simulation mode with real AI + CS50 transcript data
 - **Types** — `messages.ts` defines the full message protocol and state types
 
 ### Server (`server/src/`)
-- **server.ts** — Express app with CORS, sessions, route mounting
+- **server.ts** — Express app with CORS, sessions, OWASP headers, route mounting, serves production client build
 - **config.ts** — Env var validation (fails fast on missing vars)
 - **Routes:**
   - `auth.ts` — OAuth PKCE (`/authorize`, `/callback`, `/me`)
   - `ai.ts` — AI endpoints (`/poll-generate`, `/quiz-generate`, `/topic-segment`, `/recovery-pack`, `/detect-cues`)
-  - `transcript.ts` — Transcript storage (`POST /segment`, `GET /buffer`)
-  - `bookmarks.ts` — Bookmark CRUD
-- **Database** — Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema in `server/prisma/schema.prisma` with models: User, Meeting, TranscriptSegment, Bookmark, QuizSet, RecoveryPack
+  - `transcript.ts` — Transcript storage with meeting-resolver (`POST /segment`, `GET /buffer`)
+  - `bookmarks.ts` — Bookmark CRUD with meeting-resolver
+  - `rtms.ts` — RTMS webhook receiver + stream client
+- **Services:**
+  - `meeting-resolver.ts` — Auto-creates Meeting records from Zoom UUIDs or mock IDs
+  - `rtms-ingest.ts` — RTMS WebSocket client, transcript storage, session lifecycle
+- **Database** — Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema in `server/prisma/schema.prisma`
 
 ### Mock Transcript (`mock-transcript/`)
 - Fetches real CS50 Lecture 0 SRT from Harvard CDN, parses into ~700 chunks, POSTs to `/api/transcript/segment` every 3 seconds
+- Falls back to hardcoded chunks if CDN fetch fails
 
 ### Product Page (`product-page/`)
-- **index.html** — Static landing page (single file, no build step)
-- Fonts: Playfair Display (headings), Plus Jakarta Sans (body), Space Mono (decorative)
-- Color scheme: `#0044CC` (blue bg), `#d4b84a` (gold accents), white text
-- Sections: Hero, Features, Demo (video placeholder), How It Works, For Who, About (NEXT Lab + Zoom Fellows), Tech Stack, CTA, Footer
-- Assets: `assets/` folder with ASU and Zoom logos
+- Static landing page (`index.html`), no build step
 - Serve locally: `cd product-page && python3 -m http.server 8080`
-- Glassmorphism cards, scroll-reveal animations, always-sticky nav
 
 ### Message Protocol
-All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` with a standardized envelope containing `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`.
+All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` with a standardized envelope containing `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`. **NOTE: This is currently broken — see Known Issues.**
 
 ## Key Config
 
-- `client/vite.config.ts` — Proxies `/api/*` requests to `localhost:3001`
+- `client/vite.config.ts` — Proxies `/api/*` requests to `localhost:3001` (dev mode only)
+- `client/index.html` — Must include `<script src="https://appssdk.zoom.us/sdk.js"></script>` before app bundle
 - `.env` — Requires `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`, `ZOOM_REDIRECT_URL`, `ZOOM_SECRET_TOKEN`, `SESSION_SECRET`, `DATABASE_URL`, `AWS_REGION`, `PORT`, `CLIENT_URL` (see `.env.example`)
 
 ## AI Backend
@@ -73,17 +93,36 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 - Cross-region inference profile IDs required (`us.` prefix)
 - IAM role: `zoom-momentum-ec2-role`
 
-## Zoom SDK Integration (IMPORTANT)
+## Zoom SDK Integration (CRITICAL)
 
 - **Do NOT use `import zoomSdk from '@zoom/appssdk'`** — the npm package creates a separate SDK instance that lacks the native bridge in ZoomWebKit. This causes `config()` to timeout.
 - **Use `(window as any).zoomSdk`** — the CDN script tag (`sdk.js`) in `index.html` creates the global `window.zoomSdk` which has the native bridge connected to the Zoom client.
-- The `index.html` must include `<script src="https://appssdk.zoom.us/sdk.js"></script>` before the app bundle.
 - All four hooks (`useZoomSdk`, `useMessaging`, `useZoomAuth`, `useZoomEvents`) use `window.zoomSdk` with a guard for when running outside Zoom (DevPreview).
-- Server must serve production build via Express (port 3001) with ngrok tunneling to 3001 — not through Vite dev server.
+- Server must serve production build via Express (port 3001) with ngrok tunneling to 3001 — Vite dev server does NOT work inside Zoom.
+- OWASP headers (Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy, Content-Security-Policy) are REQUIRED — Zoom blocks rendering without all four.
 
-## Known Bugs
+## Known Issues (Priority Order)
 
+### P0: Host↔Student Messaging Broken
+- `zoomSdk.connect()` resolves, `onConnect` fires on both host and attendee
+- `zoomSdk.postMessage()` resolves with `{"message":"Success"}` on both sides
+- But `onMessage` NEVER fires — neither side receives messages
+- The native bridge (`native2js`) shows no message delivery events
+- **Root cause unknown.** The Zoom SDK docs confirm `connect`/`postMessage`/`onMessage` exist for app-to-app messaging, but no working examples were found online.
+- The reference app (Arlo at `/home/ubuntu/arlo`) does NOT use SDK messaging — it uses WebSockets through the backend instead.
+- **Recommended fix:** Switch to WebSocket relay through Express server (proven approach from Arlo). This would replace `useMessaging` hook with a WebSocket-based implementation.
+
+### P1: Other Bugs
 1. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
 2. **AI topic-segment silent failure** — Returns fake success on AI error instead of surfacing the failure.
-3. **RTMS secret fallback** — `config.zoom_secret_token` returns `''` from `optional()`, so `||` fallback silently uses `clientSecret`.
-4. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
+3. **AI topic dedup** — Similar titles sometimes create duplicate topics across polling cycles.
+4. **RTMS secret fallback** — `config.zoom_secret_token` returns `''` from `optional()`, so `||` fallback silently uses `clientSecret`.
+5. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
+6. **Participant count** — Hardcoded "Participants: --" in HostDashboard, never wired to `getMeetingParticipants()`.
+7. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
+8. **"Analyze Now" button** — Confusing alongside "Start AI" on Anchor tab. Should be removed.
+
+## Git Config
+- user.name: `shitijkarsolia`
+- user.email: `shitijkarsolia@gmail.com`
+- Do NOT add `Co-Authored-By` lines to commits

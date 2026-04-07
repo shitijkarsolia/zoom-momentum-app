@@ -57,8 +57,16 @@ export function useZoomSdk(): ZoomContext {
 
       const userContext = await zoomSdk.getUserContext();
 
-      // configResponse may contain meetingUUID at runtime even if not in the TS type
-      const meetingUUID = (configResponse as any).meetingUUID ?? '';
+      // Get meeting UUID — try configResponse first, then getMeetingContext
+      let meetingUUID = (configResponse as any).meetingUUID ?? '';
+      if (!meetingUUID) {
+        try {
+          const meetingContext = await zoomSdk.getMeetingContext();
+          meetingUUID = meetingContext?.meetingID ?? '';
+        } catch {
+          // getMeetingContext may not be available
+        }
+      }
 
       setContext({
         isHost: userContext.role === 'host' || userContext.role === 'coHost',

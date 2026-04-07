@@ -21,12 +21,17 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
   }, [onMessage]);
 
   useEffect(() => {
+    if (!zoomSdk) return;
     let mounted = true;
 
     const init = async () => {
       try {
+        console.log('[useMessaging] calling connect()...');
         await zoomSdk.connect();
-        if (mounted) setConnected(true);
+        console.log('[useMessaging] connected!');
+        if (mounted) {
+          setConnected(true);
+        }
 
         // If student, request current state on connect
         if (!isHost) {
@@ -39,6 +44,7 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
             senderRole: 'student',
           };
           await zoomSdk.postMessage({ payload: JSON.stringify(requestMsg) });
+          console.log('[useMessaging] sent REQUEST_STATE');
         }
       } catch (err) {
         console.error('[useMessaging] connect failed:', err);
@@ -46,46 +52,58 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
     };
 
     // Listen for incoming messages
-    zoomSdk.onMessage((message: any) => {
-      try {
-        const raw = typeof message.payload === 'string' ? message.payload : JSON.stringify(message.payload);
-        const parsed: AppMessage = JSON.parse(raw);
+    try {
+      zoomSdk.onMessage((message: any) => {
+        try {
+          const raw = typeof message.payload === 'string' ? message.payload : JSON.stringify(message.payload);
+          const parsed: AppMessage = JSON.parse(raw);
+          console.log('[useMessaging] received:', parsed.type);
 
-        // Host auto-responds to state requests
-        if (isHost && parsed.type === 'REQUEST_STATE' && stateRef.current) {
-          const fullState: AppMessage = {
-            type: 'FULL_STATE',
-            payload: stateRef.current,
-            seq: ++seqRef.current,
-            timestamp: Date.now(),
-            senderId: participantId,
-            senderRole: 'host',
-          };
-          zoomSdk.postMessage({ payload: JSON.stringify(fullState) });
-          return;
+          // Host auto-responds to state requests
+          if (isHost && parsed.type === 'REQUEST_STATE' && stateRef.current) {
+            const fullState: AppMessage = {
+              type: 'FULL_STATE',
+              payload: stateRef.current,
+              seq: ++seqRef.current,
+              timestamp: Date.now(),
+              senderId: participantId,
+              senderRole: 'host',
+            };
+            zoomSdk.postMessage({ payload: JSON.stringify(fullState) });
+            console.log('[useMessaging] sent FULL_STATE');
+            return;
+          }
+
+          onMessageRef.current(parsed);
+        } catch (err) {
+          console.error('[useMessaging] failed to parse message:', err);
         }
-
-        onMessageRef.current(parsed);
-      } catch (err) {
-        console.error('[useMessaging] failed to parse message:', err);
-      }
-    });
+      });
+      console.log('[useMessaging] onMessage listener registered');
+    } catch (err) {
+      console.error('[useMessaging] onMessage registration failed:', err);
+    }
 
     // Host: detect new participants and auto-send state
     if (isHost) {
-      zoomSdk.onParticipantChange(() => {
-        if (stateRef.current) {
-          const fullState: AppMessage = {
-            type: 'FULL_STATE',
-            payload: stateRef.current,
-            seq: ++seqRef.current,
-            timestamp: Date.now(),
-            senderId: participantId,
-            senderRole: 'host',
-          };
-          zoomSdk.postMessage({ payload: JSON.stringify(fullState) });
-        }
-      });
+      try {
+        zoomSdk.onParticipantChange(() => {
+          console.log('[useMessaging] participant changed');
+          if (stateRef.current) {
+            const fullState: AppMessage = {
+              type: 'FULL_STATE',
+              payload: stateRef.current,
+              seq: ++seqRef.current,
+              timestamp: Date.now(),
+              senderId: participantId,
+              senderRole: 'host',
+            };
+            zoomSdk.postMessage({ payload: JSON.stringify(fullState) });
+          }
+        });
+      } catch (err) {
+        console.error('[useMessaging] onParticipantChange failed:', err);
+      }
     }
 
     init();
