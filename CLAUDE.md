@@ -44,7 +44,7 @@ npm run dev -w mock-transcript
 ### Client (`client/src/`)
 - **App.tsx** — Entry point with role-based routing (host vs student via Zoom SDK role detection)
 - **Hooks** — Core logic lives in hooks:
-  - `useZoomSdk` — SDK init, role detection, meeting context, RTMS start/stop
+  - `useZoomSdk` — SDK init, role detection, meeting context (uses `getMeetingUUID()` for consistent ID across host/attendee), RTMS start/stop, participant count
   - `useZoomAuth` — OAuth PKCE flow
   - `useMessaging` — WebSocket relay client with auto-reconnect, sequence-numbered state sync
   - `usePulse` / `useArena` / `useLiveAnchor` — Feature-specific state management
