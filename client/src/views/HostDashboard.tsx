@@ -4,6 +4,7 @@ import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
 import { Timeline } from '../components/anchor/Timeline';
 import { GlossaryTab } from '../components/anchor/GlossaryTab';
+import { TranscriptTab } from '../components/anchor/TranscriptTab';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { PollDraft, PulsePhase } from '../hooks/usePulse';
 import type { ArenaHostPhase } from '../hooks/useArena';
@@ -52,9 +53,12 @@ interface HostDashboardProps {
   anchorGlossary: GlossaryEntry[];
   anchorIsPolling: boolean;
   anchorError: string | null;
+  meetingId: string;
+  isInZoom: boolean;
+  useMockTranscript: boolean;
+  onToggleTranscriptSource: () => void;
   onAnchorStartPolling: () => void;
   onAnchorStopPolling: () => void;
-  onAnchorPollNow: () => void;
 }
 
 type HostTab = 'pulse' | 'arena' | 'anchor';
@@ -93,9 +97,12 @@ export function HostDashboard({
   anchorGlossary,
   anchorIsPolling,
   anchorError,
+  meetingId,
+  isInZoom,
+  useMockTranscript,
+  onToggleTranscriptSource,
   onAnchorStartPolling,
   onAnchorStopPolling,
-  onAnchorPollNow,
 }: HostDashboardProps) {
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
 
@@ -223,15 +230,22 @@ export function HostDashboard({
                 <span>{anchorIsPolling ? 'AI Active' : 'Paused'}</span>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {anchorIsPolling ? (
                 <button className="btn btn-secondary" onClick={onAnchorStopPolling}>Pause AI</button>
               ) : (
                 <button className="btn btn-primary" onClick={onAnchorStartPolling}>Start AI</button>
               )}
-              <button className="btn btn-secondary" onClick={onAnchorPollNow} disabled={anchorIsPolling}>
-                Analyze Now
-              </button>
+              {isInZoom && (
+                <button
+                  className={`btn btn-secondary`}
+                  onClick={onToggleTranscriptSource}
+                  disabled={anchorIsPolling}
+                  style={{ fontSize: 11, padding: '4px 10px' }}
+                >
+                  {useMockTranscript ? 'Mock' : 'Live'}
+                </button>
+              )}
             </div>
             {anchorError && (
               <p style={{ color: 'var(--zoom-error)', fontSize: 12 }}>{anchorError}</p>
@@ -240,6 +254,16 @@ export function HostDashboard({
             {anchorGlossary.length > 0 && (
               <div style={{ marginTop: 8 }}>
                 <GlossaryTab glossary={anchorGlossary} />
+              </div>
+            )}
+            {meetingId && (
+              <div style={{ marginTop: 8 }}>
+                <TranscriptTab
+                  meetingId={meetingId}
+                  glossary={anchorGlossary}
+                  topics={anchorTopics}
+                  currentTopicId={anchorCurrentTopicId}
+                />
               </div>
             )}
           </div>

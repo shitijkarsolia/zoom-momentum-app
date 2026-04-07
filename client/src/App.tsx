@@ -6,6 +6,7 @@ import { usePulseHost, usePulseStudent } from './hooks/usePulse';
 import { useArenaHost, useArenaStudent } from './hooks/useArena';
 import { useAnchorHost, useAnchorStudent } from './hooks/useLiveAnchor';
 import { useZoomEvents } from './hooks/useZoomEvents';
+import { useDemoMode } from './hooks/useDemoMode';
 import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
@@ -15,9 +16,18 @@ const ARENA_TIME_LIMIT_SEC = 15;
 
 export default function App() {
   const zoom = useZoomSdk();
+  const demo = useDemoMode();
   const auth = useZoomAuth();
   const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   const [studentActiveSpeaker, setStudentActiveSpeaker] = useState<string | null>(null);
+  const [demoRole, setDemoRole] = useState<'host' | 'student'>('host');
+  const [useMockTranscript, setUseMockTranscript] = useState(demo.isDemoMode);
+
+  // In demo mode, override meetingId and role
+  const isHost = demo.isDemoMode ? demoRole === 'host' : zoom.isHost;
+  const meetingId = demo.isDemoMode ? demo.meetingId : zoom.meetingId;
+  const userName = demo.isDemoMode ? (isHost ? 'Professor (Demo)' : 'Student (Demo)') : zoom.userName;
+  const anchorMeetingId = useMockTranscript ? 'mock-meeting-001' : meetingId;
 
   const messageRouterRef = useRef<(msg: AppMessage) => void>(() => {});
 
@@ -26,16 +36,23 @@ export default function App() {
   }, []);
 
   const messaging = useMessaging({
-    isHost: zoom.isHost,
-    participantId: zoom.participantId,
+    isHost,
+    participantId: zoom.participantId || (demo.isDemoMode ? `demo-${demoRole}` : ''),
     onMessage: handleMessage,
   });
+
+  // Update WebSocket meetingId when it becomes available
+  useEffect(() => {
+    if (meetingId) {
+      messaging.setMeetingId(meetingId);
+    }
+  }, [meetingId, messaging.setMeetingId]);
 
   const pulseHost = usePulseHost({ broadcast: messaging.broadcast });
   const pulseStudent = usePulseStudent({ send: messaging.send });
   const arenaHost = useArenaHost({ broadcast: messaging.broadcast });
-  const arenaStudent = useArenaStudent({ send: messaging.send, participantName: zoom.userName });
-  const anchorHost = useAnchorHost({ broadcast: messaging.broadcast, meetingId: zoom.meetingId });
+  const arenaStudent = useArenaStudent({ send: messaging.send, participantName: userName });
+  const anchorHost = useAnchorHost({ broadcast: messaging.broadcast, meetingId: anchorMeetingId, isInZoom: !demo.isDemoMode && zoom.isConfigured && !useMockTranscript });
   const anchorStudent = useAnchorStudent({ send: messaging.send });
 
   const handleMeetingEnd = useCallback(() => {
@@ -43,14 +60,14 @@ export default function App() {
   }, []);
 
   const zoomEvents = useZoomEvents({
-    isHost: zoom.isHost,
+    isHost,
     broadcast: messaging.broadcast,
     onMeetingEnd: handleMeetingEnd,
   });
 
   useEffect(() => {
     messageRouterRef.current = (message: AppMessage) => {
-      if (zoom.isHost) {
+      if (isHost) {
         if (message.type === 'POLL_RESPONSE') {
           const payload = message.payload as { pollId: string; optionIndex: number };
           pulseHost.handleResponse(message.senderId, payload.pollId, payload.optionIndex);
@@ -127,11 +144,11 @@ export default function App() {
           };
           console.log('[App] Auto-bookmark triggered:', abPayload.topic, abPayload.cues);
           const authUserId = auth.user?.id;
-          if (zoom.meetingId && authUserId) {
+          if (meetingId && authUserId) {
             const cueSnippet = Array.isArray(abPayload.cues)
               ? abPayload.cues.map((cue) => cue?.phrase ?? cue?.reason ?? '').filter(Boolean).join(' | ')
               : undefined;
-            anchorStudent.bookmarkCurrentTopic(zoom.meetingId, authUserId, {
+            anchorStudent.bookmarkCurrentTopic(meetingId, authUserId, {
               isAuto: true,
               topicOverride: abPayload.topic,
               transcriptSnippet: cueSnippet || undefined,
@@ -148,8 +165,8 @@ export default function App() {
       console.log('[App] received message:', message.type, message);
     };
   }, [
-    zoom.isHost,
-    zoom.meetingId,
+    isHost,
+    meetingId,
     zoom.participantId,
     pulseHost.handleResponse,
     pulseStudent.handlePollStart,
@@ -167,7 +184,7 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    if (!zoom.isHost) return;
+    if (!isHost) return;
 
     const isArenaActive = arenaHost.phase === 'question' || arenaHost.phase === 'leaderboard';
     const appPhase: AppState['phase'] = isArenaActive ? 'arena' : 'lecture';
@@ -191,7 +208,7 @@ export default function App() {
         pollHistory: pulseHost.activePoll ? [pulseHost.activePoll] : [],
       },
       meeting: {
-        id: zoom.meetingId,
+        id: meetingId,
         startTime: 0,
         participantCount: 0,
       },
@@ -199,8 +216,8 @@ export default function App() {
 
     messaging.setState(stateSnapshot);
   }, [
-    zoom.isHost,
-    zoom.meetingId,
+    isHost,
+    meetingId,
     messaging.setState,
     arenaHost.phase,
     arenaHost.currentIndex,
@@ -212,7 +229,7 @@ export default function App() {
     pulseHost.activePoll,
   ]);
 
-  if (!zoom.isConfigured && !zoom.error) {
+  if (!demo.isDemoMode && !zoom.isConfigured && !zoom.error) {
     return (
       <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
         <div className="loading">Initializing Zoom SDK…</div>
@@ -220,7 +237,7 @@ export default function App() {
     );
   }
 
-  if (zoom.error) {
+  if (!demo.isDemoMode && zoom.error) {
     const isAppNotSupport = zoom.error.startsWith('APP_NOT_SUPPORT:');
     const displayMessage = isAppNotSupport ? zoom.error.replace(/^APP_NOT_SUPPORT:\s*/, '') : zoom.error;
     return (
@@ -252,18 +269,38 @@ export default function App() {
   if (!hasSeenWelcome) {
     return (
       <WelcomeView
-        userName={zoom.userName}
-        isHost={zoom.isHost}
+        userName={userName}
+        isHost={isHost}
         onContinue={() => setHasSeenWelcome(true)}
       />
     );
   }
 
-  if (zoom.isHost) {
+  if (isHost) {
     return (
-      <HostDashboard
-        userName={zoom.userName}
-        connected={messaging.connected}
+      <>
+        {demo.isDemoMode && (
+          <div style={{ background: '#1a73e8', color: '#fff', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, flexWrap: 'wrap', gap: 4 }}>
+            <span>Demo — {demoRole === 'host' ? 'Host' : 'Student'}</span>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <button onClick={() => setDemoRole(demoRole === 'host' ? 'student' : 'host')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+                {demoRole === 'host' ? 'Student' : 'Host'}
+              </button>
+              <button onClick={() => setStudentActiveSpeaker(s => s ? null : 'Prof. Smith')} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+                Speaker
+              </button>
+              <button onClick={() => zoomEvents.simulateLateJoin?.({ topicCount: 3, latestTopic: 'Advanced Applications' })} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+                Late Join
+              </button>
+              <button onClick={() => zoomEvents.simulateMeetingEnd?.()} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+                End Class
+              </button>
+            </div>
+          </div>
+        )}
+        <HostDashboard
+        userName={userName}
+        connected={demo.isDemoMode || messaging.connected}
         pulsePhase={pulseHost.phase}
         pulseDraft={pulseHost.draft}
         pulseResponseCount={pulseHost.responseCount}
@@ -283,7 +320,7 @@ export default function App() {
         arenaLeaderboard={arenaHost.leaderboard}
         arenaError={arenaHost.error}
         arenaQuestions={arenaHost.questions}
-        arenaMeetingId={zoom.meetingId}
+        arenaMeetingId={meetingId}
         onArenaFetchQuestions={arenaHost.fetchQuestions}
         onArenaUpdateQuestion={arenaHost.updateQuestion}
         onArenaStartGame={arenaHost.startGame}
@@ -297,15 +334,28 @@ export default function App() {
         anchorError={anchorHost.error}
         onAnchorStartPolling={anchorHost.startPolling}
         onAnchorStopPolling={anchorHost.stopPolling}
-        onAnchorPollNow={anchorHost.pollTranscript}
+        meetingId={anchorMeetingId}
+        isInZoom={demo.isInZoom}
+        useMockTranscript={useMockTranscript}
+        onToggleTranscriptSource={() => setUseMockTranscript(prev => !prev)}
       />
+      </>
     );
   }
 
   return (
-    <StudentView
-      userName={zoom.userName}
-      connected={messaging.connected}
+    <>
+      {demo.isDemoMode && (
+        <div style={{ background: '#1a73e8', color: '#fff', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+          <span>Demo Mode — Student View</span>
+          <button onClick={() => setDemoRole('host')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+            Switch to Host
+          </button>
+        </div>
+      )}
+      <StudentView
+      userName={userName}
+      connected={demo.isDemoMode || messaging.connected}
       isSignedIn={auth.isAuthenticated}
       onSignIn={auth.login}
       signInLoading={auth.isLoading}
@@ -330,11 +380,12 @@ export default function App() {
       anchorBookmarks={anchorStudent.bookmarks}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
       authUserId={auth.user?.id ?? null}
-      meetingId={zoom.meetingId}
+      meetingId={meetingId}
       meetingEnded={zoomEvents.meetingEnded}
       lateJoinInfo={zoomEvents.lateJoinInfo}
       onDismissLateJoin={zoomEvents.dismissLateJoinInfo}
       activeSpeaker={studentActiveSpeaker}
     />
+    </>
   );
 }
