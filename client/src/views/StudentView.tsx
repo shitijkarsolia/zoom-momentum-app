@@ -199,13 +199,7 @@ export function StudentView({
             </span>
           )}
           {!isSignedIn && onSignIn && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ padding: '4px 10px', fontSize: 12 }}
-              onClick={onSignIn}
-              disabled={signInLoading}
-            >
+            <button type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={onSignIn} disabled={signInLoading}>
               {signInLoading ? 'Connecting…' : 'Sign in to save bookmarks'}
             </button>
           )}

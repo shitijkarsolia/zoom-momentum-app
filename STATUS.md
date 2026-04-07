@@ -28,7 +28,7 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 | OAuth PKCE | Complete | Full Zoom OAuth flow with session |
 | RTMS Integration | Complete, tested | Start AI button triggers `startRTMS()`, webhook + stream client, live-tested |
 | SDK Events | Complete | Active speaker, late joiner, meeting end |
-| WebSocket Messaging | Complete, tested | Server relay with rooms by meetingId, auto-reconnect, state sync |
+| WebSocket Messaging | Complete, tested | Server relay with rooms by meetingId, auto-reconnect, state sync. Tested in Zoom with host + student. |
 | Demo Mode | Complete, tested | Auto-enabled outside Zoom, role switcher, sim buttons, transcript toggle |
 | Mock Transcript | Complete, tested | Fetches real CS50 Lecture 0 SRT (700 chunks) from Harvard CDN |
 | SDK Config | Fixed | Uses `window.zoomSdk` from CDN, not npm import |
@@ -60,7 +60,7 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 - ~~Demo mode~~ — DONE. Auto-enabled outside Zoom, DevPreview removed.
 
 ### Priority 1 — End-to-End in Zoom
-- Test all features inside a real Zoom meeting (host + student) with WebSocket messaging
+- ~~Test all features inside a real Zoom meeting (host + student) with WebSocket messaging~~ — DONE. Tested April 7.
 - ~~Test RTMS with live transcription~~ — DONE
 - Test guest mode with second Zoom account
 

@@ -22,6 +22,8 @@ const SDK_CAPABILITIES = [
   'onConnect',
   'onMessage',
   'getUserContext',
+  'getMeetingContext',
+  'getMeetingUUID',
   'getMeetingParticipants',
   'onParticipantChange',
   'onActiveSpeakerChange',
@@ -63,16 +65,32 @@ export function useZoomSdk(): ZoomContext {
 
       const userContext = await zoomSdk.getUserContext();
 
-      // Get meeting UUID — try configResponse first, then getMeetingContext
-      let meetingUUID = (configResponse as any).meetingUUID ?? '';
+      // Get meeting ID — follow Arlo's pattern: getMeetingUUID first, then getMeetingContext
+      // getMeetingUUID returns the same value for both host and attendee
+      let meetingUUID = '';
+      try {
+        const uuidResponse = await zoomSdk.getMeetingUUID();
+        console.log('[useZoomSdk] getMeetingUUID response:', JSON.stringify(uuidResponse));
+        meetingUUID = uuidResponse?.meetingUUID ?? uuidResponse?.uuid ?? (typeof uuidResponse === 'string' ? uuidResponse : '');
+      } catch (e) {
+        console.log('[useZoomSdk] getMeetingUUID failed:', e);
+      }
+
       if (!meetingUUID) {
         try {
           const meetingContext = await zoomSdk.getMeetingContext();
-          meetingUUID = meetingContext?.meetingID ?? '';
-        } catch {
-          // getMeetingContext may not be available
+          console.log('[useZoomSdk] getMeetingContext response:', JSON.stringify(meetingContext));
+          meetingUUID = meetingContext?.meetingUUID ?? meetingContext?.meetingID ?? '';
+        } catch (e) {
+          console.log('[useZoomSdk] getMeetingContext failed:', e);
         }
       }
+
+      if (!meetingUUID) {
+        meetingUUID = (configResponse as any).meetingUUID ?? '';
+        console.log('[useZoomSdk] fallback to configResponse.meetingUUID:', meetingUUID);
+      }
+      console.log('[useZoomSdk] final meetingId:', meetingUUID, '| role:', userContext.role);
 
       // Get participant count
       let participantCount = 0;
