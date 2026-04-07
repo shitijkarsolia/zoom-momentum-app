@@ -108,9 +108,9 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 - `zoomSdk.postMessage()` resolves with `{"message":"Success"}` on both sides
 - But `onMessage` NEVER fires — neither side receives messages
 - The native bridge (`native2js`) shows no message delivery events
-- **Root cause unknown.** The Zoom SDK docs confirm `connect`/`postMessage`/`onMessage` exist for app-to-app messaging, but no working examples were found online.
-- The reference app (Arlo at `/home/ubuntu/arlo`) does NOT use SDK messaging — it uses WebSockets through the backend instead.
-- **Recommended fix:** Switch to WebSocket relay through Express server (proven approach from Arlo). This would replace `useMessaging` hook with a WebSocket-based implementation.
+- **Root cause found:** The SDK docs state: *"Apps that first call the `connect` API will be able to broadcast messages to instances of the same app in the main client."* This means `postMessage`/`onMessage` is designed for communication between the **in-meeting** and **main client** instances of the SAME user's app — NOT between different participants' app instances. It was never meant for host↔student messaging.
+- The reference app (Arlo at `/home/ubuntu/arlo`) confirms this — it uses WebSockets through the backend (`MeetingContext.js` connects to `/ws?meeting_id=...`) for all inter-participant communication.
+- **Fix: Replace `useMessaging` with a WebSocket relay through Express.** Server manages rooms by meetingId, relays messages between all connected clients in the same meeting.
 
 ### P1: Other Bugs
 1. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
