@@ -3,6 +3,25 @@ import type { Topic, GlossaryEntry } from '../types/messages';
 import type { MessageType } from '../types/messages';
 import { startRTMS, stopRTMS } from './useZoomSdk';
 
+const STOP_WORDS = new Set(['a','an','the','and','or','of','in','on','to','for','with','is','are','was','were','by','at','from','as','how','what','why','when','where','using','about','into','through','during','its','this','that']);
+
+function tokenize(title: string): Set<string> {
+  return new Set(
+    title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w))
+  );
+}
+
+function titleSimilarity(a: string, b: string): number {
+  const wordsA = tokenize(a);
+  const wordsB = tokenize(b);
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let overlap = 0;
+  for (const w of wordsA) {
+    if (wordsB.has(w)) overlap++;
+  }
+  return overlap / Math.min(wordsA.size, wordsB.size);
+}
+
 // --------------- Host Hook ---------------
 
 interface AnchorHostState {
@@ -78,8 +97,7 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
         // Check if a topic with similar title already exists to avoid duplicates
         const existingByTitle = state.topics.find(t =>
           t.title.toLowerCase() === result.topic.title.toLowerCase() ||
-          t.title.toLowerCase().includes(result.topic.title.toLowerCase()) ||
-          result.topic.title.toLowerCase().includes(t.title.toLowerCase())
+          titleSimilarity(t.title, result.topic.title) >= 0.6
         );
         const topicId = existingByTitle
           ? existingByTitle.id
