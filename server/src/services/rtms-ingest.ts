@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db.js';
 import { resolveMeetingId } from './meeting-resolver.js';
 import { config } from '../config.js';
-
-const prisma = new PrismaClient();
 
 // Dynamically import the @zoom/rtms ES module
 let rtms: any;

@@ -1,8 +1,6 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db.js';
 import { resolveMeetingId } from '../services/meeting-resolver.js';
-
-const prisma = new PrismaClient();
 export const transcriptRouter = Router();
 
 // POST /api/transcript/segment — Store a transcript chunk (from RTMS or mock)
@@ -69,6 +67,7 @@ transcriptRouter.get('/buffer', async (req, res) => {
 
     const segments = await prisma.transcriptSegment.findMany({
       where: { meetingId: resolvedMeetingId },
+      select: { text: true },
       orderBy: { seqNo: 'desc' },
       take: 50,
     });

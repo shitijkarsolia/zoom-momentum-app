@@ -301,6 +301,7 @@ export default function App() {
         <HostDashboard
         userName={userName}
         connected={demo.isDemoMode || messaging.connected}
+        participantCount={zoom.participantCount}
         pulsePhase={pulseHost.phase}
         pulseDraft={pulseHost.draft}
         pulseResponseCount={pulseHost.responseCount}

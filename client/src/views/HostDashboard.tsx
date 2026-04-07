@@ -19,6 +19,7 @@ const TAB_INFO = {
 interface HostDashboardProps {
   userName: string;
   connected: boolean;
+  participantCount: number;
   // Pulse props
   pulsePhase: PulsePhase;
   pulseDraft: PollDraft | null;
@@ -66,6 +67,7 @@ type HostTab = 'pulse' | 'arena' | 'anchor';
 export function HostDashboard({
   userName,
   connected,
+  participantCount,
   pulsePhase,
   pulseDraft,
   pulseResponseCount,
@@ -111,7 +113,7 @@ export function HostDashboard({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum — Host</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Participants: --</span>
+          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Participants: {participantCount || '--'}</span>
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
             <span>{connected ? 'Connected' : 'Connecting…'}</span>
