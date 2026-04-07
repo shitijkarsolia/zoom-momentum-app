@@ -87,11 +87,18 @@ All host↔student communication uses Zoom SDK `sendMessage()`/`onMessage()` wit
 
 ## AI Backend
 
-- AWS Bedrock, region `us-east-1`
-- Current model: `meta.llama3-70b-instruct-v1:0` (Llama 3 70B via Converse API)
-- Also available: `us.anthropic.claude-sonnet-4-20250514-v1:0`, `us.anthropic.claude-haiku-4-5-20251001-v1:0`
-- Cross-region inference profile IDs required (`us.` prefix)
-- IAM role: `zoom-momentum-ec2-role`
+- **Primary:** ASU CREATE AI platform (`https://api-main.aiml.asu.edu/query`)
+  - Model 1: `gemini-pro` (primary — 100% quality, ~2.1s avg latency)
+  - Model 2: `claude-3-opus` (backup — 100% quality, ~2.2s avg latency)
+- **Fallback:** AWS Bedrock, region `us-east-1`
+  - Model: `meta.llama3-70b-instruct-v1:0` (Llama 3 70B via Converse API)
+  - IAM role: `zoom-momentum-ec2-role`
+- Failover chain: gemini-pro → claude-3-opus → Bedrock (automatic, per-request)
+- Tiered logic lives in `server/src/ai-client.ts`
+- CREATE AI config is optional — if env vars are missing, falls back to Bedrock
+- Env vars: `CREATE_AI_API_URL`, `CREATE_AI_TOKEN`, `CREATE_AI_PRIMARY_MODEL`, `CREATE_AI_BACKUP_MODEL`
+- Benchmark scripts in `poc/` (benchmark.mjs, benchmark-quality.mjs)
+- Migration plan: `poc/AI_MIGRATION_PLAN.md`
 
 ## Zoom SDK Integration (CRITICAL)
 
