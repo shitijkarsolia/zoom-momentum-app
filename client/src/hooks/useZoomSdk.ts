@@ -12,6 +12,7 @@ interface ZoomContext {
   meetingId: string;
   runningContext: string;
   isConfigured: boolean;
+  participantCount: number;
   error: string | null;
 }
 
@@ -45,6 +46,7 @@ export function useZoomSdk(): ZoomContext {
     meetingId: '',
     runningContext: '',
     isConfigured: false,
+    participantCount: 0,
     error: null,
   });
 
@@ -72,6 +74,15 @@ export function useZoomSdk(): ZoomContext {
         }
       }
 
+      // Get participant count
+      let participantCount = 0;
+      try {
+        const participants = await zoomSdk.getMeetingParticipants();
+        participantCount = participants?.participants?.length ?? 0;
+      } catch {
+        // getMeetingParticipants may not be available
+      }
+
       setContext({
         isHost: userContext.role === 'host' || userContext.role === 'coHost',
         userName: userContext.screenName ?? '',
@@ -79,6 +90,7 @@ export function useZoomSdk(): ZoomContext {
         meetingId: meetingUUID,
         runningContext: configResponse.runningContext ?? 'inMeeting',
         isConfigured: true,
+        participantCount,
         error: null,
       });
     } catch (err) {

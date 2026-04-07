@@ -112,14 +112,7 @@ Guidelines:
     });
   } catch (err) {
     console.error('[ai] topic-segment error:', err);
-    const words = transcript.split(/\s+/);
-    const title = previousTopic || 'Lecture in Progress';
-    res.json({
-      topicChanged: false,
-      topic: { title, bullets: [`Discussing: ${words.slice(0, 8).join(' ')}…`] },
-      glossaryTerms: [],
-      fallback: true,
-    });
+    res.status(500).json({ error: 'Topic analysis failed' });
   }
 });
 

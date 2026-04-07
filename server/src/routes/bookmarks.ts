@@ -1,8 +1,6 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db.js';
 import { resolveMeetingId } from '../services/meeting-resolver.js';
-
-const prisma = new PrismaClient();
 export const bookmarkRouter = Router();
 
 // POST /api/bookmarks — Create a bookmark
