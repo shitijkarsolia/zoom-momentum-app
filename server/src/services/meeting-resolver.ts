@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db.js';
 
 const SYSTEM_ZOOM_USER_ID = 'zoom-momentum-system';
 

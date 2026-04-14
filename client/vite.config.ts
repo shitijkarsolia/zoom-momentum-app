@@ -11,12 +11,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    allowedHosts: ['zoom.shitijmathur.tech'],
+    allowedHosts: ['your-tunnel.ngrok-free.dev'],
     headers: {
       'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
       'X-Content-Type-Options': 'nosniff',
-      'Referrer-Policy': 'same-origin',
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://appssdk.zoom.us; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.zoom.us wss://*.zoom.us https://zoom.shitijmathur.tech; frame-ancestors https://*.zoom.us",
+      'Referrer-Policy': 'origin',
+      'Content-Security-Policy': "frame-ancestors https://*.zoom.us https://*.zoomgov.com",
     },
     hmr: {
       overlay: false,
@@ -25,6 +25,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:3001',
+        ws: true,
       },
     },
   },

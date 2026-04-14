@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { Poll } from '../../types/messages';
 
 interface PollCardProps {
@@ -9,9 +10,20 @@ interface PollCardProps {
 }
 
 export function PollCard({ poll, selectedOption, hasAnswered, onSelect, onSubmit }: PollCardProps) {
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (hasAnswered) {
+      const timer = setTimeout(() => setDismissed(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasAnswered]);
+
+  if (dismissed) return null;
+
   return (
     <div className="poll-card-overlay">
-      <div className="poll-card">
+      <div className={`poll-card ${hasAnswered ? 'poll-card-fade' : ''}`}>
         <div className="poll-card-header">
           <span className="pulse-dot" />
           <span>Live Poll</span>
@@ -45,7 +57,7 @@ export function PollCard({ poll, selectedOption, hasAnswered, onSelect, onSubmit
           </button>
         ) : (
           <div className="poll-submitted">
-            Answer submitted — waiting for results…
+            Answer submitted
           </div>
         )}
       </div>

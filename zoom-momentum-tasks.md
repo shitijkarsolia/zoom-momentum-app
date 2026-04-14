@@ -16,7 +16,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
     - [x] Confirm RTMS as the path for live transcripts (done via DevRel + RTMS docs, videos, and quickstarts).
     - [x] Enable RTMS trial for core dev accounts (done for Shitij, Advikaa, Yash).
     - [ ] Send remaining team members' Zoom account emails to Jen so she can enable RTMS trials for the whole team.
-  - **Status:** RTMS enabled on the Zoom Marketplace app. Webhook URL configured at `https://zoom.shitijmathur.tech/api/rtms/webhook`.
+  - **Status:** RTMS enabled on the Zoom Marketplace app. Webhook URL configured at `https://your-tunnel.ngrok-free.dev/api/rtms/webhook`.
 - [x] **Task 2: Clarify AI Companion API Status**
   - **Context:** We need to know if Zoom's native AI Companion allows custom, real-time prompt responses.
   - **Findings (from Jen / AI Companion docs):**
@@ -99,7 +99,7 @@ This document breaks down the high-level features of Zoom Momentum into specific
   - **Context:** Create the backend server to serve the frontend and handle logic.
   - **Action Items:**
     - [x] Setup the server (Node/Express) locally. → `server/src/server.ts` with Express + TypeScript.
-    - [x] Deploy to EC2 with HTTPS at `zoom.shitijmathur.tech`.
+    - [x] Deploy to EC2 with ngrok tunnel.
     - [x] Configure Zoom Marketplace App credentials (Client ID, Secret, Redirect URL). → Done, app configured on marketplace.zoom.us.
 - [x] **Task 11: Implement Zoom OAuth (Login Flow)**
   - **Context:** The app needs to know who is opening it.
