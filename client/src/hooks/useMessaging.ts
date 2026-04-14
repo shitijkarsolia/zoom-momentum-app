@@ -15,6 +15,7 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const meetingIdRef = useRef('');
+  const connectRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -119,7 +120,7 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
       // Auto-reconnect after 3s
       reconnectTimer.current = setTimeout(() => {
         console.log('[useMessaging] Reconnecting...');
-        connectWs();
+        connectRef.current();
       }, 3000);
     };
 
@@ -127,6 +128,11 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
       console.error('[useMessaging] WebSocket error:', err);
     };
   }, [isHost, participantId]);
+
+  // Keep ref in sync for reconnect
+  useEffect(() => {
+    connectRef.current = connectWs;
+  }, [connectWs]);
 
   // Set meetingId from Zoom SDK and connect
   const setMeetingId = useCallback((id: string) => {
