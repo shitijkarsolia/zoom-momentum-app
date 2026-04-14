@@ -20,7 +20,7 @@ npm run dev -w server    # Server dev server only (tsx watch mode)
 npm run build -w server  # Compile server TypeScript to dist/
 ```
 
-No test framework or linter is currently configured.
+Testing: Vitest (`npm test`). Linting: ESLint (`npm run lint`).
 
 ## Running in Zoom (Production Build)
 
@@ -126,11 +126,13 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 - ~~**PrismaClient instances**~~ — FIXED. Singleton in `server/src/db.ts`.
 - ~~**AI topic-segment silent failure**~~ — FIXED. Returns 500 on error.
 - ~~**AI topic dedup**~~ — FIXED. Fuzzy title matching with token similarity.
+- ~~**BigInt serialization**~~ — FIXED. transcript.ts returns timestamp/seqNo as Numbers.
+- ~~**Participant count**~~ — FIXED. Filters out app's own participantUUID.
+- ~~**Sign-in button**~~ — FIXED. Guards against missing SDK in demo mode.
+- ~~**Mock transcript startup race**~~ — FIXED. Retry with backoff (3 attempts).
 
 ### Open Bugs
-1. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
-2. **Participant count** — Updates live via `onParticipantChange` but initial count may include the app itself.
-3. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
+None currently tracked.
 
 ## Git Config
 - user.name: `shitijkarsolia`
