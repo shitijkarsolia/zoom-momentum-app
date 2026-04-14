@@ -1,6 +1,26 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Topic, GlossaryEntry } from '../types/messages';
 import type { MessageType } from '../types/messages';
+import { startRTMS, stopRTMS } from './useZoomSdk';
+
+const STOP_WORDS = new Set(['a','an','the','and','or','of','in','on','to','for','with','is','are','was','were','by','at','from','as','how','what','why','when','where','using','about','into','through','during','its','this','that']);
+
+function tokenize(title: string): Set<string> {
+  return new Set(
+    title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w))
+  );
+}
+
+function titleSimilarity(a: string, b: string): number {
+  const wordsA = tokenize(a);
+  const wordsB = tokenize(b);
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let overlap = 0;
+  for (const w of wordsA) {
+    if (wordsB.has(w)) overlap++;
+  }
+  return overlap / Math.min(wordsA.size, wordsB.size);
+}
 
 // --------------- Host Hook ---------------
 
@@ -15,11 +35,13 @@ interface AnchorHostState {
 
 interface UseAnchorHostOptions {
   broadcast: (type: MessageType, payload: unknown) => void;
+  meetingId: string;
+  isInZoom: boolean;
 }
 
 const POLL_INTERVAL_MS = 30_000; // 30 seconds
 
-export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
+export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostOptions) {
   const [state, setState] = useState<AnchorHostState>({
     topics: [],
     currentTopicId: '',
@@ -34,15 +56,15 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
 
   const pollTranscript = useCallback(async () => {
     if (pollingRef.current) return;
+    if (!meetingId) return; // no meeting context (browser/dev mode)
     pollingRef.current = true;
 
     try {
       // 1. Fetch the rolling transcript buffer
-      const bufferRes = await fetch('/api/transcript/buffer');
-      if (!bufferRes.ok) throw new Error('Failed to fetch transcript buffer');
-      const { text } = await bufferRes.json();
+      const bufferRes = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(meetingId)}`);
+      const { buffer } = bufferRes.ok ? await bufferRes.json() : { buffer: '' };
 
-      if (!text || text.trim().length < 20) {
+      if (!buffer || buffer.trim().length < 20) {
         pollingRef.current = false;
         return; // not enough transcript yet
       }
@@ -56,7 +78,7 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
       const segRes = await fetch('/api/ai/topic-segment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: text, previousTopic }),
+        body: JSON.stringify({ transcript: buffer, previousTopic }),
       });
       if (!segRes.ok) throw new Error('Topic segment request failed');
       const result = await segRes.json();
@@ -65,15 +87,22 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
 
       // 4. Process topic
       if (result.topic?.title) {
-        const topicId = result.topicChanged
-          ? `topic-${now}`
-          : state.currentTopicId || `topic-${now}`;
+        // Check if a topic with similar title already exists to avoid duplicates
+        const existingByTitle = state.topics.find(t =>
+          t.title.toLowerCase() === result.topic.title.toLowerCase() ||
+          titleSimilarity(t.title, result.topic.title) >= 0.6
+        );
+        const topicId = existingByTitle
+          ? existingByTitle.id
+          : result.topicChanged
+            ? `topic-${now}`
+            : state.currentTopicId || `topic-${now}`;
 
         const newTopic: Topic = {
           id: topicId,
           title: result.topic.title,
           bullets: result.topic.bullets ?? [],
-          startTime: result.topicChanged ? now : (state.topics.find(t => t.id === topicId)?.startTime ?? now),
+          startTime: existingByTitle?.startTime ?? (result.topicChanged ? now : (state.topics.find(t => t.id === topicId)?.startTime ?? now)),
         };
 
         setState(prev => {
@@ -101,12 +130,12 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
       }
 
       // 5. Detect cues for auto-bookmark
-      if (text && text.trim().length >= 20) {
+      if (buffer && buffer.trim().length >= 20) {
         try {
           const cueRes = await fetch('/api/ai/detect-cues', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transcript: text }),
+            body: JSON.stringify({ transcript: buffer }),
           });
           if (cueRes.ok) {
             const cueResult = await cueRes.json();
@@ -149,23 +178,34 @@ export function useAnchorHost({ broadcast }: UseAnchorHostOptions) {
     } finally {
       pollingRef.current = false;
     }
-  }, [broadcast, state.currentTopicId, state.topics]);
+  }, [broadcast, meetingId, state.currentTopicId, state.topics]);
 
-  const startPolling = useCallback(() => {
+  const startPolling = useCallback(async () => {
     if (timerRef.current) return;
     setState(prev => ({ ...prev, isPolling: true }));
+
+    if (isInZoom) {
+      const ok = await startRTMS();
+      console.log(`[anchor] RTMS start ${ok ? 'succeeded' : 'failed (will poll anyway)'}`);
+    }
+
     // Poll immediately, then on interval
     pollTranscript();
     timerRef.current = setInterval(pollTranscript, POLL_INTERVAL_MS);
-  }, [pollTranscript]);
+  }, [pollTranscript, isInZoom]);
 
-  const stopPolling = useCallback(() => {
+  const stopPolling = useCallback(async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
     setState(prev => ({ ...prev, isPolling: false }));
-  }, []);
+
+    if (isInZoom) {
+      const ok = await stopRTMS();
+      console.log(`[anchor] RTMS stop ${ok ? 'succeeded' : 'failed'}`);
+    }
+  }, [isInZoom]);
 
   // Cleanup on unmount
   useEffect(() => {

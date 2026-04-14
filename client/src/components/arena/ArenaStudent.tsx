@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Leaderboard } from './Leaderboard';
 import type { ArenaStudentPhase } from '../../hooks/useArena';
 import type { LeaderboardEntry } from '../../types/messages';
@@ -17,6 +18,7 @@ interface ArenaStudentProps {
   explanation: string;
   finalLeaderboard: LeaderboardEntry[];
   onSelectAndSubmit: (optionIndex: number) => void;
+  onDismissFinished?: () => void;
 }
 
 export function ArenaStudent({
@@ -29,14 +31,25 @@ export function ArenaStudent({
   explanation,
   finalLeaderboard,
   onSelectAndSubmit,
+  onDismissFinished,
 }: ArenaStudentProps) {
+  const [autoDismiss, setAutoDismiss] = useState(false);
+
+  useEffect(() => {
+    if (phase === 'finished') {
+      setAutoDismiss(false);
+      const timer = setTimeout(() => setAutoDismiss(true), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
+
   if (phase === 'waiting') {
     return (
       <div className="arena-student-overlay">
         <div className="arena-student-card">
           <div className="arena-waiting">
-            <h3>Warm-Up Arena</h3>
-            <p>Get ready — the trivia is about to begin.</p>
+            <h3>Arena</h3>
+            <p>Get ready — the quiz is about to begin.</p>
             <div className="arena-waiting-dots">
               <span className="dot-bounce" />
               <span className="dot-bounce" style={{ animationDelay: '0.2s' }} />
@@ -106,12 +119,15 @@ export function ArenaStudent({
             </div>
           )}
           <Leaderboard entries={leaderboard} title="Leaderboard" compact />
+          <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 8 }}>
+            Next question coming up…
+          </p>
         </div>
       </div>
     );
   }
 
-  if (phase === 'finished') {
+  if (phase === 'finished' && !autoDismiss) {
     return (
       <div className="arena-student-overlay">
         <div className="arena-student-card">
@@ -119,6 +135,13 @@ export function ArenaStudent({
             <h2 className="card-title">Game Over</h2>
           </div>
           <Leaderboard entries={finalLeaderboard} title="Final Standings" />
+          <button
+            className="btn btn-secondary"
+            style={{ marginTop: 12, width: '100%' }}
+            onClick={() => { setAutoDismiss(true); onDismissFinished?.(); }}
+          >
+            Back to Class
+          </button>
         </div>
       </div>
     );

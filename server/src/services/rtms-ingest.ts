@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db.js';
 import { resolveMeetingId } from './meeting-resolver.js';
-
-const prisma = new PrismaClient();
+import { config } from '../config.js';
 
 // Dynamically import the @zoom/rtms ES module
 let rtms: any;
@@ -142,6 +141,8 @@ export async function startRTMSSession(payload: RTMSStartPayload): Promise<void>
       meeting_uuid,
       rtms_stream_id,
       server_urls,
+      client: config.zoom.clientId,
+      secret: config.zoom.clientSecret,
     });
     console.log(`[rtms-ingest] Join result: ${result}`);
   } catch (error) {

@@ -4,7 +4,8 @@ import type { Question, LeaderboardEntry, MessageType } from '../types/messages'
 export type ArenaHostPhase = 'idle' | 'loading' | 'ready' | 'question' | 'leaderboard' | 'finished';
 export type ArenaStudentPhase = 'waiting' | 'question' | 'answered' | 'leaderboard' | 'finished';
 
-const QUESTION_TIME_SEC = 15;
+const QUESTION_TIME_SEC = 10;
+const LEADERBOARD_DISPLAY_SEC = 5;
 
 // --- Host Hook ---
 
@@ -35,6 +36,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     countdown: 0,
   });
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const questionStartRef = useRef(0);
 
   const clearTimer = useCallback(() => {
@@ -42,17 +44,25 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (autoAdvanceRef.current) {
+      clearTimeout(autoAdvanceRef.current);
+      autoAdvanceRef.current = null;
+    }
   }, []);
 
   useEffect(() => () => clearTimer(), [clearTimer]);
 
-  const fetchQuestions = useCallback(async (topic?: string) => {
+  // Refs for auto-advance (avoid stale closures in timers)
+  const showLeaderboardRef = useRef<() => void>(() => {});
+  const nextQuestionRef = useRef<() => void>(() => {});
+
+  const fetchQuestions = useCallback(async (topic?: string, transcript?: string) => {
     setState(prev => ({ ...prev, phase: 'loading', error: null }));
     try {
       const res = await fetch('/api/ai/quiz-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, questionCount: 5 }),
+        body: JSON.stringify({ topic, transcript, questionCount: 5 }),
       });
       if (!res.ok) throw new Error('Failed to generate quiz');
       const data = await res.json();
@@ -72,6 +82,37 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     }
   }, []);
 
+  const updateQuestion = useCallback((index: number, updates: Partial<Question>) => {
+    setState(prev => {
+      const questions = [...prev.questions];
+      const existing = questions[index];
+      if (!existing) return prev;
+      questions[index] = {
+        question: updates.question ?? existing.question,
+        options: updates.options ?? existing.options,
+        correctIndex: updates.correctIndex ?? existing.correctIndex,
+        explanation: updates.explanation ?? existing.explanation,
+      };
+      return { ...prev, questions };
+    });
+  }, []);
+
+  const startCountdown = useCallback(() => {
+    clearTimer();
+    timerRef.current = setInterval(() => {
+      setState(prev => {
+        const newCountdown = prev.countdown - 1;
+        if (newCountdown <= 0) {
+          clearTimer();
+          // Auto-show leaderboard when time runs out
+          setTimeout(() => showLeaderboardRef.current(), 100);
+          return { ...prev, countdown: 0 };
+        }
+        return { ...prev, countdown: newCountdown };
+      });
+    }, 1000);
+  }, [clearTimer]);
+
   const startGame = useCallback(() => {
     setState(prev => {
       if (prev.questions.length === 0) return prev;
@@ -79,7 +120,6 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       return { ...prev, phase: 'question', currentIndex: 0, responses: new Map(), countdown: QUESTION_TIME_SEC };
     });
 
-    // Slight delay so ARENA_START processes before first question
     setTimeout(() => {
       setState(prev => {
         const q = prev.questions[0];
@@ -96,19 +136,8 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       });
     }, 500);
 
-    // Start countdown
-    clearTimer();
-    timerRef.current = setInterval(() => {
-      setState(prev => {
-        const newCountdown = prev.countdown - 1;
-        if (newCountdown <= 0) {
-          clearTimer();
-          return prev;
-        }
-        return { ...prev, countdown: newCountdown };
-      });
-    }, 1000);
-  }, [broadcast, clearTimer]);
+    startCountdown();
+  }, [broadcast, startCountdown]);
 
   const handleAnswer = useCallback((senderId: string, senderName: string, optionIndex: number, questionIndex: number) => {
     const timeMs = Date.now() - questionStartRef.current;
@@ -137,6 +166,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
   const showLeaderboard = useCallback(() => {
     clearTimer();
     setState(prev => {
+      if (prev.phase !== 'question') return prev;
       const question = prev.questions[prev.currentIndex];
       const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
         .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
@@ -151,11 +181,15 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
         responseCount: prev.responses.size,
       });
 
+      // Auto-advance to next question after leaderboard display
+      autoAdvanceRef.current = setTimeout(() => nextQuestionRef.current(), LEADERBOARD_DISPLAY_SEC * 1000);
+
       return { ...prev, phase: 'leaderboard', leaderboard: entries, countdown: 0 };
     });
   }, [broadcast, clearTimer]);
 
   const nextQuestion = useCallback(() => {
+    if (autoAdvanceRef.current) { clearTimeout(autoAdvanceRef.current); autoAdvanceRef.current = null; }
     setState(prev => {
       const nextIndex = prev.currentIndex + 1;
       if (nextIndex >= prev.questions.length) {
@@ -175,19 +209,6 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       });
       questionStartRef.current = Date.now();
 
-      // Restart countdown
-      clearTimer();
-      timerRef.current = setInterval(() => {
-        setState(p => {
-          const newCountdown = p.countdown - 1;
-          if (newCountdown <= 0) {
-            clearTimer();
-            return p;
-          }
-          return { ...p, countdown: newCountdown };
-        });
-      }, 1000);
-
       return {
         ...prev,
         phase: 'question',
@@ -195,6 +216,23 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
         responses: new Map(),
         countdown: QUESTION_TIME_SEC,
       };
+    });
+    startCountdown();
+  }, [broadcast, startCountdown]);
+
+  // Keep refs in sync for timer callbacks
+  useEffect(() => { showLeaderboardRef.current = showLeaderboard; }, [showLeaderboard]);
+  useEffect(() => { nextQuestionRef.current = nextQuestion; }, [nextQuestion]);
+
+  const endGame = useCallback(() => {
+    clearTimer();
+    setState(prev => {
+      const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
+        .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
+        .sort((a, b) => b.score - a.score)
+        .map((entry, i) => ({ ...entry, rank: i + 1 }));
+      broadcast('ARENA_END', { leaderboard: entries.slice(0, 10) });
+      return { ...prev, phase: 'finished', leaderboard: entries };
     });
   }, [broadcast, clearTimer]);
 
@@ -218,10 +256,12 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     currentQuestion: state.questions[state.currentIndex] ?? null,
     totalQuestions: state.questions.length,
     fetchQuestions,
+    updateQuestion,
     startGame,
     handleAnswer,
     showLeaderboard,
     nextQuestion,
+    endGame,
     resetArena,
   };
 }

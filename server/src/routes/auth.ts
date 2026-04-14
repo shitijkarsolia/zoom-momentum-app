@@ -1,9 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db.js';
 import { config } from '../config.js';
-
-const prisma = new PrismaClient();
 export const authRouter = Router();
 
 // Extend session type

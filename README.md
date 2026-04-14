@@ -1,8 +1,8 @@
 # Zoom Momentum
 
-A Zoom Apps SDK application that transforms passive virtual classrooms into active learning environments. Momentum runs as an in-meeting side panel, giving professors real-time engagement tools and giving students a dynamic topic timeline, glossary, and post-class review.
+A Zoom Apps SDK in-meeting side panel app that transforms passive virtual classrooms into active learning environments. Built by **Shitij Mathur** as part of the **Zoom Fellowship 2025–2026** at **ASU's Next Lab**.
 
-**Live deployment:** `https://your-domain.example`
+Momentum gives professors real-time engagement tools and gives students a dynamic topic timeline, glossary, live transcript, and post-class review — all powered by AI.
 
 ---
 
@@ -10,26 +10,10 @@ A Zoom Apps SDK application that transforms passive virtual classrooms into acti
 
 Zoom Momentum is a **single app** installed once on the Zoom Marketplace. When a participant opens it from the Apps panel during a meeting, the app detects their role automatically:
 
-- **Host / Co-host** sees the **Host Dashboard** with controls to launch polls, start trivia games, and monitor the AI-powered live anchor.
-- **Participants** see the **Student View** with a topic timeline, glossary, bookmark button, and receive polls/trivia from the host in real time.
+- **Host / Co-host** sees the **Host Dashboard** with controls to launch polls, start trivia games, monitor AI-powered live analysis, and view the live transcript.
+- **Participants** see the **Student View** with a topic timeline, glossary, live transcript, bookmark button, and receive polls/trivia from the host in real time.
 
-Both views are served from the same URL. The Zoom SDK provides the user's role via `getUserContext()`, and the app renders the appropriate interface. There is no separate installation for students vs. professors — it is one app, one URL, role-aware.
-
-### User Flow
-
-```
-Meeting starts
-  -> Professor opens Momentum from the Zoom Apps panel
-  -> OAuth login (first time only)
-  -> Welcome screen (role-specific feature overview)
-  -> Host Dashboard appears
-
-Students open Momentum from the Zoom Apps panel
-  -> OAuth login (first time only)
-  -> Welcome screen (student feature overview)
-  -> Student View appears
-  -> Students automatically receive polls, trivia, and topic updates from the host
-```
+Both views are served from the same URL. The Zoom SDK provides the user's role via `getUserContext()`, and the app renders the appropriate interface.
 
 ---
 
@@ -43,37 +27,40 @@ Check-in polls that let the professor gauge student understanding at any point d
 - AI generates a relevant multiple-choice question
 - Professor previews and can edit before launching
 - Students see a modal overlay, select an answer, and submit
-- Professor ends the poll and results are shown to everyone as a bar chart
+- Professor ends the poll and results are shown as a bar chart
 
-### Warm-Up Arena (Host launches, students participate)
+### Arena (Host launches, students participate)
 
-A timed trivia game for reviewing material at the start of class.
+A timed trivia game for reviewing material.
 
-- Professor enters a topic and AI generates 5 quiz questions
-- Each question has a 15-second countdown timer
+- Professor enters a topic and AI generates quiz questions from the lecture transcript
+- Each question has a 10-second countdown timer
 - Students answer in real time and are scored (base points + speed bonus)
 - Leaderboard updates after each question
-- Final standings shown at the end
+- Professor can end the quiz at any time
+- Student overlay stays visible between questions
 
 ### Live Anchor (Automatic for all participants)
 
-AI-powered real-time topic timeline and glossary built from the live lecture transcript.
+AI-powered real-time topic timeline, glossary, and live transcript built from RTMS transcription.
 
-- Host activates the AI analysis, which polls the transcript buffer every 30 seconds
-- When the AI detects a topic change, a new topic card appears with bullet-point takeaways
+- Host clicks "Start AI" which triggers Zoom RTMS live transcription
+- AI polls the transcript buffer every 30 seconds, detecting topic changes
+- Topic cards appear with bullet-point takeaways
 - Technical terms and definitions are extracted into a searchable glossary
-- Students see the same timeline and can switch between Timeline and Glossary tabs
+- Both host and students see the live transcript with glossary term highlighting
+- Inside Zoom: toggle between Live (RTMS) and Mock transcript sources
 
-### Recovery Agent (Post-class, student-facing)
+### Recovery Pack (Post-class, student-facing)
 
 Personalized post-class review based on moments the student bookmarked during the lecture.
 
-- During the lecture, students can tap "I'm Confused" to bookmark the current topic
+- During the lecture, students can tap "Mark for Review" to bookmark the current topic
+- AI detects emphasis cues and auto-bookmarks important moments
 - When the class ends, the app generates a Recovery Pack with:
   - Plain-language explanation of each confusing topic
   - A practice problem
   - A suggested external resource
-- A summary screen shows topics covered, key terms, and the recovery pack
 
 ---
 
@@ -83,14 +70,13 @@ Personalized post-class review based on moments the student bookmarked during th
 |---|---|---|
 | Launch polls | Yes | No (receives and answers) |
 | Start trivia game | Yes | No (receives and plays) |
-| Control AI anchor | Yes (start/stop/analyze now) | No (receives updates) |
-| Topic timeline | Yes (read-only) | Yes (read-only) |
-| Glossary | Yes (read-only) | Yes (searchable) |
-| Bookmark confused moments | No | Yes |
+| Control AI anchor | Yes (start/stop) | No (receives updates) |
+| Topic timeline | Yes | Yes |
+| Glossary | Yes | Yes (searchable) |
+| Live transcript | Yes | Yes (with glossary highlighting) |
+| Bookmark moments | No | Yes (Mark for Review) |
 | Post-class recovery pack | No | Yes |
 | View poll/trivia results | Yes (aggregate) | Yes (own results) |
-
-The host acts as the **source of truth** for all shared state. The host's app maintains the canonical state and broadcasts updates to all students via the Zoom SDK's `sendMessage` / `onMessage` API. Students never send data to each other directly.
 
 ---
 
@@ -103,21 +89,25 @@ Zoom Desktop Client
               +-- Host? -> HostDashboard
               +-- Student? -> StudentView
 
-Both connect to:
-  Express Backend (EC2 at your-domain.example:3001)
+Both connect via WebSocket to:
+  Express Backend (localhost:3001, or EC2)
+    +-- /ws             -> WebSocket relay (rooms by meetingId)
     +-- /api/auth       -> Zoom OAuth PKCE
     +-- /api/ai         -> AI endpoints (poll, quiz, topic, recovery, cues)
     +-- /api/transcript  -> Transcript storage + rolling buffer
     +-- /api/bookmarks   -> Bookmark CRUD
-    +-- /api/rtms        -> RTMS webhook handler (pending)
+    +-- /api/rtms        -> RTMS webhook + stream client
 
-  AI Provider (Kiro API at your-domain.example, OpenAI-compatible)
-  SQLite Database (via Prisma ORM)
+  AI Provider:
+    Primary: ASU CREATE AI (gemini-pro -> claude-3-opus)
+    Fallback: AWS Bedrock (Llama 3 70B via Converse API)
+
+  Database: SQLite (dev) / PostgreSQL (prod) via Prisma ORM
 ```
 
 ### Message Protocol
 
-All real-time communication uses the Zoom SDK's `sendMessage` / `onMessage`:
+All real-time communication uses **WebSocket relay** through Express. The server manages rooms by meetingId and relays messages between connected clients.
 
 | Message | Sender | Receiver | Purpose |
 |---|---|---|---|
@@ -136,17 +126,28 @@ All real-time communication uses the Zoom SDK's `sendMessage` / `onMessage`:
 
 ---
 
+## Demo Mode
+
+When accessed outside of Zoom (in a regular browser), the app auto-detects **demo mode**:
+
+- Full real app UI (not a separate simulation)
+- Role switcher in the blue banner (Host / Student)
+- Simulation buttons: Late Join, Meeting End, Speaker
+- Mock CS50 transcript data (requires mock-transcript service)
+- WebSocket messaging works between browser tabs
+- Open two tabs to test host↔student interaction
+
+---
+
 ## Deployment
 
-The app runs on an **EC2 instance** at `your-domain.example` with HTTPS.
+The app runs on an **EC2 instance** with a static ngrok tunnel for development.
 
 ### Zoom Marketplace Configuration
 
-The Zoom App is registered and configured on [marketplace.zoom.us](https://marketplace.zoom.us):
-
-- **Home URL:** `https://your-domain.example`
-- **Redirect URL:** `https://your-domain.example/api/auth/callback`
-- **Webhook URL:** `https://your-domain.example/api/rtms/webhook`
+- **Home URL:** `https://your-tunnel.ngrok-free.dev`
+- **Redirect URL:** `https://your-tunnel.ngrok-free.dev/api/auth/callback`
+- **Webhook URL:** `https://your-tunnel.ngrok-free.dev/api/rtms/webhook`
 - **RTMS:** Enabled (1-year trial through Feb 2027)
 - **OAuth Scopes:** `zoomapp:inmeeting`, `meeting:read:meeting`, `user:read`
 
@@ -156,11 +157,15 @@ The Zoom App is registered and configured on [marketplace.zoom.us](https://marke
 |---|---|
 | `ZOOM_CLIENT_ID` | From Zoom Marketplace app |
 | `ZOOM_CLIENT_SECRET` | From Zoom Marketplace app |
-| `ZOOM_REDIRECT_URL` | `https://your-domain.example/api/auth/callback` |
+| `ZOOM_REDIRECT_URL` | OAuth callback URL (must match Marketplace) |
+| `ZOOM_SECRET_TOKEN` | For RTMS webhook HMAC verification |
 | `SESSION_SECRET` | Random secret for express-session |
 | `DATABASE_URL` | `file:./dev.db` (SQLite) or PostgreSQL connection string |
-| `OPENAI_API_KEY` | API key for the AI provider |
-| `OPENAI_BASE_URL` | `https://your-domain.example/v1` (or OpenAI default) |
+| `AWS_REGION` | AWS region for Bedrock (`us-east-1`) |
+| `CREATE_AI_API_URL` | ASU CREATE AI endpoint (optional) |
+| `CREATE_AI_TOKEN` | CREATE AI auth token (optional) |
+| `CREATE_AI_PRIMARY_MODEL` | Primary model, e.g. `gemini-pro` (optional) |
+| `CREATE_AI_BACKUP_MODEL` | Backup model, e.g. `claude-3-opus` (optional) |
 | `PORT` | Server port (default: 3001) |
 | `CLIENT_URL` | Frontend URL (default: `http://localhost:5173`) |
 
@@ -170,7 +175,7 @@ The Zoom App is registered and configured on [marketplace.zoom.us](https://marke
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 
 ### Setup
 
@@ -182,14 +187,11 @@ npm install
 cp .env.example .env
 # Fill in credentials (see Environment Variables above)
 
-# 3. Copy env to server directory (server reads from its own cwd)
-cp .env server/.env
-
-# 4. Initialize the database
+# 3. Initialize the database
 cd server && npx prisma migrate dev --name init && cd ..
 
-# 5. Start development servers
-npm run dev
+# 4. Start development servers
+npm run dev:mock   # client + server + mock transcript
 ```
 
 ### Commands
@@ -202,14 +204,32 @@ npm run dev
 | `npm run db:migrate -w server` | Run Prisma migrations |
 | `npm run db:studio -w server` | Open Prisma Studio |
 
-### DevPreview (Browser Testing)
+### Testing in Zoom
 
-When accessed outside of Zoom, the app renders a **DevPreview** that simulates both Host and Student views. This lets you test UI flows without a Zoom meeting:
+```bash
+# 1. Build production client
+npm run build -w client
 
-- Host/Student view toggle
-- All feature tabs (Pulse, Arena, Anchor)
-- Real AI integration for poll/quiz/recovery generation
-- End Class flow with Recovery Pack
+# 2. Start ngrok (must point to port 3001)
+ngrok http 3001 --url=your-tunnel.ngrok-free.dev
+
+# 3. Start server (serves API + static client build)
+npm run dev -w server
+
+# 4. Optionally start mock transcript
+npm run dev -w mock-transcript
+```
+
+### Testing in Browser (Demo Mode)
+
+```bash
+# Start server + mock transcript
+npm run dev -w server
+npm run dev -w mock-transcript
+
+# Open http://localhost:3001 — demo mode auto-enables
+# Open a second tab for student view
+```
 
 ---
 
@@ -219,84 +239,105 @@ When accessed outside of Zoom, the app renders a **DevPreview** that simulates b
 zoom-momentum/
   client/                          # React frontend (Zoom App)
     src/
-      App.tsx                      # SDK init, auth, welcome, role routing
-      DevPreview.tsx               # Browser-only testing UI
+      App.tsx                      # SDK init, auth, welcome, role routing, demo mode
       views/
         WelcomeView.tsx            # Post-auth onboarding screen
-        HostDashboard.tsx          # Host: Pulse + Arena + Anchor
-        StudentView.tsx            # Student: Timeline + Glossary
-        AuthView.tsx               # OAuth login
+        HostDashboard.tsx          # Host: Pulse + Arena + Anchor + Transcript
+        StudentView.tsx            # Student: Timeline + Glossary + Transcript
       components/
         pulse/                     # Poll creator, card, results
         arena/                     # Quiz host, student, leaderboard
-        anchor/                    # Topic card, timeline, glossary
+        anchor/                    # Topic card, timeline, glossary, transcript
         recovery/                  # Recovery pack, post-class summary
-        shared/                    # FeatureInfo tooltip
       hooks/
-        useZoomSdk.ts              # SDK config + role detection
+        useZoomSdk.ts              # SDK config, role detection, RTMS, participant count
         useZoomAuth.ts             # OAuth PKCE flow
-        useMessaging.ts            # sendMessage / onMessage abstraction
+        useMessaging.ts            # WebSocket relay client with auto-reconnect
         usePulse.ts                # Poll state (host + student)
         useArena.ts                # Trivia state (host + student)
-        useLiveAnchor.ts           # Topic timeline state (host + student)
+        useLiveAnchor.ts           # Topic timeline + transcript polling
+        useDemoMode.ts             # Auto-detect demo mode outside Zoom
+        useZoomEvents.ts           # Active speaker, meeting end, late joiner
       types/
         messages.ts                # Message types + app state
 
   server/                          # Express backend
     src/
-      server.ts                    # Express app + middleware + security headers
+      server.ts                    # Express app + WebSocket server + security headers
       config.ts                    # Environment variable validation
+      db.ts                        # Shared PrismaClient singleton
+      ai-client.ts                # Tiered AI client (CREATE AI -> Bedrock)
       routes/
         auth.ts                    # Zoom OAuth PKCE
-        ai.ts                      # AI endpoints (subject-agnostic)
+        ai.ts                      # AI endpoints (poll, quiz, topic, recovery, cues)
         transcript.ts              # Transcript storage + rolling buffer
         bookmarks.ts               # Bookmark CRUD
+        rtms.ts                    # RTMS webhook receiver
+      services/
+        websocket.ts               # WebSocket relay (rooms by meetingId)
+        rtms-ingest.ts             # RTMS stream client + transcript storage
+        meeting-resolver.ts        # Auto-create Meeting records from Zoom UUIDs
     prisma/
       schema.prisma                # Database schema
 
-  mock-transcript/                 # Dev-only mock RTMS service
-  product-page/                    # Marketing landing page
+  mock-transcript/                 # Dev-only mock RTMS service (CS50 lecture data)
+  product-page/                    # Static landing page
 ```
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + Vite + TypeScript + @zoom/appssdk |
+| Frontend | React 18 + Vite + TypeScript |
 | Backend | Express + TypeScript + Prisma |
 | Database | SQLite (dev) / PostgreSQL (prod) |
-| AI | Kiro API (OpenAI-compatible, configurable via `OPENAI_BASE_URL`) |
-| Hosting | EC2 with HTTPS (`your-domain.example`) |
+| AI | ASU CREATE AI (gemini-pro/claude-3-opus) + AWS Bedrock fallback |
+| Messaging | WebSocket relay through Express |
 | Transcript | Zoom RTMS (real-time media streams) |
+| Hosting | EC2 (dev via ngrok tunnel) |
+| SDK | Zoom Apps SDK (CDN `window.zoomSdk`) |
 
 ---
 
 ## Status
 
+For detailed progress, bugs, and next steps, see [STATUS.md](STATUS.md).
+
 ### Done
 
 - [x] Zoom OAuth PKCE authentication
 - [x] Host/student role detection and routing
-- [x] Welcome/onboarding screen with role-specific feature descriptions
-- [x] Feature info tooltips (?) on every tab
-- [x] Professor's Pulse — AI poll generation, preview/edit, launch, results bar chart
-- [x] Warm-Up Arena — AI quiz generation, 15s countdown, scoring, leaderboard
+- [x] Professor's Pulse — AI poll generation, preview/edit, launch, results
+- [x] Arena — AI quiz generation, 10s countdown, scoring, leaderboard, host can end anytime
 - [x] Live Anchor — AI transcript analysis, topic timeline, searchable glossary
-- [x] Recovery Agent — bookmarks, post-class summary, AI recovery pack
-- [x] Detect Cues endpoint — AI detection of professor emphasis phrases
-- [x] Messaging layer with sequence numbers and late-joiner sync protocol
-- [x] DevPreview for browser-based testing without Zoom
-- [x] Subject-agnostic AI prompts (tested with history, biology, economics)
-- [x] Mock transcript service for development
-- [x] Clean emoji-free UI with Zoom brand colors
-- [x] EC2 deployment with HTTPS
-- [x] Zoom Marketplace app configured with RTMS enabled
+- [x] Live Transcript Tab — host + student, glossary term highlighting
+- [x] Recovery Pack — bookmarks, post-class summary, AI recovery pack
+- [x] Auto-bookmark broadcast — AI cue detection
+- [x] WebSocket messaging — replaced SDK messaging, tested in Zoom
+- [x] RTMS integration — Start AI triggers live transcription, tested end-to-end
+- [x] Demo mode — auto-enabled outside Zoom, role switcher, sim buttons
+- [x] AI backend — CREATE AI with Bedrock fallback
+- [x] Prisma singleton, AI error handling, topic dedup (fuzzy matching)
+- [x] Meeting ID sync — `getMeetingUUID()` for consistent host/attendee IDs
+- [x] Mock transcript service (real CS50 Lecture 0 from Harvard CDN)
 
-### Pending
+### Remaining
 
-- [ ] **RTMS integration** (Tasks 18-19) — Build `/api/rtms/webhook` handler and `@zoom/rtms` WebSocket ingestion to replace mock transcript with live lecture audio/text
-- [ ] **Auto-bookmark broadcast** (Task 28) — When detect-cues finds professor emphasis, host broadcasts auto-bookmarks to all students
-- [ ] **Smart Spotlight** (Task 29) — Use `onActiveSpeakerChange` to auto-spotlight students asking questions
-- [ ] **Late Joiner catch-up** (Task 14) — Use `onParticipantChange` to send `FULL_STATE` to new participants
-- [ ] **Post-meeting detection** (Task 31 partial) — Use `onRunningContextChange` to trigger recovery pack when meeting ends
-- [ ] **Production database** — Migrate from SQLite to PostgreSQL for production
+- [ ] Guest mode testing (second Zoom account)
+- [ ] Production database (PostgreSQL)
+- [ ] Test framework (Vitest) and linter (ESLint)
+- [ ] CI/CD pipeline
+- [ ] HTTPS on EC2
+
+---
+
+## Author
+
+**Shitij Mathur**
+Zoom Fellowship 2025–2026, ASU Next Lab
+
+---
+
+## License
+
+This project is part of the Zoom Fellowship program at Arizona State University's Next Lab.

@@ -41,8 +41,8 @@ Required values in `.env`:
 | `ZOOM_CLIENT_SECRET` | Zoom Marketplace → your app → App Credentials |
 | `ZOOM_REDIRECT_URL` | `https://<your-server-domain>/api/auth/callback` |
 | `SESSION_SECRET` | Any random string. Generate one: `openssl rand -hex 32` |
-| `OPENAI_API_KEY` | Your AI provider API key |
-| `OPENAI_BASE_URL` | `https://your-domain.example/v1` (or omit for OpenAI default) |
+| `OPENAI_API_KEY` | No longer used — AI is on AWS Bedrock (uses IAM role, no key needed) |
+| `OPENAI_BASE_URL` | No longer used — removed |
 | `DATABASE_URL` | `file:./dev.db` (already set) |
 | `PORT` | `3001` (already set) |
 | `CLIENT_URL` | `http://localhost:5173` (already set) |

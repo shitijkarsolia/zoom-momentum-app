@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import zoomSdk from '@zoom/appssdk';
 import type { MessageType } from '../types/messages';
+
+const zoomSdk = (window as any).zoomSdk as any | undefined;
 
 interface UseZoomEventsOptions {
   isHost: boolean;
@@ -47,7 +48,7 @@ export function useZoomEvents({ isHost, broadcast, onMeetingEnd }: UseZoomEvents
   useEffect(() => {
     if (!isHost) return;
     try {
-      zoomSdk.onActiveSpeakerChange((event) => {
+      zoomSdk.onActiveSpeakerChange((event: any) => {
         const speaker = event.users?.[0];
         if (speaker) {
           setActiveSpeaker(speaker.screenName);
@@ -65,11 +66,23 @@ export function useZoomEvents({ isHost, broadcast, onMeetingEnd }: UseZoomEvents
 
   const dismissLateJoinInfo = useCallback(() => setLateJoinInfo(null), []);
 
+  const simulateLateJoin = useCallback((info: { topicCount: number; latestTopic: string }) => {
+    setLateJoinInfo(info);
+    setTimeout(() => setLateJoinInfo(null), 8000);
+  }, []);
+
+  const simulateMeetingEnd = useCallback(() => {
+    setMeetingEnded(true);
+    onMeetingEnd();
+  }, [onMeetingEnd]);
+
   return {
     meetingEnded,
     lateJoinInfo,
     activeSpeaker,
     handleFullState,
     dismissLateJoinInfo,
+    simulateLateJoin,
+    simulateMeetingEnd,
   };
 }

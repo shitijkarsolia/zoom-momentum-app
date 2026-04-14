@@ -13,8 +13,13 @@ export const rtmsRouter = Router();
 // Webhook HMAC signature verification
 // ---------------------------------------------------------------------------
 
+function getRtmsSecret(): string {
+  const token = config.zoom_secret_token;
+  return token && token.trim().length > 0 ? token : config.zoom.clientSecret;
+}
+
 function verifyWebhookSignature(req: { headers: Record<string, any>; body: any }): boolean {
-  const secret = config.zoom_secret_token || config.zoom.clientSecret;
+  const secret = getRtmsSecret();
 
   const signature = req.headers['x-zm-signature'] as string | undefined;
   const timestamp = req.headers['x-zm-request-timestamp'] as string | undefined;
@@ -62,7 +67,7 @@ rtmsRouter.post('/webhook', async (req, res) => {
     }
 
     const hashForValidate = crypto
-      .createHmac('sha256', config.zoom_secret_token || config.zoom.clientSecret)
+      .createHmac('sha256', getRtmsSecret())
       .update(plainToken)
       .digest('hex');
 
