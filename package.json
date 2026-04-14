@@ -12,6 +12,7 @@
     "dev:mock": "concurrently -n client,server,mock -c blue,green,yellow \"npm run dev -w client\" \"npm run dev -w server\" \"npm run dev -w mock-transcript\"",
     "build": "npm run build -w client && npm run build -w server",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint 'client/src/**/*.{ts,tsx}' 'server/src/**/*.ts' 'mock-transcript/src/**/*.ts'",
+    "test": "vitest run",
     "db:migrate": "npm run db:migrate -w server",
     "db:studio": "npm run db:studio -w server"
   },
@@ -21,6 +22,7 @@
     "concurrently": "^9.1.2",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1"
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "vitest": "^4.1.4"
   }
 }
