@@ -40,13 +40,13 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 
 1. ~~**[Critical] SDK config timeout**~~ — FIXED.
 2. ~~**[Critical] Messaging broken**~~ — FIXED. WebSocket relay.
-3. **[Medium] Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
-4. **[Medium] AI topic-segment silent failure** — `ai.ts` returns a fake success response when the AI call fails.
-5. **[Medium] Anchor topic dedup** — AI sometimes generates slightly different titles for the same topic.
+3. ~~**[Medium] Multiple PrismaClient instances**~~ — FIXED. Singleton in `server/src/db.ts`.
+4. ~~**[Medium] AI topic-segment silent failure**~~ — FIXED. Returns 500.
+5. ~~**[Medium] Anchor topic dedup**~~ — FIXED. Fuzzy title matching.
 6. ~~**[Low] RTMS secret fallback**~~ — FIXED.
 7. **[Low] BigInt serialization** — `transcript.ts` returns segments without converting BigInt fields to strings.
 8. **[Low] Startup race** — mock-transcript chunk #1 always fails with ECONNREFUSED.
-9. **[Low] Participant count** — Hardcoded "Participants: --" in host UI.
+9. **[Low] Participant count** — Live updates via `onParticipantChange`, but initial count may include the app itself.
 10. **[Low] Sign-in button** — Does nothing on participant side in Zoom context.
 11. ~~**[Low] "Analyze Now" button**~~ — FIXED. Removed.
 
@@ -65,11 +65,11 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 - Test guest mode with second Zoom account
 
 ### Priority 2 — Code Quality
-- Create shared PrismaClient singleton
+- ~~Create shared PrismaClient singleton~~ — DONE
+- ~~Fix AI silent failure in topic-segment~~ — DONE
+- ~~Improve anchor topic dedup (fuzzy matching)~~ — DONE
+- ~~Wire participant count to `getMeetingParticipants()`~~ — DONE (live updates via onParticipantChange)
 - Fix BigInt serialization in transcript route
-- Fix AI silent failure in topic-segment
-- Improve anchor topic dedup (fuzzy matching)
-- Wire participant count to `getMeetingParticipants()`
 - Add test framework (Vitest)
 - Add linter (ESLint)
 
@@ -112,16 +112,23 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 npm run build -w client
 ngrok http 3001 --url=your-tunnel.ngrok-free.dev
 npm run dev -w server
-npm run dev -w mock-transcript  # optional, for transcript data
+npm run dev -w mock-transcript  # optional, for mock CS50 transcript data
 
-# For browser testing (DevPreview):
-npm run dev:mock   # client + server + mock transcript
-# Open http://localhost:5173
+# For browser testing (demo mode — auto-enabled outside Zoom):
+npm run dev -w server
+npm run dev -w mock-transcript
+# Open http://localhost:3001
 ```
 
 ---
 
 ## Changelog
+
+### April 13-14, 2026
+- Arena: host can end quiz anytime (End Quiz button), student overlay stays visible between questions
+- Removed mock transcript fallback in Zoom — Anchor only uses real RTMS data inside Zoom
+- Participant count updates live via `onParticipantChange` listener
+- Updated docs to reflect all resolved P2 bugs
 
 ### April 6-7, 2026
 - **SDK config timeout FIXED** — Root cause: npm `@zoom/appssdk` creates separate instance without native bridge. Switched all hooks to `window.zoomSdk` from CDN script tag.

@@ -224,6 +224,18 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
   useEffect(() => { showLeaderboardRef.current = showLeaderboard; }, [showLeaderboard]);
   useEffect(() => { nextQuestionRef.current = nextQuestion; }, [nextQuestion]);
 
+  const endGame = useCallback(() => {
+    clearTimer();
+    setState(prev => {
+      const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
+        .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
+        .sort((a, b) => b.score - a.score)
+        .map((entry, i) => ({ ...entry, rank: i + 1 }));
+      broadcast('ARENA_END', { leaderboard: entries.slice(0, 10) });
+      return { ...prev, phase: 'finished', leaderboard: entries };
+    });
+  }, [broadcast, clearTimer]);
+
   const resetArena = useCallback(() => {
     clearTimer();
     setState({
@@ -249,6 +261,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     handleAnswer,
     showLeaderboard,
     nextQuestion,
+    endGame,
     resetArena,
   };
 }

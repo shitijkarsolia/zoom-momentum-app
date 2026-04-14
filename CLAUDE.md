@@ -123,14 +123,14 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 - ~~**P0: Host↔Student Messaging**~~ — FIXED. Replaced Zoom SDK `postMessage`/`onMessage` with WebSocket relay through Express.
 - ~~**RTMS secret fallback**~~ — FIXED. Proper empty-string check before falling back to clientSecret.
 - ~~**"Analyze Now" button**~~ — FIXED. Removed from Anchor tab.
+- ~~**PrismaClient instances**~~ — FIXED. Singleton in `server/src/db.ts`.
+- ~~**AI topic-segment silent failure**~~ — FIXED. Returns 500 on error.
+- ~~**AI topic dedup**~~ — FIXED. Fuzzy title matching with token similarity.
 
 ### Open Bugs
-1. **Multiple PrismaClient instances** — transcript.ts, bookmarks.ts, auth.ts, rtms-ingest.ts, meeting-resolver.ts each create their own. Should be singleton.
-2. **AI topic-segment silent failure** — Returns fake success on AI error instead of surfacing the failure.
-3. **AI topic dedup** — Similar titles sometimes create duplicate topics across polling cycles.
-4. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
-5. **Participant count** — Hardcoded "Participants: --" in HostDashboard, never wired to `getMeetingParticipants()`.
-6. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
+1. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
+2. **Participant count** — Updates live via `onParticipantChange` but initial count may include the app itself.
+3. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
 
 ## Git Config
 - user.name: `shitijkarsolia`

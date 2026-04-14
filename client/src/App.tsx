@@ -327,6 +327,7 @@ export default function App() {
         onArenaStartGame={arenaHost.startGame}
         onArenaShowLeaderboard={arenaHost.showLeaderboard}
         onArenaNextQuestion={arenaHost.nextQuestion}
+        onArenaEndGame={arenaHost.endGame}
         onArenaReset={arenaHost.resetArena}
         anchorTopics={anchorHost.topics}
         anchorCurrentTopicId={anchorHost.currentTopicId}
