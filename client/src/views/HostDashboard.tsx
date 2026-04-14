@@ -117,6 +117,12 @@ export function HostDashboard({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum — Host</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {anchorIsPolling && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              Live
+            </span>
+          )}
           <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Students: {participantCount || '--'}</span>
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
@@ -270,6 +276,7 @@ export function HostDashboard({
                   glossary={anchorGlossary}
                   topics={anchorTopics}
                   currentTopicId={anchorCurrentTopicId}
+                  showTitle
                 />
               </div>
             )}

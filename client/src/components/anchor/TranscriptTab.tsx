@@ -12,11 +12,13 @@ interface TranscriptTabProps {
   glossary: GlossaryEntry[];
   topics: Topic[];
   currentTopicId: string;
+  showTitle?: boolean;
 }
 
-export function TranscriptTab({ meetingId, glossary, topics, currentTopicId }: TranscriptTabProps) {
+export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, showTitle }: TranscriptTabProps) {
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const wasAtBottomRef = useRef(true);
 
   useEffect(() => {
     if (!meetingId) return;
@@ -39,11 +41,18 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId }: T
     return () => clearInterval(interval);
   }, [meetingId]);
 
+  // Auto-scroll only if user was already at the bottom
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && wasAtBottomRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [segments]);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    wasAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 40;
+  };
 
   if (!meetingId) {
     return (
@@ -64,75 +73,66 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId }: T
   const glossaryTerms = glossary.map(g => g.term).filter(t => t.length > 2);
   const currentTopic = topics.find(t => t.id === currentTopicId);
 
-  // Group consecutive segments by speaker
-  const grouped: { speaker: string; lines: string[]; timestamp: number }[] = [];
-  for (const seg of segments) {
-    const last = grouped[grouped.length - 1];
-    if (last && last.speaker === seg.speaker) {
-      last.lines.push(seg.text);
-    } else {
-      grouped.push({ speaker: seg.speaker, lines: [seg.text], timestamp: seg.timestamp });
-    }
-  }
-
   return (
     <div>
+      {showTitle && (
+        <h2 className="card-title" style={{ margin: '0 0 8px' }}>Transcript</h2>
+      )}
+
       {currentTopic && (
         <div style={{
-          padding: '8px 12px',
-          marginBottom: 10,
+          padding: '6px 10px',
+          marginBottom: 8,
           borderRadius: 6,
           background: 'var(--zoom-brand-light, #e8f0fe)',
           borderLeft: '3px solid var(--zoom-brand, #0E71EB)',
+          fontSize: 12,
         }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--zoom-brand, #0E71EB)' }}>
-            Current Topic
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{currentTopic.title}</div>
+          <span style={{ fontWeight: 600, color: 'var(--zoom-brand, #0E71EB)' }}>Topic: </span>
+          <span style={{ fontWeight: 600 }}>{currentTopic.title}</span>
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>
-          {segments.length} segments — live
-        </span>
-        {glossaryTerms.length > 0 && (
-          <span style={{ fontSize: 10, color: 'var(--zoom-text-secondary)' }}>
-            Key terms highlighted
-          </span>
-        )}
-      </div>
-
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         style={{
           maxHeight: 400,
           overflowY: 'auto',
           fontSize: 13,
-          lineHeight: 1.7,
           color: 'var(--zoom-text)',
-          padding: '8px 0',
+          padding: '4px 0',
         }}
       >
-        {grouped.map((group, i) => {
-          const time = new Date(group.timestamp);
-          const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}`;
-          const text = group.lines.join(' ');
+        {segments.map((seg, i) => {
+          const time = new Date(seg.timestamp);
+          const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}`;
+          const prevSpeaker = i > 0 ? segments[i - 1]!.speaker : null;
+          const isNewSpeaker = seg.speaker !== prevSpeaker;
 
           return (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 2 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--zoom-brand, #0E71EB)' }}>
-                  {group.speaker}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--zoom-text-secondary)' }}>
+            <div key={i} style={{
+              padding: '4px 8px',
+              marginTop: isNewSpeaker ? 10 : 1,
+              borderRadius: 4,
+              background: i % 2 === 0 ? 'transparent' : 'var(--zoom-bg, #f8f8fa)',
+            }}>
+              {isNewSpeaker && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--zoom-brand, #0E71EB)' }}>
+                    {seg.speaker}
+                  </span>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <span style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', flexShrink: 0, paddingTop: 2, minWidth: 52 }}>
                   {timeStr}
                 </span>
+                <span
+                  style={{ lineHeight: 1.5 }}
+                  dangerouslySetInnerHTML={{ __html: highlightTerms(seg.text, glossaryTerms) }}
+                />
               </div>
-              <div
-                style={{ paddingLeft: 2 }}
-                dangerouslySetInnerHTML={{ __html: highlightTerms(text, glossaryTerms) }}
-              />
             </div>
           );
         })}

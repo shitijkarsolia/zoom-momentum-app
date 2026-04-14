@@ -24,6 +24,7 @@ interface StudentViewProps {
   userName: string;
   connected: boolean;
   meetingId: string;
+  anchorIsLive?: boolean;
   // Pulse props
   activePoll: Poll | null;
   selectedOption: number | null;
@@ -67,6 +68,7 @@ export function StudentView({
   userName,
   connected,
   meetingId,
+  anchorIsLive = false,
   activePoll,
   selectedOption,
   hasAnswered,
@@ -172,6 +174,12 @@ export function StudentView({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {anchorIsLive && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              Live
+            </span>
+          )}
           {activeSpeaker && (
             <span style={{ fontSize: 11, color: 'var(--zoom-brand)', fontWeight: 500 }}>
               Speaking: {activeSpeaker}
