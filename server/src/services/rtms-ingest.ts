@@ -194,8 +194,19 @@ async function storeSegment(
     return;
   }
 
-  await prisma.transcriptSegment.create({
-    data: {
+  await prisma.transcriptSegment.upsert({
+    where: {
+      meetingId_seqNo: {
+        meetingId,
+        seqNo: BigInt(seqNo),
+      },
+    },
+    update: {
+      speaker: data.speaker,
+      text: data.text,
+      timestamp: BigInt(data.timestamp ?? Date.now()),
+    },
+    create: {
       meetingId,
       speaker: data.speaker,
       text: data.text,
