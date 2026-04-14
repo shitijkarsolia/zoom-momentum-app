@@ -111,6 +111,18 @@ export function useZoomSdk(): ZoomContext {
         participantCount,
         error: null,
       });
+
+      // Listen for participant changes to keep count updated
+      try {
+        zoomSdk.onParticipantChange(async () => {
+          try {
+            const updated = await zoomSdk.getMeetingParticipants();
+            const count = updated?.participants?.length ?? 0;
+            setContext(prev => ({ ...prev, participantCount: count }));
+          } catch { /* ignore */ }
+        });
+      } catch { /* onParticipantChange may not be available */ }
+
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : 'Failed to configure Zoom SDK';
       const isAppNotSupport = /80004|app_not_support/i.test(rawMessage);

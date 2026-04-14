@@ -47,6 +47,7 @@ interface HostDashboardProps {
   onArenaStartGame: () => void;
   onArenaShowLeaderboard: () => void;
   onArenaNextQuestion: () => void;
+  onArenaEndGame: () => void;
   onArenaReset: () => void;
   // Anchor props
   anchorTopics: Topic[];
@@ -93,6 +94,7 @@ export function HostDashboard({
   onArenaStartGame,
   onArenaShowLeaderboard,
   onArenaNextQuestion,
+  onArenaEndGame,
   onArenaReset,
   anchorTopics,
   anchorCurrentTopicId,
@@ -220,6 +222,7 @@ export function HostDashboard({
             onStartGame={onArenaStartGame}
             onShowLeaderboard={onArenaShowLeaderboard}
             onNextQuestion={onArenaNextQuestion}
+            onEndGame={onArenaEndGame}
             onReset={onArenaReset}
           />
         )}

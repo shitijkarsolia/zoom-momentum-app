@@ -151,7 +151,7 @@ export function StudentView({
     return () => { cancelled = true; };
   }, [meetingEnded, authUserId, meetingId, anchorBookmarks, anchorTopics]);
 
-  const showArena = arenaPhase === 'question' || arenaPhase === 'leaderboard';
+  const showArena = arenaPhase === 'question' || arenaPhase === 'answered' || arenaPhase === 'leaderboard' || arenaPhase === 'finished';
 
   const handleBookmark = useCallback(async () => {
     if (!authUserId) {

@@ -119,6 +119,9 @@ export function ArenaStudent({
             </div>
           )}
           <Leaderboard entries={leaderboard} title="Leaderboard" compact />
+          <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 8 }}>
+            Next question coming up…
+          </p>
         </div>
       </div>
     );

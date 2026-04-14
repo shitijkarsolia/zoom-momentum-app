@@ -19,6 +19,7 @@ interface ArenaHostProps {
   onStartGame: () => void;
   onShowLeaderboard: () => void;
   onNextQuestion: () => void;
+  onEndGame: () => void;
   onReset: () => void;
 }
 
@@ -38,6 +39,7 @@ export function ArenaHost({
   onStartGame,
   onShowLeaderboard,
   onNextQuestion,
+  onEndGame,
   onReset,
 }: ArenaHostProps) {
   const [topic, setTopic] = useState('');
@@ -264,19 +266,12 @@ export function ArenaHost({
         <div className="arena-live-stats">
           <span>{responseCount} {responseCount === 1 ? 'answer' : 'answers'} received</span>
           <div style={{ display: 'flex', gap: 6 }}>
-            {currentIndex > 0 && (
-              <button className="btn btn-secondary" onClick={onShowLeaderboard} style={{ fontSize: 11, padding: '4px 8px' }}>
-                Prev
-              </button>
-            )}
+            <button className="btn btn-secondary" onClick={onEndGame} style={{ fontSize: 11, padding: '4px 8px', color: 'var(--zoom-error, #e53935)' }}>
+              End Quiz
+            </button>
             <button className="btn btn-secondary" onClick={onShowLeaderboard} style={{ fontSize: 12 }}>
               Skip to Results
             </button>
-            {currentIndex < totalQuestions - 1 && (
-              <button className="btn btn-secondary" onClick={onNextQuestion} style={{ fontSize: 11, padding: '4px 8px' }}>
-                Next
-              </button>
-            )}
           </div>
         </div>
         <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
@@ -296,6 +291,9 @@ export function ArenaHost({
         />
         <button className="btn btn-primary arena-next-btn" onClick={onNextQuestion}>
           {isLast ? 'Final Results' : `Next Question (Q${currentIndex + 2})`}
+        </button>
+        <button className="btn btn-secondary" onClick={onEndGame} style={{ width: '100%', marginTop: 6, fontSize: 11, color: 'var(--zoom-error, #e53935)' }}>
+          End Quiz
         </button>
         <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
           Auto-advances in 5 seconds
