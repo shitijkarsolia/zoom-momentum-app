@@ -15,8 +15,11 @@ import { initWebSocketServer } from './services/websocket.js';
 const app = express();
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(cors({
+  origin: [config.clientUrl, /\.zoom\.us$/, /\.zoomgov\.com$/],
+  credentials: true,
+}));
+app.use(express.json({ limit: '16kb' }));
 
 export const sessionMiddleware = session({
   secret: config.session.secret,

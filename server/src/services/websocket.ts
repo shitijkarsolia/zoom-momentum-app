@@ -60,7 +60,10 @@ function broadcastToRoom(meetingId: string, message: string) {
 }
 
 export function initWebSocketServer(server: Server, sessionParser: RequestHandler) {
-  const wss = new WebSocketServer({ server, path: '/ws' });
+  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });
+
+  // Per-client rate limiting: max 20 messages per second
+  const rateLimits = new Map<ClientSocket, { count: number; resetTime: number }>();
 
   // Heartbeat: ping every 30s, terminate dead connections
   const heartbeat = setInterval(() => {
@@ -145,10 +148,22 @@ export function initWebSocketServer(server: Server, sessionParser: RequestHandle
     ws.on('pong', () => { ws.isAlive = true; });
 
     ws.on('message', (data) => {
+      // Rate limiting
+      const now = Date.now();
+      const limit = rateLimits.get(ws) ?? { count: 0, resetTime: now + 1000 };
+      if (now > limit.resetTime) {
+        limit.count = 0;
+        limit.resetTime = now + 1000;
+      }
+      if (++limit.count > 20) {
+        console.warn(`[ws] Rate limit exceeded for ${ws.participantId}`);
+        return;
+      }
+      rateLimits.set(ws, limit);
+
       try {
         const raw = data.toString();
         const relayed = relayToRoom(ws, raw);
-        // Log first few chars for debugging
         const parsed = JSON.parse(raw);
         console.log(`[ws] ${ws.role}→room(${ws.meetingId}): ${parsed.type} (relayed to ${relayed} clients)`);
       } catch (err) {

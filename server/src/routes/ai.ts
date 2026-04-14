@@ -3,6 +3,11 @@ import { callAI } from '../ai-client.js';
 
 export const aiRouter = Router();
 
+/** Sanitize user input before interpolating into AI prompts */
+function sanitizeInput(text: string, maxLen: number): string {
+  return text.replace(/[`\\]/g, '').slice(0, maxLen).trim();
+}
+
 /** Extract JSON from a response that may contain markdown fences or conversational text */
 function extractJSON(text: string): any {
   try { return JSON.parse(text); } catch {}
@@ -18,7 +23,8 @@ function extractJSON(text: string): any {
 // ────────────────── Poll Generate ──────────────────
 
 aiRouter.post('/poll-generate', async (req, res) => {
-  const { context, currentTopic } = req.body;
+  const context = sanitizeInput(req.body.context ?? '', 500);
+  const currentTopic = sanitizeInput(req.body.currentTopic ?? '', 200);
 
   try {
     const prompt = `You are an AI assistant for a live classroom engagement tool. Generate a single multiple-choice check-in poll question that a professor can ask students during a lecture.
@@ -54,9 +60,10 @@ Requirements:
 // ────────────────── Topic Segment ──────────────────
 
 aiRouter.post('/topic-segment', async (req, res) => {
-  const { transcript, previousTopic } = req.body;
+  const transcript = sanitizeInput(req.body.transcript ?? '', 5000);
+  const previousTopic = sanitizeInput(req.body.previousTopic ?? '', 200);
 
-  if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 20) {
+  if (transcript.length < 20) {
     return res.json({ topicChanged: false, topic: null, glossaryTerms: [] });
   }
 
@@ -119,8 +126,9 @@ Guidelines:
 // ────────────────── Quiz Generate ──────────────────
 
 aiRouter.post('/quiz-generate', async (req, res) => {
-  const { transcript, topic, questionCount } = req.body;
-  const count = Math.min(questionCount ?? 5, 10);
+  const transcript = sanitizeInput(req.body.transcript ?? '', 5000);
+  const topic = sanitizeInput(req.body.topic ?? '', 200);
+  const count = Math.min(req.body.questionCount ?? 5, 10);
 
   try {
     const hasContext = topic || transcript;
@@ -166,10 +174,16 @@ aiRouter.post('/recovery-pack', async (req, res) => {
     return;
   }
 
+  if (bookmarks.length > 50) {
+    res.status(400).json({ error: 'Too many bookmarks (max 50)' });
+    return;
+  }
+
   try {
     const bookmarkSummary = bookmarks
+      .slice(0, 50)
       .map((b: { topic: string; timestamp: number }, i: number) =>
-        `${i + 1}. "${b.topic}" (bookmarked at ${new Date(b.timestamp).toLocaleTimeString()})`)
+        `${i + 1}. "${sanitizeInput(b.topic ?? '', 200)}" (bookmarked at ${new Date(b.timestamp).toLocaleTimeString()})`)
       .join('\n');
 
     const topicSummary = Array.isArray(topics)
@@ -210,9 +224,9 @@ Requirements:
 // ────────────────── Detect Cues ──────────────────
 
 aiRouter.post('/detect-cues', async (req, res) => {
-  const { transcript } = req.body;
+  const transcript = sanitizeInput(req.body.transcript ?? '', 2000);
 
-  if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 20) {
+  if (transcript.length < 20) {
     return res.json({ hasCue: false, cues: [] });
   }
 
