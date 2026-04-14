@@ -243,7 +243,7 @@ export function HostDashboard({
               ) : (
                 <button className="btn btn-primary" onClick={onAnchorStartPolling}>Start AI</button>
               )}
-              {isInZoom && (
+              {!isInZoom && (
                 <button
                   className={`btn btn-secondary`}
                   onClick={onToggleTranscriptSource}
