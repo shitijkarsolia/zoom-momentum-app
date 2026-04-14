@@ -92,11 +92,14 @@ export function useZoomSdk(): ZoomContext {
       }
       console.log('[useZoomSdk] final meetingId:', meetingUUID, '| role:', userContext.role);
 
-      // Get participant count
+      // Get participant count (exclude the app's own participant entry)
       let participantCount = 0;
       try {
         const participants = await zoomSdk.getMeetingParticipants();
-        participantCount = participants?.participants?.length ?? 0;
+        const list = participants?.participants ?? [];
+        participantCount = list.filter(
+          (p: any) => p.participantUUID !== userContext.participantUUID
+        ).length;
       } catch {
         // getMeetingParticipants may not be available
       }
@@ -113,11 +116,15 @@ export function useZoomSdk(): ZoomContext {
       });
 
       // Listen for participant changes to keep count updated
+      const ownUUID = userContext.participantUUID;
       try {
         zoomSdk.onParticipantChange(async () => {
           try {
             const updated = await zoomSdk.getMeetingParticipants();
-            const count = updated?.participants?.length ?? 0;
+            const list = updated?.participants ?? [];
+            const count = list.filter(
+              (p: any) => p.participantUUID !== ownUUID
+            ).length;
             setContext(prev => ({ ...prev, participantCount: count }));
           } catch { /* ignore */ }
         });

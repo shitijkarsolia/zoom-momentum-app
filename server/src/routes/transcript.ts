@@ -43,7 +43,11 @@ transcriptRouter.post('/segment', async (req, res) => {
       },
     });
 
-    res.json({ id: segment.id });
+    res.json({
+      id: segment.id,
+      timestamp: Number(segment.timestamp),
+      seqNo: Number(segment.seqNo),
+    });
   } catch (err) {
     console.error('[transcript] segment error:', err);
     res.status(500).json({ error: 'Failed to store segment' });
