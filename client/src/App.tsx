@@ -209,8 +209,8 @@ export default function App() {
       },
       meeting: {
         id: meetingId,
-        startTime: 0,
-        participantCount: 0,
+        startTime: Date.now(),
+        participantCount: zoom.participantCount,
       },
     };
 
