@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
-import type { IncomingMessage } from 'http';
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { RequestHandler } from 'express';
 import { prisma } from '../db.js';
 
 interface ClientSocket extends WebSocket {
@@ -58,7 +59,7 @@ function broadcastToRoom(meetingId: string, message: string) {
   }
 }
 
-export function initWebSocketServer(server: Server) {
+export function initWebSocketServer(server: Server, sessionParser: RequestHandler) {
   const wss = new WebSocketServer({ server, path: '/ws' });
 
   // Heartbeat: ping every 30s, terminate dead connections
@@ -77,6 +78,13 @@ export function initWebSocketServer(server: Server) {
   wss.on('close', () => clearInterval(heartbeat));
 
   wss.on('connection', async (ws: ClientSocket, req: IncomingMessage) => {
+    // Parse session from cookie to validate the connection
+    const res = {} as ServerResponse;
+    await new Promise<void>((resolve) => {
+      sessionParser(req as any, res as any, () => resolve());
+    });
+    const sess = (req as any).session;
+
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const meetingId = url.searchParams.get('meetingId') ?? '';
     const role = url.searchParams.get('role') ?? 'student';
@@ -90,7 +98,6 @@ export function initWebSocketServer(server: Server) {
     }
 
     // Validate meetingId: must be a known mock ID or exist in the database
-    // TODO: For production, add session/token-based auth here
     const isMock = meetingId === 'mock-meeting-001';
     if (!isMock) {
       try {
@@ -106,6 +113,14 @@ export function initWebSocketServer(server: Server) {
       } catch {
         // DB check failed — allow connection (don't block on transient DB errors)
       }
+    }
+
+    // Log session status (auth is advisory for now — don't block unauthenticated
+    // users since OAuth is optional for students)
+    if (sess?.userId) {
+      console.log(`[ws] Authenticated session: userId=${sess.userId}`);
+    } else {
+      console.log(`[ws] Unauthenticated connection (session exists: ${!!sess})`);
     }
 
     ws.meetingId = meetingId;
