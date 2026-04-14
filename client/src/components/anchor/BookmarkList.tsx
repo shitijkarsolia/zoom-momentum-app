@@ -26,6 +26,9 @@ export function BookmarkList({ bookmarks }: BookmarkListProps) {
           return (
             <div
               key={i}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isExpanded}
               style={{
                 padding: '8px 10px',
                 borderRadius: 6,
@@ -36,6 +39,7 @@ export function BookmarkList({ bookmarks }: BookmarkListProps) {
                 transition: 'border-color 0.2s',
               }}
               onClick={() => setExpandedIndex(isExpanded ? null : i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedIndex(isExpanded ? null : i); } }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14 }}>{b.isAuto ? '\u2728' : '\uD83D\uDD16'}</span>
