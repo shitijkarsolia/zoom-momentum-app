@@ -23,10 +23,6 @@ import type { ArenaStudentPhase } from '../hooks/useArena';
 interface StudentViewProps {
   userName: string;
   connected: boolean;
-  isSignedIn?: boolean;
-  onSignIn?: () => void;
-  signInLoading?: boolean;
-  authUserId?: string | null;
   meetingId: string;
   // Pulse props
   activePoll: Poll | null;
@@ -55,8 +51,8 @@ interface StudentViewProps {
   anchorCurrentTopicId: string;
   anchorGlossary: GlossaryEntry[];
   anchorBookmarks: AnchorBookmark[];
-  onBookmark: (meetingId: string, userId: string) => Promise<boolean>;
-  // Events props (wired by Events teammate)
+  onBookmark: () => boolean;
+  // Events props
   meetingEnded?: boolean;
   lateJoinInfo?: { topicCount: number; latestTopic: string } | null;
   onDismissLateJoin?: () => void;
@@ -64,17 +60,12 @@ interface StudentViewProps {
 }
 
 const BOOKMARK_SAVED = 'Bookmarked';
-const BOOKMARK_SIGN_IN = 'Sign in to save bookmarks';
 
 type StudentTab = 'timeline' | 'glossary' | 'transcript';
 
 export function StudentView({
   userName,
   connected,
-  isSignedIn = false,
-  onSignIn,
-  signInLoading = false,
-  authUserId = null,
   meetingId,
   activePoll,
   selectedOption,
@@ -120,7 +111,7 @@ export function StudentView({
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
-    if (!meetingEnded || !authUserId || !meetingId) return;
+    if (!meetingEnded || !meetingId) return;
     let cancelled = false;
     setRecoveryLoading(true);
     const bookmarks = anchorBookmarks.map((bookmark) => ({
@@ -149,27 +140,15 @@ export function StudentView({
       .catch(() => { if (!cancelled) setRecoveryItems([]); })
       .finally(() => { if (!cancelled) setRecoveryLoading(false); });
     return () => { cancelled = true; };
-  }, [meetingEnded, authUserId, meetingId, anchorBookmarks, anchorTopics]);
+  }, [meetingEnded, meetingId, anchorBookmarks, anchorTopics]);
 
   const showArena = arenaPhase === 'question' || arenaPhase === 'answered' || arenaPhase === 'leaderboard' || arenaPhase === 'finished';
 
-  const handleBookmark = useCallback(async () => {
-    if (!authUserId) {
-      setBookmarkToast(BOOKMARK_SIGN_IN);
-      setTimeout(() => setBookmarkToast(null), 2800);
-      return;
-    }
-    if (!meetingId) {
-      setBookmarkToast('Meeting not detected');
-      setTimeout(() => setBookmarkToast(null), 2200);
-      return;
-    }
-    const ok = await onBookmark(meetingId, authUserId);
-    if (ok) {
-      setBookmarkToast(BOOKMARK_SAVED);
-      setTimeout(() => setBookmarkToast(null), 2200);
-    }
-  }, [onBookmark, authUserId, meetingId]);
+  const handleBookmark = useCallback(() => {
+    onBookmark();
+    setBookmarkToast(BOOKMARK_SAVED);
+    setTimeout(() => setBookmarkToast(null), 2200);
+  }, [onBookmark]);
 
   // Show PostClassSummary when meeting has ended
   if (meetingEnded) {
@@ -197,11 +176,6 @@ export function StudentView({
             <span style={{ fontSize: 11, color: 'var(--zoom-brand)', fontWeight: 500 }}>
               Speaking: {activeSpeaker}
             </span>
-          )}
-          {!isSignedIn && onSignIn && (
-            <button type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={onSignIn} disabled={signInLoading}>
-              {signInLoading ? 'Connecting…' : 'Sign in to save bookmarks'}
-            </button>
           )}
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
