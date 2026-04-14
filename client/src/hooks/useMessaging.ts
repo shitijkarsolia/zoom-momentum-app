@@ -74,17 +74,21 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
         console.log('[useMessaging] received:', parsed.type);
 
         // Host auto-responds to state requests
-        if (isHost && parsed.type === 'REQUEST_STATE' && stateRef.current) {
-          const fullState: AppMessage = {
-            type: 'FULL_STATE',
-            payload: stateRef.current,
-            seq: ++seqRef.current,
-            timestamp: Date.now(),
-            senderId: participantId,
-            senderRole: 'host',
-          };
-          ws.send(JSON.stringify(fullState));
-          console.log('[useMessaging] sent FULL_STATE');
+        if (isHost && parsed.type === 'REQUEST_STATE') {
+          if (stateRef.current) {
+            const fullState: AppMessage = {
+              type: 'FULL_STATE',
+              payload: stateRef.current,
+              seq: ++seqRef.current,
+              timestamp: Date.now(),
+              senderId: participantId,
+              senderRole: 'host',
+            };
+            ws.send(JSON.stringify(fullState));
+            console.log('[useMessaging] sent FULL_STATE');
+          } else {
+            console.log('[useMessaging] REQUEST_STATE received but state not ready yet');
+          }
           return;
         }
 
