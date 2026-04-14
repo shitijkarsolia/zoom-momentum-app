@@ -320,12 +320,14 @@ For detailed progress, bugs, and next steps, see [STATUS.md](STATUS.md).
 - [x] Prisma singleton, AI error handling, topic dedup (fuzzy matching)
 - [x] Meeting ID sync — `getMeetingUUID()` for consistent host/attendee IDs
 - [x] Mock transcript service (real CS50 Lecture 0 from Harvard CDN)
+- [x] Test framework (Vitest) and linter (ESLint)
+- [x] WebSocket auth hardening (session cookie validation)
+- [x] Bug fixes — BigInt serialization, participant count, startup race, sign-in button
 
 ### Remaining
 
 - [ ] Guest mode testing (second Zoom account)
 - [ ] Production database (PostgreSQL)
-- [ ] Test framework (Vitest) and linter (ESLint)
 - [ ] CI/CD pipeline
 - [ ] HTTPS on EC2
 
