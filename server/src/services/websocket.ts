@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { RequestHandler } from 'express';
-import { prisma } from '../db.js';
+import { resolveMeetingId } from './meeting-resolver.js';
 
 interface ClientSocket extends WebSocket {
   meetingId?: string;
@@ -100,19 +100,11 @@ export function initWebSocketServer(server: Server, sessionParser: RequestHandle
       return;
     }
 
-    // Validate meetingId: must be a known mock ID or exist in the database
+    // Validate meetingId: auto-create meeting record if it doesn't exist
     const isMock = meetingId === 'mock-meeting-001';
     if (!isMock) {
       try {
-        const meeting = await prisma.meeting.findFirst({
-          where: { OR: [{ id: meetingId }, { zoomMeetingId: meetingId }] },
-          select: { id: true },
-        });
-        if (!meeting) {
-          console.warn(`[ws] Rejected connection: unknown meetingId ${meetingId}`);
-          ws.close(1008, 'Unknown meeting');
-          return;
-        }
+        await resolveMeetingId(meetingId, { createIfMissing: true, defaultTitle: 'Lecture Session' });
       } catch {
         // DB check failed — allow connection (don't block on transient DB errors)
       }
