@@ -141,6 +141,9 @@ export function useZoomSdk(): ZoomContext {
 }
 
 /** Start RTMS transcript stream (only works inside Zoom) */
+// Note: We use callZoomApi('startRTMS', options) instead of zoomSdk.startRTMS()
+// because the direct method accepts no arguments — we need to pass transcriptOptions.
+// This matches the Arlo reference app's pattern.
 export async function startRTMS(): Promise<boolean> {
   if (!zoomSdk) return false;
   try {
