@@ -340,6 +340,7 @@ export default function App() {
         isInZoom={demo.isInZoom}
         useMockTranscript={useMockTranscript}
         onToggleTranscriptSource={() => setUseMockTranscript(prev => !prev)}
+        onEndClass={zoomEvents.simulateMeetingEnd}
       />
       </>
     );
@@ -358,9 +359,6 @@ export default function App() {
       <StudentView
       userName={userName}
       connected={demo.isDemoMode || messaging.connected}
-      isSignedIn={auth.isAuthenticated}
-      onSignIn={auth.login}
-      signInLoading={auth.isLoading}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}
@@ -381,7 +379,6 @@ export default function App() {
       anchorGlossary={anchorStudent.glossary}
       anchorBookmarks={anchorStudent.bookmarks}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
-      authUserId={auth.user?.id ?? null}
       meetingId={meetingId}
       meetingEnded={zoomEvents.meetingEnded}
       lateJoinInfo={zoomEvents.lateJoinInfo}

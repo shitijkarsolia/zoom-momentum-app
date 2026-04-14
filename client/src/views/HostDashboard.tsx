@@ -61,6 +61,7 @@ interface HostDashboardProps {
   onToggleTranscriptSource: () => void;
   onAnchorStartPolling: () => void;
   onAnchorStopPolling: () => void;
+  onEndClass?: () => void;
 }
 
 type HostTab = 'pulse' | 'arena' | 'anchor';
@@ -107,6 +108,7 @@ export function HostDashboard({
   onToggleTranscriptSource,
   onAnchorStartPolling,
   onAnchorStopPolling,
+  onEndClass,
 }: HostDashboardProps) {
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
 
@@ -115,7 +117,7 @@ export function HostDashboard({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum — Host</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Participants: {participantCount || '--'}</span>
+          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Students: {participantCount || '--'}</span>
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
             <span>{connected ? 'Connected' : 'Connecting…'}</span>
@@ -274,6 +276,16 @@ export function HostDashboard({
           </div>
         )}
       </div>
+
+      {onEndClass && (
+        <button
+          className="btn btn-secondary"
+          style={{ margin: '8px 12px', width: 'calc(100% - 24px)', fontSize: 12 }}
+          onClick={onEndClass}
+        >
+          End Class
+        </button>
+      )}
 
       <div style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', textAlign: 'center' }}>
         Hosting as {userName}

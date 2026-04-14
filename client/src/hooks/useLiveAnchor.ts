@@ -39,7 +39,7 @@ interface UseAnchorHostOptions {
   isInZoom: boolean;
 }
 
-const POLL_INTERVAL_MS = 30_000; // 30 seconds
+const POLL_INTERVAL_MS = 10_000; // 10 seconds
 
 export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostOptions) {
   const [state, setState] = useState<AnchorHostState>({
@@ -294,9 +294,9 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     });
   }, []);
 
-  const bookmarkCurrentTopic = useCallback(async (
-    meetingId: string,
-    userId: string,
+  const bookmarkCurrentTopic = useCallback((
+    _meetingId?: string,
+    _userId?: string,
     options?: {
       topicOverride?: string;
       isAuto?: boolean;
@@ -304,39 +304,20 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
       timestamp?: number;
     },
   ) => {
-    if (!userId) return false;
     const topic = state.topics.find(t => t.id === state.currentTopicId);
-    const topicLabel = options?.topicOverride || (topic ? topic.title : 'I\'m Confused');
+    const topicLabel = options?.topicOverride || (topic ? topic.title : 'Marked for Review');
     const timestamp = options?.timestamp ?? Date.now();
-    try {
-      const res = await fetch('/api/bookmarks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meetingId,
-          userId,
-          topic: topicLabel,
-          timestamp,
-          transcriptSnippet: options?.transcriptSnippet,
-          isAuto: options?.isAuto ?? false,
-        }),
-      });
-      if (res.ok) {
-        setState(prev => ({
-          ...prev,
-          bookmarks: [...prev.bookmarks, {
-            topic: topicLabel,
-            timestamp,
-            isAuto: options?.isAuto ?? false,
-            transcriptSnippet: options?.transcriptSnippet,
-          }],
-        }));
-      }
-      return res.ok;
-    } catch (err) {
-      console.error('[anchor] bookmark error:', err);
-      return false;
-    }
+
+    setState(prev => ({
+      ...prev,
+      bookmarks: [...prev.bookmarks, {
+        topic: topicLabel,
+        timestamp,
+        isAuto: options?.isAuto ?? false,
+        transcriptSnippet: options?.transcriptSnippet,
+      }],
+    }));
+    return true;
   }, [state.currentTopicId, state.topics]);
 
   return {
