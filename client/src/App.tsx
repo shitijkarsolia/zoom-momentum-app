@@ -10,6 +10,7 @@ import { useDemoMode } from './hooks/useDemoMode';
 import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
+import { Timeline } from './components/anchor/Timeline';
 import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry, AppState } from './types/messages';
 
 const ARENA_TIME_LIMIT_SEC = 15;
@@ -277,6 +278,21 @@ export default function App() {
   }
 
   if (isHost) {
+    // Show post-class summary when meeting ended
+    if (zoomEvents.meetingEnded) {
+      return (
+        <div className="app-container">
+          <div className="card" style={{ flex: 1 }}>
+            <h2 className="card-title">Class Ended</h2>
+            <div style={{ fontSize: 13, color: 'var(--zoom-text-secondary)', marginBottom: 12 }}>
+              {anchorHost.topics.length} topics covered, {anchorHost.glossary.length} glossary terms extracted
+            </div>
+            <Timeline topics={anchorHost.topics} currentTopicId={anchorHost.currentTopicId} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <>
         {demo.isDemoMode && (
@@ -359,6 +375,7 @@ export default function App() {
       <StudentView
       userName={userName}
       connected={demo.isDemoMode || messaging.connected}
+      anchorIsLive={anchorHost.isPolling}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}
