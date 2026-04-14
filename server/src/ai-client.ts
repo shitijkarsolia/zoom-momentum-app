@@ -35,16 +35,23 @@ async function callCreateAI(prompt: string, model: string, opts?: AIOptions): Pr
 }
 
 async function callBedrock(prompt: string, opts?: AIOptions): Promise<string> {
-  const resp = await bedrock.send(new ConverseCommand({
-    modelId: BEDROCK_MODEL,
-    messages: [{ role: 'user', content: [{ text: prompt }] }],
-    inferenceConfig: {
-      maxTokens: opts?.maxTokens ?? 1000,
-      temperature: opts?.temperature ?? 0.7,
-    },
-  }));
-  console.log('[ai] Served by Bedrock (Llama 3 70B)');
-  return resp.output?.message?.content?.[0]?.text ?? '';
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), opts?.timeout ?? 15000);
+
+  try {
+    const resp = await bedrock.send(new ConverseCommand({
+      modelId: BEDROCK_MODEL,
+      messages: [{ role: 'user', content: [{ text: prompt }] }],
+      inferenceConfig: {
+        maxTokens: opts?.maxTokens ?? 1000,
+        temperature: opts?.temperature ?? 0.7,
+      },
+    }), { abortSignal: controller.signal });
+    console.log('[ai] Served by Bedrock (Llama 3 70B)');
+    return resp.output?.message?.content?.[0]?.text ?? '';
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function callAI(prompt: string, opts?: AIOptions): Promise<string> {
