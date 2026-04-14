@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
 import type { IncomingMessage } from 'http';
+import { prisma } from '../db.js';
 
 interface ClientSocket extends WebSocket {
   meetingId?: string;
@@ -75,11 +76,37 @@ export function initWebSocketServer(server: Server) {
 
   wss.on('close', () => clearInterval(heartbeat));
 
-  wss.on('connection', (ws: ClientSocket, req: IncomingMessage) => {
+  wss.on('connection', async (ws: ClientSocket, req: IncomingMessage) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const meetingId = url.searchParams.get('meetingId') ?? '';
     const role = url.searchParams.get('role') ?? 'student';
     const participantId = url.searchParams.get('participantId') ?? '';
+
+    // Reject connections without a meetingId
+    if (!meetingId) {
+      console.warn('[ws] Rejected connection: no meetingId');
+      ws.close(1008, 'meetingId required');
+      return;
+    }
+
+    // Validate meetingId: must be a known mock ID or exist in the database
+    // TODO: For production, add session/token-based auth here
+    const isMock = meetingId === 'mock-meeting-001';
+    if (!isMock) {
+      try {
+        const meeting = await prisma.meeting.findFirst({
+          where: { OR: [{ id: meetingId }, { zoomMeetingId: meetingId }] },
+          select: { id: true },
+        });
+        if (!meeting) {
+          console.warn(`[ws] Rejected connection: unknown meetingId ${meetingId}`);
+          ws.close(1008, 'Unknown meeting');
+          return;
+        }
+      } catch {
+        // DB check failed — allow connection (don't block on transient DB errors)
+      }
+    }
 
     ws.meetingId = meetingId;
     ws.role = role;
