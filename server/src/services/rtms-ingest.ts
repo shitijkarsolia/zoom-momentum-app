@@ -183,7 +183,7 @@ async function storeSegment(
   data: { speaker: string; text: string; timestamp: number },
 ): Promise<void> {
   const session = activeSessions.get(meetingUuid);
-  const seqNo = session ? ++session.seqCounter : Date.now();
+  if (!session) return;
 
   const meetingId = await resolveMeetingId(meetingUuid, {
     createIfMissing: true,
@@ -193,6 +193,22 @@ async function storeSegment(
     console.error(`[rtms-ingest] Failed to resolve meeting for zoom UUID ${meetingUuid}`);
     return;
   }
+
+  // Initialize seqCounter from DB on first segment to avoid overwriting old data
+  if (session.seqCounter === 0) {
+    try {
+      const latest = await prisma.transcriptSegment.findFirst({
+        where: { meetingId },
+        orderBy: { seqNo: 'desc' },
+        select: { seqNo: true },
+      });
+      session.seqCounter = latest ? Number(latest.seqNo) : 0;
+    } catch {
+      // fallback to 0
+    }
+  }
+
+  const seqNo = ++session.seqCounter;
 
   await prisma.transcriptSegment.upsert({
     where: {
