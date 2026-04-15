@@ -3,7 +3,6 @@ import { PollCreator } from '../components/pulse/PollCreator';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
 import { Timeline } from '../components/anchor/Timeline';
-import { GlossaryTab } from '../components/anchor/GlossaryTab';
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { PollDraft, PulsePhase } from '../hooks/usePulse';
@@ -13,7 +12,8 @@ import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from '../
 const TAB_INFO = {
   pulse: 'Generate AI check-in polls to gauge student understanding. You can edit the question before launching it to everyone.',
   arena: 'Run a timed trivia quiz. AI generates questions from your topic, and students compete on a live leaderboard with scoring.',
-  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
+  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline visible to all students.',
+  transcript: 'Live transcript of the lecture with speaker attribution and timestamps.',
 } as const;
 
 interface HostDashboardProps {
@@ -64,7 +64,7 @@ interface HostDashboardProps {
   onEndClass?: () => void;
 }
 
-type HostTab = 'pulse' | 'arena' | 'anchor';
+type HostTab = 'pulse' | 'arena' | 'anchor' | 'transcript';
 
 export function HostDashboard({
   userName,
@@ -184,6 +184,12 @@ export function HostDashboard({
               }} />
             )}
           </button>
+          <button
+            className={`tab ${activeTab === 'transcript' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transcript')}
+          >
+            Transcript
+          </button>
         </div>
       </div>
 
@@ -264,23 +270,15 @@ export function HostDashboard({
               <p style={{ color: 'var(--zoom-error)', fontSize: 12 }}>{anchorError}</p>
             )}
             <Timeline topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
-            {anchorGlossary.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <GlossaryTab glossary={anchorGlossary} />
-              </div>
-            )}
-            {meetingId && (
-              <div style={{ marginTop: 8 }}>
-                <TranscriptTab
-                  meetingId={meetingId}
-                  glossary={anchorGlossary}
-                  topics={anchorTopics}
-                  currentTopicId={anchorCurrentTopicId}
-                  showTitle
-                />
-              </div>
-            )}
           </div>
+        )}
+        {activeTab === 'transcript' && meetingId && (
+          <TranscriptTab
+            meetingId={meetingId}
+            glossary={anchorGlossary}
+            topics={anchorTopics}
+            currentTopicId={anchorCurrentTopicId}
+          />
         )}
       </div>
 
