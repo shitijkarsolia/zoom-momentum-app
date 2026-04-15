@@ -53,7 +53,7 @@ interface StudentViewProps {
   anchorCurrentTopicId: string;
   anchorGlossary: GlossaryEntry[];
   anchorBookmarks: AnchorBookmark[];
-  onBookmark: () => boolean;
+  onBookmark: (meetingId?: string, userId?: string, options?: { topicOverride?: string }) => boolean;
   onRemoveBookmark: (index: number) => void;
   // Events props
   meetingEnded?: boolean;
@@ -149,11 +149,14 @@ export function StudentView({
 
   const showArena = arenaPhase === 'question' || arenaPhase === 'answered' || arenaPhase === 'leaderboard' || arenaPhase === 'finished';
 
-  const handleBookmark = useCallback(() => {
-    onBookmark();
+  const bookmarkedTopics = new Set(anchorBookmarks.map(b => b.topic));
+
+  const handleBookmark = useCallback((topicTitle?: string) => {
+    if (topicTitle && bookmarkedTopics.has(topicTitle)) return;
+    onBookmark(undefined, undefined, topicTitle ? { topicOverride: topicTitle } : undefined);
     setBookmarkToast(BOOKMARK_SAVED);
     setTimeout(() => setBookmarkToast(null), 2200);
-  }, [onBookmark]);
+  }, [onBookmark, bookmarkedTopics]);
 
   // Show PostClassSummary when meeting has ended
   if (meetingEnded) {
@@ -252,6 +255,7 @@ export function StudentView({
           <Timeline
             topics={anchorTopics}
             currentTopicId={anchorCurrentTopicId}
+            bookmarkedTopics={bookmarkedTopics}
             onBookmark={handleBookmark}
           />
         )}
