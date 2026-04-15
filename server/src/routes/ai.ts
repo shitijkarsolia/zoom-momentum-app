@@ -108,8 +108,11 @@ Guidelines:
 
     const content = await callAI(prompt, { temperature: 0.3, maxTokens: 600 });
     const parsed = extractJSON(content);
-    if (typeof parsed.topicChanged !== 'boolean' || !parsed.topic?.title) {
-      throw new Error('Invalid topic-segment format from AI');
+
+    // AI returns null topic for non-academic content — that's valid
+    if (!parsed.topic || !parsed.topic.title) {
+      res.json({ topicChanged: false, topic: null, glossaryTerms: [] });
+      return;
     }
 
     res.json({
