@@ -87,10 +87,17 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
 
       // 4. Process topic
       if (result.topic?.title) {
+        // Skip topics with very short titles (likely small talk)
+        const titleWords = tokenize(result.topic.title);
+        if (titleWords.size < 3) {
+          pollingRef.current = false;
+          return;
+        }
+
         // Check if a topic with similar title already exists to avoid duplicates
         const existingByTitle = state.topics.find(t =>
           t.title.toLowerCase() === result.topic.title.toLowerCase() ||
-          titleSimilarity(t.title, result.topic.title) >= 0.6
+          titleSimilarity(t.title, result.topic.title) >= 0.7
         );
         const topicId = existingByTitle
           ? existingByTitle.id

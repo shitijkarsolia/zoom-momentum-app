@@ -19,7 +19,8 @@ export type MessageType =
   | 'POLL_RESULTS'
   // Events
   | 'SPEAKER_SPOTLIGHT'
-  | 'AUTO_BOOKMARK';
+  | 'AUTO_BOOKMARK'
+  | 'CLASS_END';
 
 export interface AppMessage {
   type: MessageType;

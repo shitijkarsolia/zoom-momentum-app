@@ -13,9 +13,10 @@ import type { AnchorBookmark } from '../hooks/useLiveAnchor';
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
 
 const TAB_INFO = {
-  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "Mark for Review" to bookmark moments for review after class.',
+  timeline: 'Topics and key takeaways appear here as your professor lectures.',
   glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
-  transcript: 'Live transcript of the lecture, updated every 10 seconds. Key terms are highlighted.',
+  transcript: 'Live transcript of the lecture. Key terms are highlighted.',
+  bookmarks: 'Tap "Mark for Review" to bookmark the current moment. Review these after class.',
 } as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
@@ -62,7 +63,7 @@ interface StudentViewProps {
 
 const BOOKMARK_SAVED = 'Bookmarked';
 
-type StudentTab = 'timeline' | 'glossary' | 'transcript';
+type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks';
 
 export function StudentView({
   userName,
@@ -229,38 +230,50 @@ export function StudentView({
           >
             Transcript
           </button>
+          <button
+            className={`tab ${activeTab === 'bookmarks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bookmarks')}
+          >
+            Bookmarks{anchorBookmarks.length > 0 ? ` (${anchorBookmarks.length})` : ''}
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
         <div className="tab-info-bar">
           <FeatureInfo
-            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : 'Transcript'}
+            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : activeTab === 'transcript' ? 'Transcript' : 'Bookmarks'}
             description={TAB_INFO[activeTab]}
           />
         </div>
         {activeTab === 'timeline' && (
-          <div>
-            <Timeline
-              topics={anchorTopics}
-              currentTopicId={anchorCurrentTopicId}
-              onBookmark={handleBookmark ? () => handleBookmark() : undefined}
-            />
-            <button
-              className="btn btn-secondary"
-              style={{ marginTop: 12, width: '100%' }}
-              onClick={handleBookmark}
-            >
-              Mark for Review
-            </button>
-            <BookmarkList bookmarks={anchorBookmarks} />
-          </div>
+          <Timeline
+            topics={anchorTopics}
+            currentTopicId={anchorCurrentTopicId}
+          />
         )}
         {activeTab === 'glossary' && (
           <GlossaryTab glossary={anchorGlossary} />
         )}
         {activeTab === 'transcript' && (
           <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+        )}
+        {activeTab === 'bookmarks' && (
+          <div>
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', marginBottom: 12 }}
+              onClick={handleBookmark}
+            >
+              Mark for Review
+            </button>
+            <BookmarkList bookmarks={anchorBookmarks} />
+            {anchorBookmarks.length === 0 && (
+              <div style={{ padding: 16, textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
+                No bookmarks yet. Tap "Mark for Review" to save the current moment.
+              </div>
+            )}
+          </div>
         )}
       </div>
 

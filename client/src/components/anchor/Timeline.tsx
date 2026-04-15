@@ -4,10 +4,9 @@ import { TopicCard } from './TopicCard';
 interface TimelineProps {
   topics: Topic[];
   currentTopicId: string;
-  onBookmark?: (topicId: string) => void;
 }
 
-export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) {
+export function Timeline({ topics, currentTopicId }: TimelineProps) {
   // Show newest first
   const sorted = [...topics].sort((a, b) => b.startTime - a.startTime);
 
@@ -32,7 +31,6 @@ export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) 
             key={topic.id}
             topic={topic}
             isCurrent={topic.id === currentTopicId}
-            onBookmark={onBookmark ? () => onBookmark(topic.id) : undefined}
           />
         ))}
       </div>

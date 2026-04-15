@@ -88,7 +88,9 @@ Respond with ONLY a JSON object — no markdown, no explanation:
 }
 
 Guidelines:
-- Set topicChanged to true only if the lecturer clearly shifted to a new subject
+- Set topicChanged to true only if the lecturer clearly shifted to a NEW substantive academic subject
+- Set topicChanged to false if the transcript contains small talk, greetings, administrative remarks, off-topic conversation, or casual discussion that is not lecture material
+- If the content is not academic or educational, return the previous topic unchanged with topicChanged: false
 - Topic title should be descriptive enough that a student can recall what was covered (8-12 words)
 - Bullets must be SPECIFIC to what was actually said — not generic summaries
   - Good: "ASCII uses 7-8 bits to represent 128-256 characters including letters, digits, and symbols"
