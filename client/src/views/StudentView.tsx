@@ -54,6 +54,7 @@ interface StudentViewProps {
   anchorGlossary: GlossaryEntry[];
   anchorBookmarks: AnchorBookmark[];
   onBookmark: () => boolean;
+  onRemoveBookmark: (index: number) => void;
   // Events props
   meetingEnded?: boolean;
   lateJoinInfo?: { topicCount: number; latestTopic: string } | null;
@@ -90,6 +91,7 @@ export function StudentView({
   anchorGlossary,
   anchorBookmarks,
   onBookmark,
+  onRemoveBookmark,
   meetingEnded = false,
   lateJoinInfo,
   onDismissLateJoin,
@@ -250,6 +252,7 @@ export function StudentView({
           <Timeline
             topics={anchorTopics}
             currentTopicId={anchorCurrentTopicId}
+            onBookmark={handleBookmark}
           />
         )}
         {activeTab === 'glossary' && (
@@ -260,17 +263,10 @@ export function StudentView({
         )}
         {activeTab === 'bookmarks' && (
           <div>
-            <button
-              className="btn btn-primary"
-              style={{ width: '100%', marginBottom: 12 }}
-              onClick={handleBookmark}
-            >
-              Mark for Review
-            </button>
-            <BookmarkList bookmarks={anchorBookmarks} />
+            <BookmarkList bookmarks={anchorBookmarks} onRemove={onRemoveBookmark} />
             {anchorBookmarks.length === 0 && (
               <div style={{ padding: 16, textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
-                No bookmarks yet. Tap "Mark for Review" to save the current moment.
+                No bookmarks yet. Tap "Bookmark" on a topic to save it for review.
               </div>
             )}
           </div>

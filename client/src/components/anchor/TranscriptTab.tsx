@@ -105,7 +105,9 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, sho
         }}
       >
         {segments.map((seg, i) => {
-          const time = new Date(seg.timestamp);
+          const rawTs = seg.timestamp;
+          const ms = rawTs > 1e15 ? Math.floor(rawTs / 1000) : rawTs > 1e12 ? rawTs : rawTs * 1000;
+          const time = new Date(ms);
           const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}`;
           const prevSpeaker = i > 0 ? segments[i - 1]!.speaker : null;
           const isNewSpeaker = seg.speaker !== prevSpeaker;

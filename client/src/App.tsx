@@ -10,8 +10,6 @@ import { useDemoMode } from './hooks/useDemoMode';
 import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
-import { Timeline } from './components/anchor/Timeline';
-import { GlossaryTab } from './components/anchor/GlossaryTab';
 import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry, AppState } from './types/messages';
 
 const ARENA_TIME_LIMIT_SEC = 15;
@@ -292,23 +290,62 @@ export default function App() {
       return (
         <div className="app-container">
           <div className="card" style={{ flex: 1, overflowY: 'auto' }}>
-            <h2 className="card-title" style={{ textAlign: 'center', marginBottom: 4 }}>Class Summary</h2>
-            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginBottom: 16 }}>
-              {anchorHost.topics.length} topic{anchorHost.topics.length !== 1 ? 's' : ''} covered
-              {anchorHost.glossary.length > 0 && ` · ${anchorHost.glossary.length} glossary term${anchorHost.glossary.length !== 1 ? 's' : ''}`}
-            </p>
-            {anchorHost.topics.length > 0 && (
-              <>
-                <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Topics</h3>
-                <Timeline topics={anchorHost.topics} currentTopicId="" />
-              </>
-            )}
-            {anchorHost.glossary.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Glossary</h3>
-                <GlossaryTab glossary={anchorHost.glossary} />
+            <div className="post-class-summary">
+              <div className="post-class-header">
+                <h1 className="post-class-title">Class Complete</h1>
               </div>
-            )}
+
+              <div className="post-class-stats">
+                <div className="stat-card">
+                  <span className="stat-number">{anchorHost.topics.length}</span>
+                  <span className="stat-label">Topics Covered</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-number">{anchorHost.glossary.length}</span>
+                  <span className="stat-label">Terms Extracted</span>
+                </div>
+                {anchorHost.topics.length >= 2 && (
+                  <div className="stat-card">
+                    <span className="stat-number">
+                      {Math.round(((anchorHost.topics[anchorHost.topics.length - 1]?.startTime ?? 0) - (anchorHost.topics[0]?.startTime ?? 0)) / 60_000)}m
+                    </span>
+                    <span className="stat-label">Duration</span>
+                  </div>
+                )}
+              </div>
+
+              {anchorHost.topics.length > 0 && (
+                <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
+                  <h3 className="post-class-section-title">Topics Covered</h3>
+                  <div className="post-class-topics">
+                    {anchorHost.topics.map(topic => (
+                      <div key={topic.id} className="post-class-topic">
+                        <span className="post-class-topic-title">{topic.title}</span>
+                        <ul className="post-class-topic-bullets">
+                          {topic.bullets.slice(0, 2).map((b, i) => (
+                            <li key={i}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {anchorHost.glossary.length > 0 && (
+                <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
+                  <h3 className="post-class-section-title">Key Terms</h3>
+                  <div className="post-class-terms">
+                    {anchorHost.glossary.slice(0, 8).map((entry, i) => (
+                      <div key={i} className="post-class-term">
+                        <strong>{entry.term}</strong>
+                        {entry.formula && <code>{entry.formula}</code>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -417,6 +454,7 @@ export default function App() {
       anchorGlossary={anchorStudent.glossary}
       anchorBookmarks={anchorStudent.bookmarks}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
+      onRemoveBookmark={anchorStudent.removeBookmark}
       meetingId={meetingId}
       meetingEnded={zoomEvents.meetingEnded}
       lateJoinInfo={zoomEvents.lateJoinInfo}

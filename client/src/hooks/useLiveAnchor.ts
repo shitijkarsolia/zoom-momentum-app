@@ -53,10 +53,11 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollingRef = useRef(false); // guard against concurrent fetches
+  const lastBufferRef = useRef(''); // track last analyzed buffer to skip duplicates
 
   const pollTranscript = useCallback(async () => {
     if (pollingRef.current) return;
-    if (!meetingId) return; // no meeting context (browser/dev mode)
+    if (!meetingId) return;
     pollingRef.current = true;
 
     try {
@@ -68,6 +69,13 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
         pollingRef.current = false;
         return; // not enough transcript yet
       }
+
+      // Skip if transcript hasn't changed since last analysis
+      if (buffer === lastBufferRef.current) {
+        pollingRef.current = false;
+        return;
+      }
+      lastBufferRef.current = buffer;
 
       // 2. Get current topic title for context
       const previousTopic = state.currentTopicId
@@ -327,6 +335,13 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     return true;
   }, [state.currentTopicId, state.topics]);
 
+  const removeBookmark = useCallback((index: number) => {
+    setState(prev => ({
+      ...prev,
+      bookmarks: prev.bookmarks.filter((_, i) => i !== index),
+    }));
+  }, []);
+
   return {
     topics: state.topics,
     currentTopicId: state.currentTopicId,
@@ -335,5 +350,6 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     handleTopicUpdate,
     handleGlossaryUpdate,
     bookmarkCurrentTopic,
+    removeBookmark,
   };
 }

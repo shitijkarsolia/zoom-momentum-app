@@ -3,9 +3,10 @@ import type { AnchorBookmark } from '../../hooks/useLiveAnchor';
 
 interface BookmarkListProps {
   bookmarks: AnchorBookmark[];
+  onRemove?: (index: number) => void;
 }
 
-export function BookmarkList({ bookmarks }: BookmarkListProps) {
+export function BookmarkList({ bookmarks, onRemove }: BookmarkListProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   if (bookmarks.length === 0) return null;
@@ -42,24 +43,13 @@ export function BookmarkList({ bookmarks }: BookmarkListProps) {
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedIndex(isExpanded ? null : i); } }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14 }}>{b.isAuto ? '\u2728' : '\uD83D\uDD16'}</span>
+                <span style={{ fontSize: 14 }}>{'\uD83D\uDD16'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {b.topic}
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
-                  <span style={{ fontSize: 10, color: 'var(--zoom-text-secondary)' }}>{timeLabel}</span>
-                  <span style={{
-                    fontSize: 9,
-                    padding: '1px 5px',
-                    borderRadius: 3,
-                    background: b.isAuto ? 'var(--zoom-brand-light, #e8f0fe)' : 'var(--zoom-bg)',
-                    color: b.isAuto ? 'var(--zoom-brand, #0E71EB)' : 'var(--zoom-text-secondary)',
-                  }}>
-                    {b.isAuto ? 'auto' : 'manual'}
-                  </span>
-                </div>
+                <span style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', flexShrink: 0 }}>{timeLabel}</span>
               </div>
 
               {isExpanded && (
@@ -76,14 +66,19 @@ export function BookmarkList({ bookmarks }: BookmarkListProps) {
                     {b.transcriptSnippet && (
                       <div>
                         <span style={{ color: 'var(--zoom-text-secondary)' }}>Context: </span>
-                        <span style={{ fontStyle: 'italic' }}>"{b.transcriptSnippet}"</span>
+                        <span style={{ fontStyle: 'italic' }}>{b.transcriptSnippet}</span>
                       </div>
                     )}
-                    <div>
-                      <span style={{ color: 'var(--zoom-text-secondary)' }}>Type: </span>
-                      <span>{b.isAuto ? 'Auto-detected by AI (instructor cue)' : 'Manually bookmarked'}</span>
-                    </div>
                   </div>
+                  {onRemove && (
+                    <button
+                      className="btn btn-secondary"
+                      style={{ marginTop: 8, fontSize: 11, padding: '3px 10px', width: '100%' }}
+                      onClick={(e) => { e.stopPropagation(); onRemove(i); setExpandedIndex(null); }}
+                    >
+                      Remove Bookmark
+                    </button>
+                  )}
                 </div>
               )}
             </div>
