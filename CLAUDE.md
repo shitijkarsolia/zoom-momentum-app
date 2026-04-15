@@ -124,12 +124,16 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 - ~~**RTMS secret fallback**~~ — FIXED. Proper empty-string check before falling back to clientSecret.
 - ~~**"Analyze Now" button**~~ — FIXED. Removed from Anchor tab.
 - ~~**PrismaClient instances**~~ — FIXED. Singleton in `server/src/db.ts`.
-- ~~**AI topic-segment silent failure**~~ — FIXED. Returns 500 on error.
-- ~~**AI topic dedup**~~ — FIXED. Fuzzy title matching with token similarity.
+- ~~**AI topic-segment silent failure**~~ — FIXED. Returns null for non-academic content, 500 on real errors.
+- ~~**AI topic dedup**~~ — FIXED. Fuzzy title matching (0.7 threshold), skip short titles, ignore small talk.
 - ~~**BigInt serialization**~~ — FIXED. transcript.ts returns timestamp/seqNo as Numbers.
-- ~~**Participant count**~~ — FIXED. Filters out app's own participantUUID.
-- ~~**Sign-in button**~~ — FIXED. Guards against missing SDK in demo mode.
+- ~~**Participant count**~~ — FIXED. Filters out app's own participantUUID + host. Shows students only.
+- ~~**Sign-in button**~~ — REMOVED. Bookmarks are local-only now.
 - ~~**Mock transcript startup race**~~ — FIXED. Retry with backoff (3 attempts).
+- ~~**RTMS segment overwrite**~~ — FIXED. Upsert + seqCounter initialized from DB.
+- ~~**RTMS timestamps**~~ — FIXED. Microsecond detection and conversion to milliseconds.
+- ~~**WebSocket rejecting Zoom UUIDs**~~ — FIXED. Auto-create meeting on connect.
+- ~~**End Class not notifying students**~~ — FIXED. CLASS_END broadcast + stops AI polling.
 
 ### Open Bugs
 None currently tracked.

@@ -125,7 +125,7 @@ npm run dev -w mock-transcript
 
 ## Changelog
 
-### April 14, 2026
+### April 14-15, 2026
 - Fixed BigInt serialization in transcript route (return as Numbers)
 - Fixed participant count off-by-one (filter out app's own UUID)
 - Fixed mock-transcript startup race (retry with backoff)
@@ -135,6 +135,27 @@ npm run dev -w mock-transcript
 - WebSocket auth hardening (session cookie parsed on handshake)
 - Simplified README attribution
 - Committed experimental AI eval scripts (server/scripts/)
+- Security: CORS restricted, WS rate limiting (20 msg/sec) + 64KB max payload, AI input sanitization
+- Security: bookmarks use session userId, JSON body limit 16KB
+- Fixed WebSocket rejecting real Zoom meeting UUIDs (auto-create meeting on connect)
+- Fixed RTMS segment storage (upsert + seqCounter initialized from DB)
+- UX: participant count shows students only, removed sign-in button
+- UX: bookmarks are local-only (no server POST required)
+- UX: End Class button broadcasts CLASS_END to students, stops AI polling
+- UX: host and student both see blue-themed "Class Complete" summary
+- UX: green "Live" indicator in status bar when AI is active
+- Transcript: per-segment display with speaker names, HH:MM:SS timestamps
+- Transcript: fixed RTMS microsecond timestamps, auto-scroll only when at bottom
+- Transcript: host has separate Transcript tab, removed glossary from Anchor
+- Timeline: AI ignores small talk/setup/personal remarks, returns null for non-academic content
+- Timeline: dedup threshold raised to 0.7, skip short titles (<3 words)
+- Timeline: skip re-analysis when transcript buffer unchanged
+- Bookmarks: per-topic state (shows "Bookmarked" when already saved, prevents re-bookmark)
+- Bookmarks: own tab with remove/unpin, removed manual/auto labels
+- Arena: cancel button on quiz preview, host can abandon before starting
+- Arena: leaderboard ties get same rank
+- Removed dead message types (BULLET_UPDATE, LATE_JOIN_SUMMARY), added CLASS_END
+- Added TESTING.md manual testing checklist
 
 ### April 13-14, 2026
 - Arena: host can end quiz anytime (End Quiz button), student overlay stays visible between questions
