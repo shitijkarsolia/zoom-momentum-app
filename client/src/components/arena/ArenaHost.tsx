@@ -234,6 +234,9 @@ export function ArenaHost({
         </div>
 
         <div className="arena-ready-actions">
+          <button className="btn btn-secondary" onClick={onReset}>
+            Cancel
+          </button>
           <button className="btn btn-secondary" onClick={handleGenerate}>
             Regenerate
           </button>
