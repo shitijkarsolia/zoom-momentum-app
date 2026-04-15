@@ -3,10 +3,9 @@ import type { Topic } from '../../types/messages';
 interface TopicCardProps {
   topic: Topic;
   isCurrent: boolean;
-  onBookmark?: () => void;
 }
 
-export function TopicCard({ topic, isCurrent, onBookmark }: TopicCardProps) {
+export function TopicCard({ topic, isCurrent }: TopicCardProps) {
   const elapsed = Math.round((Date.now() - topic.startTime) / 60_000);
   const timeLabel = elapsed < 1 ? 'Just now' : `${elapsed}m ago`;
 
@@ -44,15 +43,6 @@ export function TopicCard({ topic, isCurrent, onBookmark }: TopicCardProps) {
             <li key={i} style={{ color: 'var(--zoom-text-secondary)' }}>{bullet}</li>
           ))}
         </ul>
-      )}
-      {onBookmark && (
-        <button
-          className="btn btn-secondary"
-          style={{ marginTop: 8, fontSize: 12, padding: '4px 10px' }}
-          onClick={onBookmark}
-        >
-          Bookmark
-        </button>
       )}
     </div>
   );

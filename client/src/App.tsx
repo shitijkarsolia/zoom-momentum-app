@@ -11,6 +11,7 @@ import { WelcomeView } from './views/WelcomeView';
 import { HostDashboard } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
 import { Timeline } from './components/anchor/Timeline';
+import { GlossaryTab } from './components/anchor/GlossaryTab';
 import type { AppMessage, Poll, LeaderboardEntry, Topic, GlossaryEntry, AppState } from './types/messages';
 
 const ARENA_TIME_LIMIT_SEC = 15;
@@ -58,7 +59,11 @@ export default function App() {
 
   const handleMeetingEnd = useCallback(() => {
     console.log('[App] Meeting ended');
-  }, []);
+    if (isHost) {
+      messaging.broadcast('CLASS_END', { timestamp: Date.now() });
+      anchorHost.stopPolling();
+    }
+  }, [isHost, messaging.broadcast, anchorHost.stopPolling]);
 
   const zoomEvents = useZoomEvents({
     isHost,
@@ -161,6 +166,9 @@ export default function App() {
           const spPayload = message.payload as { speakerName: string; participantId: string; timestamp: number };
           setStudentActiveSpeaker(spPayload.speakerName);
           console.log('[App] Speaker spotlight:', spPayload.speakerName);
+        } else if (message.type === 'CLASS_END') {
+          console.log('[App] Class ended by host');
+          zoomEvents.simulateMeetingEnd();
         }
       }
       console.log('[App] received message:', message.type, message);
@@ -182,6 +190,7 @@ export default function App() {
     anchorStudent.bookmarkCurrentTopic,
     auth.user?.id,
     zoomEvents.handleFullState,
+    zoomEvents.simulateMeetingEnd,
   ]);
 
   useEffect(() => {
@@ -282,12 +291,24 @@ export default function App() {
     if (zoomEvents.meetingEnded) {
       return (
         <div className="app-container">
-          <div className="card" style={{ flex: 1 }}>
-            <h2 className="card-title">Class Ended</h2>
-            <div style={{ fontSize: 13, color: 'var(--zoom-text-secondary)', marginBottom: 12 }}>
-              {anchorHost.topics.length} topics covered, {anchorHost.glossary.length} glossary terms extracted
-            </div>
-            <Timeline topics={anchorHost.topics} currentTopicId={anchorHost.currentTopicId} />
+          <div className="card" style={{ flex: 1, overflowY: 'auto' }}>
+            <h2 className="card-title" style={{ textAlign: 'center', marginBottom: 4 }}>Class Summary</h2>
+            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginBottom: 16 }}>
+              {anchorHost.topics.length} topic{anchorHost.topics.length !== 1 ? 's' : ''} covered
+              {anchorHost.glossary.length > 0 && ` · ${anchorHost.glossary.length} glossary term${anchorHost.glossary.length !== 1 ? 's' : ''}`}
+            </p>
+            {anchorHost.topics.length > 0 && (
+              <>
+                <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Topics</h3>
+                <Timeline topics={anchorHost.topics} currentTopicId="" />
+              </>
+            )}
+            {anchorHost.glossary.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Glossary</h3>
+                <GlossaryTab glossary={anchorHost.glossary} />
+              </div>
+            )}
           </div>
         </div>
       );
