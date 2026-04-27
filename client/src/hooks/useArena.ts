@@ -4,7 +4,7 @@ import type { Question, LeaderboardEntry, MessageType } from '../types/messages'
 export type ArenaHostPhase = 'idle' | 'loading' | 'ready' | 'question' | 'leaderboard' | 'finished';
 export type ArenaStudentPhase = 'waiting' | 'question' | 'answered' | 'leaderboard' | 'finished';
 
-const QUESTION_TIME_SEC = 10;
+const QUESTION_TIME_SEC = 5;
 const LEADERBOARD_DISPLAY_SEC = 5;
 
 // --- Host Hook ---
@@ -79,6 +79,27 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load quiz';
       setState(prev => ({ ...prev, phase: 'idle', error: message }));
+    }
+  }, []);
+
+  const appendQuestions = useCallback(async (topic?: string, transcript?: string) => {
+    try {
+      const res = await fetch('/api/ai/quiz-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, transcript, questionCount: 3 }),
+      });
+      if (!res.ok) throw new Error('Failed to generate questions');
+      const data = await res.json();
+      if (!data.questions?.length) throw new Error('No questions received');
+
+      setState(prev => ({
+        ...prev,
+        questions: [...prev.questions, ...data.questions],
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate questions';
+      setState(prev => ({ ...prev, error: message }));
     }
   }, []);
 
@@ -256,6 +277,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     currentQuestion: state.questions[state.currentIndex] ?? null,
     totalQuestions: state.questions.length,
     fetchQuestions,
+    appendQuestions,
     updateQuestion,
     startGame,
     handleAnswer,

@@ -15,6 +15,7 @@ interface ArenaHostProps {
   questions: Question[];
   meetingId?: string;
   onFetchQuestions: (topic?: string, transcript?: string) => void;
+  onAppendQuestions: (topic?: string, transcript?: string) => void;
   onUpdateQuestion: (index: number, updates: Partial<Question>) => void;
   onStartGame: () => void;
   onShowLeaderboard: () => void;
@@ -35,6 +36,7 @@ export function ArenaHost({
   questions,
   meetingId,
   onFetchQuestions,
+  onAppendQuestions,
   onUpdateQuestion,
   onStartGame,
   onShowLeaderboard,
@@ -63,7 +65,7 @@ export function ArenaHost({
     onFetchQuestions(topic || undefined, transcript || undefined);
   };
 
-  const handleTailorRegenerate = async () => {
+  const handleTailorAppend = async () => {
     let transcript = '';
     if (meetingId) {
       try {
@@ -74,8 +76,7 @@ export function ArenaHost({
         }
       } catch { /* silent */ }
     }
-    const combinedTopic = [topic, tailorInput].filter(Boolean).join('. ');
-    onFetchQuestions(combinedTopic || undefined, transcript || undefined);
+    onAppendQuestions(tailorInput || undefined, transcript || undefined);
     setTailorInput('');
   };
 
@@ -212,7 +213,7 @@ export function ArenaHost({
 
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', display: 'block', marginBottom: 4 }}>
-            Tailor these questions (optional)
+            Add more questions on a specific topic
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
@@ -225,10 +226,10 @@ export function ArenaHost({
             <button
               className="btn btn-secondary"
               style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
-              onClick={handleTailorRegenerate}
+              onClick={handleTailorAppend}
               disabled={!tailorInput.trim()}
             >
-              Tailor
+              Add More
             </button>
           </div>
         </div>
@@ -236,9 +237,6 @@ export function ArenaHost({
         <div className="arena-ready-actions">
           <button className="btn btn-secondary" onClick={onReset}>
             Cancel
-          </button>
-          <button className="btn btn-secondary" onClick={handleGenerate}>
-            Regenerate
           </button>
           <button className="btn btn-primary" onClick={onStartGame}>
             Start Game

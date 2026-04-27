@@ -252,18 +252,37 @@ export function StudentView({
           />
         </div>
         {activeTab === 'timeline' && (
-          <Timeline
-            topics={anchorTopics}
-            currentTopicId={anchorCurrentTopicId}
-            bookmarkedTopics={bookmarkedTopics}
-            onBookmark={handleBookmark}
-          />
+          <>
+            {!anchorIsLive && anchorTopics.length === 0 && (
+              <div style={{ padding: '16px 14px', textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13, background: 'var(--zoom-bg)', borderRadius: 8, margin: '0 0 8px' }}>
+                Waiting for professor to start AI analysis…
+              </div>
+            )}
+            {!anchorIsLive && anchorTopics.length > 0 && (
+              <div style={{ padding: '8px 14px', textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 11, background: 'var(--zoom-bg)', borderRadius: 8, margin: '0 0 8px' }}>
+                AI paused by professor
+              </div>
+            )}
+            <Timeline
+              topics={anchorTopics}
+              currentTopicId={anchorCurrentTopicId}
+              bookmarkedTopics={bookmarkedTopics}
+              onBookmark={handleBookmark}
+            />
+          </>
         )}
         {activeTab === 'glossary' && (
           <GlossaryTab glossary={anchorGlossary} />
         )}
         {activeTab === 'transcript' && (
-          <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+          <>
+            {!anchorIsLive && anchorTopics.length === 0 && (
+              <div style={{ padding: '16px 14px', textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13, background: 'var(--zoom-bg)', borderRadius: 8, margin: '0 0 8px' }}>
+                Waiting for professor to start the lecture…
+              </div>
+            )}
+            <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+          </>
         )}
         {activeTab === 'bookmarks' && (
           <div>
