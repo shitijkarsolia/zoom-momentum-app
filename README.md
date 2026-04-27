@@ -99,7 +99,7 @@ Both connect via WebSocket to:
     +-- /api/rtms        -> RTMS webhook + stream client
 
   AI Provider:
-    Primary: ASU CREATE AI (gemini-pro -> claude-3-opus)
+    Primary: ASU CREATE AI (claude4_5_sonnet -> gpt5)
     Fallback: AWS Bedrock (Llama 3 70B via Converse API)
 
   Database: SQLite (dev) / PostgreSQL (prod) via Prisma ORM
@@ -164,8 +164,10 @@ The app runs on an **EC2 instance** with a static ngrok tunnel for development.
 | `AWS_REGION` | AWS region for Bedrock (`us-east-1`) |
 | `CREATE_AI_API_URL` | ASU CREATE AI endpoint (optional) |
 | `CREATE_AI_TOKEN` | CREATE AI auth token (optional) |
-| `CREATE_AI_PRIMARY_MODEL` | Primary model, e.g. `gemini-pro` (optional) |
-| `CREATE_AI_BACKUP_MODEL` | Backup model, e.g. `claude-3-opus` (optional) |
+| `CREATE_AI_PRIMARY_MODEL` | Primary model, e.g. `claude4_5_sonnet` (optional) |
+| `CREATE_AI_PRIMARY_PROVIDER` | Primary model provider, e.g. `aws` (optional) |
+| `CREATE_AI_BACKUP_MODEL` | Backup model, e.g. `gpt5` (optional) |
+| `CREATE_AI_BACKUP_PROVIDER` | Backup model provider, e.g. `openai` (optional) |
 | `PORT` | Server port (default: 3001) |
 | `CLIENT_URL` | Frontend URL (default: `http://localhost:5173`) |
 
@@ -291,7 +293,7 @@ zoom-momentum/
 | Frontend | React 18 + Vite + TypeScript |
 | Backend | Express + TypeScript + Prisma |
 | Database | SQLite (dev) / PostgreSQL (prod) |
-| AI | ASU CREATE AI (gemini-pro/claude-3-opus) + AWS Bedrock fallback |
+| AI | ASU CREATE AI (claude4_5_sonnet/gpt5) + AWS Bedrock fallback |
 | Messaging | WebSocket relay through Express |
 | Transcript | Zoom RTMS (real-time media streams) |
 | Hosting | EC2 (dev via ngrok tunnel) |
