@@ -44,10 +44,10 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 4. ~~**[Medium] AI topic-segment silent failure**~~ — FIXED. Returns 500.
 5. ~~**[Medium] Anchor topic dedup**~~ — FIXED. Fuzzy title matching.
 6. ~~**[Low] RTMS secret fallback**~~ — FIXED.
-7. **[Low] BigInt serialization** — `transcript.ts` returns segments without converting BigInt fields to strings.
-8. **[Low] Startup race** — mock-transcript chunk #1 always fails with ECONNREFUSED.
-9. **[Low] Participant count** — Live updates via `onParticipantChange`, but initial count may include the app itself.
-10. **[Low] Sign-in button** — Does nothing on participant side in Zoom context.
+7. ~~**[Low] BigInt serialization**~~ — FIXED. `transcript.ts` returns timestamp/seqNo as Numbers.
+8. ~~**[Low] Startup race**~~ — FIXED. Mock-transcript retries with backoff (3 attempts).
+9. ~~**[Low] Participant count**~~ — FIXED. Filters out app's own participantUUID from count.
+10. ~~**[Low] Sign-in button**~~ — FIXED. Guards against missing SDK in demo mode with clear error.
 11. ~~**[Low] "Analyze Now" button**~~ — FIXED. Removed.
 
 ---
@@ -69,9 +69,10 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 - ~~Fix AI silent failure in topic-segment~~ — DONE
 - ~~Improve anchor topic dedup (fuzzy matching)~~ — DONE
 - ~~Wire participant count to `getMeetingParticipants()`~~ — DONE (live updates via onParticipantChange)
-- Fix BigInt serialization in transcript route
-- Add test framework (Vitest)
-- Add linter (ESLint)
+- ~~Fix BigInt serialization in transcript route~~ — DONE
+- ~~Add test framework (Vitest)~~ — DONE (11 tests: ai-client failover + meeting-resolver)
+- ~~Add linter (ESLint)~~ — DONE (TypeScript + React plugins, 0 errors)
+- ~~WebSocket auth hardening~~ — DONE (session cookie parsed on WS handshake)
 
 ### Priority 3 — Production
 - PostgreSQL setup (replace SQLite)
@@ -123,6 +124,38 @@ npm run dev -w mock-transcript
 ---
 
 ## Changelog
+
+### April 14-15, 2026
+- Fixed BigInt serialization in transcript route (return as Numbers)
+- Fixed participant count off-by-one (filter out app's own UUID)
+- Fixed mock-transcript startup race (retry with backoff)
+- Fixed sign-in button in demo mode (guard against missing SDK)
+- Added ESLint with TypeScript + React plugins (0 errors)
+- Added Vitest with 11 tests (AI failover chain + meeting resolver)
+- WebSocket auth hardening (session cookie parsed on handshake)
+- Simplified README attribution
+- Committed experimental AI eval scripts (server/scripts/)
+- Security: CORS restricted, WS rate limiting (20 msg/sec) + 64KB max payload, AI input sanitization
+- Security: bookmarks use session userId, JSON body limit 16KB
+- Fixed WebSocket rejecting real Zoom meeting UUIDs (auto-create meeting on connect)
+- Fixed RTMS segment storage (upsert + seqCounter initialized from DB)
+- UX: participant count shows students only, removed sign-in button
+- UX: bookmarks are local-only (no server POST required)
+- UX: End Class button broadcasts CLASS_END to students, stops AI polling
+- UX: host and student both see blue-themed "Class Complete" summary
+- UX: green "Live" indicator in status bar when AI is active
+- Transcript: per-segment display with speaker names, HH:MM:SS timestamps
+- Transcript: fixed RTMS microsecond timestamps, auto-scroll only when at bottom
+- Transcript: host has separate Transcript tab, removed glossary from Anchor
+- Timeline: AI ignores small talk/setup/personal remarks, returns null for non-academic content
+- Timeline: dedup threshold raised to 0.7, skip short titles (<3 words)
+- Timeline: skip re-analysis when transcript buffer unchanged
+- Bookmarks: per-topic state (shows "Bookmarked" when already saved, prevents re-bookmark)
+- Bookmarks: own tab with remove/unpin, removed manual/auto labels
+- Arena: cancel button on quiz preview, host can abandon before starting
+- Arena: leaderboard ties get same rank
+- Removed dead message types (BULLET_UPDATE, LATE_JOIN_SUMMARY), added CLASS_END
+- Added TESTING.md manual testing checklist
 
 ### April 13-14, 2026
 - Arena: host can end quiz anytime (End Quiz button), student overlay stays visible between questions

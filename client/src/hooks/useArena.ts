@@ -171,7 +171,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
         .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
         .sort((a, b) => b.score - a.score)
-        .map((entry, i) => ({ ...entry, rank: i + 1 }));
+        .map((entry, i, arr) => ({ ...entry, rank: i === 0 || arr[i - 1]!.score !== entry.score ? i + 1 : arr[i - 1]!.rank }));
 
       broadcast('ARENA_LEADERBOARD', {
         leaderboard: entries.slice(0, 10),
@@ -230,7 +230,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
         .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
         .sort((a, b) => b.score - a.score)
-        .map((entry, i) => ({ ...entry, rank: i + 1 }));
+        .map((entry, i, arr) => ({ ...entry, rank: i === 0 || arr[i - 1]!.score !== entry.score ? i + 1 : arr[i - 1]!.rank }));
       broadcast('ARENA_END', { leaderboard: entries.slice(0, 10) });
       return { ...prev, phase: 'finished', leaderboard: entries };
     });

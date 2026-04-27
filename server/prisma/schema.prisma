@@ -47,6 +47,7 @@ model TranscriptSegment {
   seqNo     BigInt
 
   @@unique([meetingId, seqNo])
+  @@index([meetingId])
 }
 
 model Bookmark {
@@ -60,6 +61,9 @@ model Bookmark {
   transcriptSnippet String?
   isAuto            Boolean  @default(false)
   createdAt         DateTime @default(now())
+
+  @@index([meetingId])
+  @@index([userId])
 }
 
 model QuizSet {

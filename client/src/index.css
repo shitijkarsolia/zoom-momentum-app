@@ -902,7 +902,7 @@ body {
   border-radius: 12px;
   padding: 20px;
   width: 100%;
-  max-width: 380px;
+  max-width: 100%;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   max-height: 90vh;
   overflow-y: auto;

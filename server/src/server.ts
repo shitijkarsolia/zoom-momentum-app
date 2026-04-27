@@ -15,21 +15,24 @@ import { initWebSocketServer } from './services/websocket.js';
 const app = express();
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
-app.use(
-  session({
-    secret: config.session.secret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: true, // Set true in production with HTTPS
-      httpOnly: true,
-      sameSite: 'none' as const,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-  }),
-);
+app.use(cors({
+  origin: [config.clientUrl, /\.zoom\.us$/, /\.zoomgov\.com$/],
+  credentials: true,
+}));
+app.use(express.json({ limit: '16kb' }));
+
+export const sessionMiddleware = session({
+  secret: config.session.secret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: true, // Set true in production with HTTPS
+    httpOnly: true,
+    sameSite: 'none' as const,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+});
+app.use(sessionMiddleware);
 
 
 // Required OWASP headers — Zoom blocks rendering without all four
@@ -70,7 +73,7 @@ app.get('*', (_req, res) => {
 });
 
 const httpServer = createServer(app);
-initWebSocketServer(httpServer);
+initWebSocketServer(httpServer, sessionMiddleware);
 
 httpServer.listen(config.port, () => {
   console.log(`[server] running on http://localhost:${config.port}`);

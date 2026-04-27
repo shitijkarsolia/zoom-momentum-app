@@ -13,9 +13,10 @@ import type { AnchorBookmark } from '../hooks/useLiveAnchor';
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
 
 const TAB_INFO = {
-  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "Mark for Review" to bookmark moments for review after class.',
+  timeline: 'Topics and key takeaways appear here as your professor lectures.',
   glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
-  transcript: 'Live transcript of the lecture, updated every 10 seconds. Key terms are highlighted.',
+  transcript: 'Live transcript of the lecture. Key terms are highlighted.',
+  bookmarks: 'Tap "Mark for Review" to bookmark the current moment. Review these after class.',
 } as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
@@ -23,11 +24,8 @@ import type { ArenaStudentPhase } from '../hooks/useArena';
 interface StudentViewProps {
   userName: string;
   connected: boolean;
-  isSignedIn?: boolean;
-  onSignIn?: () => void;
-  signInLoading?: boolean;
-  authUserId?: string | null;
   meetingId: string;
+  anchorIsLive?: boolean;
   // Pulse props
   activePoll: Poll | null;
   selectedOption: number | null;
@@ -55,8 +53,9 @@ interface StudentViewProps {
   anchorCurrentTopicId: string;
   anchorGlossary: GlossaryEntry[];
   anchorBookmarks: AnchorBookmark[];
-  onBookmark: (meetingId: string, userId: string) => Promise<boolean>;
-  // Events props (wired by Events teammate)
+  onBookmark: (meetingId?: string, userId?: string, options?: { topicOverride?: string }) => boolean;
+  onRemoveBookmark: (index: number) => void;
+  // Events props
   meetingEnded?: boolean;
   lateJoinInfo?: { topicCount: number; latestTopic: string } | null;
   onDismissLateJoin?: () => void;
@@ -64,18 +63,14 @@ interface StudentViewProps {
 }
 
 const BOOKMARK_SAVED = 'Bookmarked';
-const BOOKMARK_SIGN_IN = 'Sign in to save bookmarks';
 
-type StudentTab = 'timeline' | 'glossary' | 'transcript';
+type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks';
 
 export function StudentView({
   userName,
   connected,
-  isSignedIn = false,
-  onSignIn,
-  signInLoading = false,
-  authUserId = null,
   meetingId,
+  anchorIsLive = false,
   activePoll,
   selectedOption,
   hasAnswered,
@@ -96,6 +91,7 @@ export function StudentView({
   anchorGlossary,
   anchorBookmarks,
   onBookmark,
+  onRemoveBookmark,
   meetingEnded = false,
   lateJoinInfo,
   onDismissLateJoin,
@@ -120,7 +116,7 @@ export function StudentView({
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
-    if (!meetingEnded || !authUserId || !meetingId) return;
+    if (!meetingEnded || !meetingId) return;
     let cancelled = false;
     setRecoveryLoading(true);
     const bookmarks = anchorBookmarks.map((bookmark) => ({
@@ -149,27 +145,18 @@ export function StudentView({
       .catch(() => { if (!cancelled) setRecoveryItems([]); })
       .finally(() => { if (!cancelled) setRecoveryLoading(false); });
     return () => { cancelled = true; };
-  }, [meetingEnded, authUserId, meetingId, anchorBookmarks, anchorTopics]);
+  }, [meetingEnded, meetingId, anchorBookmarks, anchorTopics]);
 
   const showArena = arenaPhase === 'question' || arenaPhase === 'answered' || arenaPhase === 'leaderboard' || arenaPhase === 'finished';
 
-  const handleBookmark = useCallback(async () => {
-    if (!authUserId) {
-      setBookmarkToast(BOOKMARK_SIGN_IN);
-      setTimeout(() => setBookmarkToast(null), 2800);
-      return;
-    }
-    if (!meetingId) {
-      setBookmarkToast('Meeting not detected');
-      setTimeout(() => setBookmarkToast(null), 2200);
-      return;
-    }
-    const ok = await onBookmark(meetingId, authUserId);
-    if (ok) {
-      setBookmarkToast(BOOKMARK_SAVED);
-      setTimeout(() => setBookmarkToast(null), 2200);
-    }
-  }, [onBookmark, authUserId, meetingId]);
+  const bookmarkedTopics = new Set(anchorBookmarks.map(b => b.topic));
+
+  const handleBookmark = useCallback((topicTitle?: string) => {
+    if (topicTitle && bookmarkedTopics.has(topicTitle)) return;
+    onBookmark(undefined, undefined, topicTitle ? { topicOverride: topicTitle } : undefined);
+    setBookmarkToast(BOOKMARK_SAVED);
+    setTimeout(() => setBookmarkToast(null), 2200);
+  }, [onBookmark, bookmarkedTopics]);
 
   // Show PostClassSummary when meeting has ended
   if (meetingEnded) {
@@ -193,15 +180,16 @@ export function StudentView({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {anchorIsLive && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              Live
+            </span>
+          )}
           {activeSpeaker && (
             <span style={{ fontSize: 11, color: 'var(--zoom-brand)', fontWeight: 500 }}>
               Speaking: {activeSpeaker}
             </span>
-          )}
-          {!isSignedIn && onSignIn && (
-            <button type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={onSignIn} disabled={signInLoading}>
-              {signInLoading ? 'Connecting…' : 'Sign in to save bookmarks'}
-            </button>
           )}
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
@@ -247,38 +235,45 @@ export function StudentView({
           >
             Transcript
           </button>
+          <button
+            className={`tab ${activeTab === 'bookmarks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bookmarks')}
+          >
+            Bookmarks{anchorBookmarks.length > 0 ? ` (${anchorBookmarks.length})` : ''}
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
         <div className="tab-info-bar">
           <FeatureInfo
-            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : 'Transcript'}
+            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : activeTab === 'transcript' ? 'Transcript' : 'Bookmarks'}
             description={TAB_INFO[activeTab]}
           />
         </div>
         {activeTab === 'timeline' && (
-          <div>
-            <Timeline
-              topics={anchorTopics}
-              currentTopicId={anchorCurrentTopicId}
-              onBookmark={handleBookmark ? () => handleBookmark() : undefined}
-            />
-            <button
-              className="btn btn-secondary"
-              style={{ marginTop: 12, width: '100%' }}
-              onClick={handleBookmark}
-            >
-              Mark for Review
-            </button>
-            <BookmarkList bookmarks={anchorBookmarks} />
-          </div>
+          <Timeline
+            topics={anchorTopics}
+            currentTopicId={anchorCurrentTopicId}
+            bookmarkedTopics={bookmarkedTopics}
+            onBookmark={handleBookmark}
+          />
         )}
         {activeTab === 'glossary' && (
           <GlossaryTab glossary={anchorGlossary} />
         )}
         {activeTab === 'transcript' && (
           <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+        )}
+        {activeTab === 'bookmarks' && (
+          <div>
+            <BookmarkList bookmarks={anchorBookmarks} onRemove={onRemoveBookmark} />
+            {anchorBookmarks.length === 0 && (
+              <div style={{ padding: 16, textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
+                No bookmarks yet. Tap "Bookmark" on a topic to save it for review.
+              </div>
+            )}
+          </div>
         )}
       </div>
 

@@ -43,14 +43,51 @@ transcriptRouter.post('/segment', async (req, res) => {
       },
     });
 
-    res.json({ id: segment.id });
+    res.json({
+      id: segment.id,
+      timestamp: Number(segment.timestamp),
+      seqNo: Number(segment.seqNo),
+    });
   } catch (err) {
     console.error('[transcript] segment error:', err);
     res.status(500).json({ error: 'Failed to store segment' });
   }
 });
 
-// GET /api/transcript/buffer?meetingId=xxx — Get rolling buffer (last ~300 words)
+// GET /api/transcript/segments?meetingId=xxx — Get recent segments with speaker info
+transcriptRouter.get('/segments', async (req, res) => {
+  try {
+    const meetingId = req.query.meetingId as string;
+    if (!meetingId) {
+      res.status(400).json({ error: 'meetingId is required' });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ segments: [] });
+      return;
+    }
+
+    const segments = await prisma.transcriptSegment.findMany({
+      where: { meetingId: resolvedMeetingId },
+      select: { speaker: true, text: true, timestamp: true, seqNo: true },
+      orderBy: { seqNo: 'desc' },
+      take: 50,
+    });
+
+    res.json({
+      segments: segments.reverse().map(s => ({
+        speaker: s.speaker,
+        text: s.text,
+        timestamp: Number(s.timestamp),
+      })),
+    });
+  } catch (err) {
+    console.error('[transcript] segments error:', err);
+    res.status(500).json({ error: 'Failed to get segments' });
+  }
+});
 transcriptRouter.get('/buffer', async (req, res) => {
   try {
     const meetingId = req.query.meetingId as string;
