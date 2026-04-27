@@ -10,9 +10,9 @@ export interface AIOptions {
   timeout?: number;
 }
 
-async function callCreateAI(prompt: string, model: string, opts?: AIOptions): Promise<string> {
+async function callCreateAI(prompt: string, model: string, provider: string, opts?: AIOptions): Promise<string> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), opts?.timeout ?? 10000);
+  const timeoutId = setTimeout(() => controller.abort(), opts?.timeout ?? 30000);
 
   try {
     const resp = await fetch(config.createAI.apiUrl, {
@@ -21,13 +21,18 @@ async function callCreateAI(prompt: string, model: string, opts?: AIOptions): Pr
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.createAI.token}`,
       },
-      body: JSON.stringify({ query: prompt, model }),
+      body: JSON.stringify({
+        query: prompt,
+        request_source: 'override_params',
+        model_name: model,
+        model_provider: provider,
+      }),
       signal: controller.signal,
     });
 
     const data = await resp.json() as { response?: string };
     if (!data.response) throw new Error(`Empty response from CREATE AI (${model})`);
-    console.log(`[ai] Served by CREATE AI (${model})`);
+    console.log(`[ai] Served by CREATE AI (${model} via ${provider})`);
     return data.response;
   } finally {
     clearTimeout(timeoutId);
@@ -58,16 +63,14 @@ export async function callAI(prompt: string, opts?: AIOptions): Promise<string> 
   const hasCreateAI = config.createAI.apiUrl && config.createAI.token;
 
   if (hasCreateAI) {
-    // Try 1: gemini-pro
     try {
-      return await callCreateAI(prompt, config.createAI.primaryModel, opts);
+      return await callCreateAI(prompt, config.createAI.primaryModel, config.createAI.primaryProvider, opts);
     } catch (err: any) {
       console.warn(`[ai] ${config.createAI.primaryModel} failed:`, err.message);
     }
 
-    // Try 2: claude-3-opus
     try {
-      return await callCreateAI(prompt, config.createAI.backupModel, opts);
+      return await callCreateAI(prompt, config.createAI.backupModel, config.createAI.backupProvider, opts);
     } catch (err: any) {
       console.warn(`[ai] ${config.createAI.backupModel} failed, falling back to Bedrock:`, err.message);
     }
