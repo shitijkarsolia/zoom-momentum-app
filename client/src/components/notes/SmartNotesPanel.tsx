@@ -63,8 +63,9 @@ export function SmartNotesPanel({
       glossary,
       bookmarks,
     });
-    downloadMarkdown(buildFilename(meetingId), content);
-    setActionToast('Downloaded class-notes.md');
+    const filename = buildFilename(meetingId);
+    downloadMarkdown(filename, content);
+    setActionToast(`Downloaded ${filename}`);
   };
 
   const handleCopy = async () => {
