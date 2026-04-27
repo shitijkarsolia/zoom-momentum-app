@@ -43,6 +43,7 @@ interface HostDashboardProps {
   arenaQuestions: Question[];
   arenaMeetingId?: string;
   onArenaFetchQuestions: (topic?: string, transcript?: string) => void;
+  onArenaAppendQuestions: (topic?: string, transcript?: string) => void;
   onArenaUpdateQuestion: (index: number, updates: Partial<Question>) => void;
   onArenaStartGame: () => void;
   onArenaShowLeaderboard: () => void;
@@ -62,6 +63,7 @@ interface HostDashboardProps {
   onAnchorStartPolling: () => void;
   onAnchorStopPolling: () => void;
   onEndClass?: () => void;
+  onResetMeeting?: () => void;
 }
 
 type HostTab = 'pulse' | 'arena' | 'anchor' | 'transcript';
@@ -91,6 +93,7 @@ export function HostDashboard({
   arenaQuestions,
   arenaMeetingId,
   onArenaFetchQuestions,
+  onArenaAppendQuestions,
   onArenaUpdateQuestion,
   onArenaStartGame,
   onArenaShowLeaderboard,
@@ -109,8 +112,11 @@ export function HostDashboard({
   onAnchorStartPolling,
   onAnchorStopPolling,
   onEndClass,
+  onResetMeeting,
 }: HostDashboardProps) {
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
+  const [showSettings, setShowSettings] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   return (
     <div className="app-container">
@@ -232,6 +238,7 @@ export function HostDashboard({
             questions={arenaQuestions}
             meetingId={arenaMeetingId}
             onFetchQuestions={onArenaFetchQuestions}
+            onAppendQuestions={onArenaAppendQuestions}
             onUpdateQuestion={onArenaUpdateQuestion}
             onStartGame={onArenaStartGame}
             onShowLeaderboard={onArenaShowLeaderboard}
@@ -292,9 +299,101 @@ export function HostDashboard({
         </button>
       )}
 
-      <div style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', textAlign: 'center' }}>
+      <div style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', textAlign: 'center', position: 'relative' }}>
         Hosting as {userName}
+        {onResetMeeting && (
+          <button
+            onClick={() => setShowSettings(prev => !prev)}
+            style={{
+              position: 'absolute',
+              right: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 16,
+              color: 'var(--zoom-text-secondary)',
+              padding: 4,
+              lineHeight: 1,
+            }}
+            title="Settings"
+          >
+            &#9881;
+          </button>
+        )}
+        {showSettings && onResetMeeting && (
+          <div style={{
+            position: 'absolute',
+            right: 12,
+            bottom: '100%',
+            marginBottom: 4,
+            background: 'var(--zoom-surface, #fff)',
+            border: '1px solid var(--zoom-border)',
+            borderRadius: 8,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            padding: 4,
+            zIndex: 10,
+          }}>
+            <button
+              onClick={() => { setShowSettings(false); setShowResetConfirm(true); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                color: 'var(--zoom-error, #e53935)',
+                padding: '6px 12px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Reset Meeting
+            </button>
+          </div>
+        )}
       </div>
+
+      {showResetConfirm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+        }}>
+          <div style={{
+            background: 'var(--zoom-surface, #fff)',
+            borderRadius: 12,
+            padding: 20,
+            maxWidth: 280,
+            textAlign: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          }}>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: '0 0 8px' }}>Reset Meeting?</p>
+            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', margin: '0 0 16px' }}>
+              This will clear all transcript data, topics, glossary, and bookmarks for everyone. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: 12, padding: '6px 16px' }}
+                onClick={() => setShowResetConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ fontSize: 12, padding: '6px 16px', background: 'var(--zoom-error, #e53935)' }}
+                onClick={() => { setShowResetConfirm(false); onResetMeeting?.(); }}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
