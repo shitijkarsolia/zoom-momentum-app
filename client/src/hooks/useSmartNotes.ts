@@ -38,18 +38,23 @@ export function useSmartNotes(meetingId: string) {
   const [lastSaved, setLastSaved] = useState<number>(0);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedKeyRef = useRef<string>('');
+  const persistedValueRef = useRef<string>('');
 
   // Load when meetingId changes
   useEffect(() => {
     const loaded = loadNotes(meetingId);
+    persistedValueRef.current = loaded.freeform;
     setFreeformState(loaded.freeform);
     setLastSaved(loaded.lastSaved);
     loadedKeyRef.current = storageKey(meetingId);
   }, [meetingId]);
 
-  // Debounced auto-save on freeform changes
+  // Debounced auto-save on user-initiated freeform changes
   useEffect(() => {
     if (!loadedKeyRef.current) return;
+    // Skip the save triggered by hydration (or any no-op state set):
+    // only persist when the value actually differs from what's in storage.
+    if (freeform === persistedValueRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       const now = Date.now();
@@ -58,6 +63,7 @@ export function useSmartNotes(meetingId: string) {
           loadedKeyRef.current,
           JSON.stringify({ freeform, lastSaved: now } satisfies PersistedNotes),
         );
+        persistedValueRef.current = freeform;
         setLastSaved(now);
       } catch (err) {
         console.error('[smart-notes] save failed:', err);
