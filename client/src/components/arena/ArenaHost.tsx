@@ -48,6 +48,7 @@ export function ArenaHost({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [tailorInput, setTailorInput] = useState('');
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
+  const [showNoContextAlert, setShowNoContextAlert] = useState(false);
 
   const handleGenerate = async () => {
     let transcript = '';
@@ -61,6 +62,10 @@ export function ArenaHost({
         }
       } catch { /* silent */ }
       setFetchingTranscript(false);
+    }
+    if (!topic && !transcript) {
+      setShowNoContextAlert(true);
+      return;
     }
     onFetchQuestions(topic || undefined, transcript || undefined);
   };
@@ -89,7 +94,7 @@ export function ArenaHost({
         </p>
 
         <div className="arena-topic-input">
-          <label htmlFor="arena-topic">Topic</label>
+          <label htmlFor="arena-topic">Topic (recommended)</label>
           <input
             id="arena-topic"
             type="text"
@@ -99,14 +104,33 @@ export function ArenaHost({
             disabled={phase === 'loading'}
           />
           <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
-            {meetingId ? 'Questions will be based on the lecture transcript.' : 'No transcript available — questions will be general trivia.'}
-          </p>
-          <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
-            Leave blank for general knowledge questions. Be specific for better results.
+            {meetingId ? 'Questions will be based on the lecture transcript + topic.' : 'Start the transcript or enter a topic for relevant questions.'}
           </p>
         </div>
 
         {error && <p className="poll-error">{error}</p>}
+
+        {showNoContextAlert && (
+          <div style={{
+            background: 'var(--zoom-bg)',
+            border: '1px solid var(--zoom-border)',
+            borderRadius: 8,
+            padding: '12px 14px',
+            marginBottom: 12,
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 500, margin: '0 0 4px' }}>No context available</p>
+            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', margin: '0 0 8px' }}>
+              Enter a topic above or start the live transcript (Anchor tab) so the AI can generate relevant questions.
+            </p>
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: 11, padding: '4px 10px' }}
+              onClick={() => setShowNoContextAlert(false)}
+            >
+              Got it
+            </button>
+          </div>
+        )}
 
         <button
           className="btn btn-primary"
