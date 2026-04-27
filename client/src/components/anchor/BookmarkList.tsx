@@ -4,9 +4,10 @@ import type { AnchorBookmark } from '../../hooks/useLiveAnchor';
 interface BookmarkListProps {
   bookmarks: AnchorBookmark[];
   onRemove?: (index: number) => void;
+  onAddToNotes?: (bookmark: AnchorBookmark) => void;
 }
 
-export function BookmarkList({ bookmarks, onRemove }: BookmarkListProps) {
+export function BookmarkList({ bookmarks, onRemove, onAddToNotes }: BookmarkListProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   if (bookmarks.length === 0) return null;
@@ -70,15 +71,27 @@ export function BookmarkList({ bookmarks, onRemove }: BookmarkListProps) {
                       </div>
                     )}
                   </div>
-                  {onRemove && (
-                    <button
-                      className="btn btn-secondary"
-                      style={{ marginTop: 8, fontSize: 11, padding: '3px 10px', width: '100%' }}
-                      onClick={(e) => { e.stopPropagation(); onRemove(i); setExpandedIndex(null); }}
-                    >
-                      Remove Bookmark
-                    </button>
-                  )}
+                  <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+                    {onAddToNotes && (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ fontSize: 11, padding: '3px 10px', flex: 1 }}
+                        onClick={(e) => { e.stopPropagation(); onAddToNotes(b); }}
+                        title="Add this bookmark to your notes"
+                      >
+                        + Note
+                      </button>
+                    )}
+                    {onRemove && (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ fontSize: 11, padding: '3px 10px', flex: 1 }}
+                        onClick={(e) => { e.stopPropagation(); onRemove(i); setExpandedIndex(null); }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

@@ -6,9 +6,10 @@ interface TimelineProps {
   currentTopicId: string;
   bookmarkedTopics?: Set<string>;
   onBookmark?: (topicTitle: string) => void;
+  onAddToNotes?: (topic: Topic) => void;
 }
 
-export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark }: TimelineProps) {
+export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark, onAddToNotes }: TimelineProps) {
   // Show newest first
   const sorted = [...topics].sort((a, b) => b.startTime - a.startTime);
 
@@ -35,6 +36,7 @@ export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark 
             isCurrent={topic.id === currentTopicId}
             isBookmarked={bookmarkedTopics?.has(topic.title)}
             onBookmark={onBookmark ? () => onBookmark(topic.title) : undefined}
+            onAddToNotes={onAddToNotes ? () => onAddToNotes(topic) : undefined}
           />
         ))}
       </div>
