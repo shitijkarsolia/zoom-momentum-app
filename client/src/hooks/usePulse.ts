@@ -42,14 +42,19 @@ export function usePulseHost({ broadcast }: UsePulseHostOptions) {
   });
   const pollIdRef = useRef(0);
 
-  const generatePoll = useCallback(async (context?: string, currentTopic?: string) => {
+  const generatePoll = useCallback(async (opts?: { context?: string; currentTopic?: string; transcript?: string; topicBullets?: string[] }) => {
     setState(prev => ({ ...prev, phase: 'generating', error: null }));
 
     try {
       const res = await fetch('/api/ai/poll-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, currentTopic }),
+        body: JSON.stringify({
+          context: opts?.context,
+          currentTopic: opts?.currentTopic,
+          transcript: opts?.transcript,
+          topicBullets: opts?.topicBullets,
+        }),
       });
 
       if (!res.ok) throw new Error('Failed to generate poll');
