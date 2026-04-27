@@ -404,11 +404,26 @@ export default function App() {
         pulseResponseCount={pulseHost.responseCount}
         pulseActivePoll={pulseHost.activePoll}
         pulseError={pulseHost.error}
-        onPulseGenerate={(context?: string) => {
+        onPulseGenerate={async (context?: string) => {
           const latestTopic = anchorHost.topics.length > 0
-            ? anchorHost.topics[anchorHost.topics.length - 1]!.title
+            ? anchorHost.topics[anchorHost.topics.length - 1]!
             : undefined;
-          pulseHost.generatePoll(context, latestTopic);
+          let transcript = '';
+          if (anchorMeetingId) {
+            try {
+              const res = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(anchorMeetingId)}`);
+              if (res.ok) {
+                const data = await res.json();
+                transcript = data.buffer || '';
+              }
+            } catch { /* silent */ }
+          }
+          pulseHost.generatePoll({
+            context,
+            currentTopic: latestTopic?.title,
+            topicBullets: latestTopic?.bullets,
+            transcript: transcript || undefined,
+          });
         }}
         onPulseUpdateDraft={pulseHost.updateDraft}
         onPulseLaunch={pulseHost.launchPoll}
