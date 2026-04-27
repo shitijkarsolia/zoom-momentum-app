@@ -102,19 +102,24 @@ export function StudentView({
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+  const [notesToast, setNotesToast] = useState<string | null>(null);
   const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
 
-  const smartNotes = useSmartNotes(meetingId);
+  const { appendToNotes, ...smartNotesRest } = useSmartNotes(meetingId);
+
+  const showNotesToast = useCallback((msg: string) => {
+    setNotesToast(msg);
+    setTimeout(() => setNotesToast(null), 1800);
+  }, []);
 
   const handleAddTopicToNotes = useCallback((topic: Topic) => {
     const lines = [`### ${topic.title}`];
     if (topic.bullets.length > 0) {
       topic.bullets.forEach(b => lines.push(`- ${b}`));
     }
-    smartNotes.appendToNotes(lines.join('\n'));
-    setBookmarkToast('Added to notes');
-    setTimeout(() => setBookmarkToast(null), 1800);
-  }, [smartNotes]);
+    appendToNotes(lines.join('\n'));
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
 
   const handleAddGlossaryToNotes = useCallback((entry: GlossaryEntry) => {
     const lines = [`**${entry.term}** — ${entry.definition}`];
@@ -123,20 +128,18 @@ export function StudentView({
       lines.push(entry.formula);
       lines.push('```');
     }
-    smartNotes.appendToNotes(lines.join('\n'));
-    setBookmarkToast('Added to notes');
-    setTimeout(() => setBookmarkToast(null), 1800);
-  }, [smartNotes]);
+    appendToNotes(lines.join('\n'));
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
 
   const handleAddBookmarkToNotes = useCallback((bookmark: AnchorBookmark) => {
     const time = new Date(bookmark.timestamp);
     const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}`;
     const tag = bookmark.isAuto ? '⭐ ' : '';
     const snippet = bookmark.transcriptSnippet ? ` — _"${bookmark.transcriptSnippet}"_` : '';
-    smartNotes.appendToNotes(`- **${timeStr}** ${tag}${bookmark.topic}${snippet}`);
-    setBookmarkToast('Added to notes');
-    setTimeout(() => setBookmarkToast(null), 1800);
-  }, [smartNotes]);
+    appendToNotes(`- **${timeStr}** ${tag}${bookmark.topic}${snippet}`);
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
 
   // Auto-dismiss poll results after 8s
   const pollResultsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -282,7 +285,7 @@ export function StudentView({
             className={`tab ${activeTab === 'notes' ? 'active' : ''}`}
             onClick={() => setActiveTab('notes')}
           >
-            Notes{smartNotes.wordCount > 0 ? ` (${smartNotes.wordCount}w)` : ''}
+            Notes{smartNotesRest.wordCount > 0 ? ` (${smartNotesRest.wordCount}w)` : ''}
           </button>
         </div>
       </div>
@@ -330,11 +333,11 @@ export function StudentView({
           <SmartNotesPanel
             meetingId={meetingId}
             userName={userName}
-            notes={smartNotes.notes}
-            setNotes={smartNotes.setNotes}
-            clearNotes={smartNotes.clearNotes}
-            lastSaved={smartNotes.lastSaved}
-            wordCount={smartNotes.wordCount}
+            notes={smartNotesRest.notes}
+            setNotes={smartNotesRest.setNotes}
+            clearNotes={smartNotesRest.clearNotes}
+            lastSaved={smartNotesRest.lastSaved}
+            wordCount={smartNotesRest.wordCount}
             topics={anchorTopics}
             glossary={anchorGlossary}
             bookmarks={anchorBookmarks}
@@ -344,6 +347,10 @@ export function StudentView({
 
       {bookmarkToast && (
         <div className="bookmark-toast">{bookmarkToast}</div>
+      )}
+
+      {notesToast && (
+        <div className="bookmark-toast" style={{ background: 'var(--zoom-brand, #0E71EB)' }}>{notesToast}</div>
       )}
 
       {pollResults && !pollResultsDismissed && (
