@@ -87,6 +87,7 @@ export function BookmarkList({ bookmarks, onRemove, onAddToNotes }: BookmarkList
                         className="btn btn-secondary"
                         style={{ fontSize: 11, padding: '3px 10px', flex: 1 }}
                         onClick={(e) => { e.stopPropagation(); onRemove(i); setExpandedIndex(null); }}
+                        aria-label={`Remove bookmark ${b.topic}`}
                       >
                         Remove
                       </button>

@@ -7,7 +7,7 @@ export function downloadMarkdown(filename: string, content: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 export async function copyToClipboard(content: string): Promise<boolean> {

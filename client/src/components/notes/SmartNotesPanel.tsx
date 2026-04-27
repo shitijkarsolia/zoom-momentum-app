@@ -80,7 +80,7 @@ export function SmartNotesPanel({
       bookmarks,
     });
     const ok = await copyToClipboard(content);
-    setActionToast(ok ? 'Copied notes to clipboard' : 'Copy failed — try Download');
+    setActionToast(ok ? 'Copied notes to clipboard' : 'Copy failed -- try Download');
   };
 
   const handleClear = () => {
@@ -136,7 +136,8 @@ export function SmartNotesPanel({
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder={"Type your notes here…\n\nTip: tap “+ Note” on any topic, glossary term, or bookmark to drop it into your notes."}
+        placeholder={'Type your notes here...\n\nTip: tap "+ Note" on any topic, glossary term, or bookmark to drop it into your notes.'}
+        aria-label="Freeform notes"
         spellCheck
         style={{
           flex: 1,
