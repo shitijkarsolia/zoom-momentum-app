@@ -5,9 +5,10 @@ interface TopicCardProps {
   isCurrent: boolean;
   isBookmarked?: boolean;
   onBookmark?: () => void;
+  onAddToNotes?: () => void;
 }
 
-export function TopicCard({ topic, isCurrent, isBookmarked, onBookmark }: TopicCardProps) {
+export function TopicCard({ topic, isCurrent, isBookmarked, onBookmark, onAddToNotes }: TopicCardProps) {
   const elapsed = Math.round((Date.now() - topic.startTime) / 60_000);
   const timeLabel = elapsed < 1 ? 'Just now' : `${elapsed}m ago`;
 
@@ -46,15 +47,29 @@ export function TopicCard({ topic, isCurrent, isBookmarked, onBookmark }: TopicC
           ))}
         </ul>
       )}
-      {onBookmark && (
-        <button
-          className={`btn ${isBookmarked ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ marginTop: 8, fontSize: 11, padding: '3px 10px' }}
-          onClick={onBookmark}
-          disabled={isBookmarked}
-        >
-          {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-        </button>
+      {(onBookmark || onAddToNotes) && (
+        <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {onBookmark && (
+            <button
+              className={`btn ${isBookmarked ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: 11, padding: '3px 10px' }}
+              onClick={onBookmark}
+              disabled={isBookmarked}
+            >
+              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+            </button>
+          )}
+          {onAddToNotes && (
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: 11, padding: '3px 10px' }}
+              onClick={onAddToNotes}
+              title="Add this topic to your notes"
+            >
+              + Note
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

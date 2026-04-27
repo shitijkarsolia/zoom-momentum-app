@@ -1,0 +1,96 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+const STORAGE_PREFIX = 'zm-smart-notes:';
+const SAVE_DEBOUNCE_MS = 500;
+
+interface PersistedNotes {
+  freeform: string;
+  lastSaved: number;
+}
+
+function storageKey(meetingId: string): string {
+  return `${STORAGE_PREFIX}${meetingId || 'unknown'}`;
+}
+
+function loadNotes(meetingId: string): PersistedNotes {
+  if (typeof window === 'undefined') return { freeform: '', lastSaved: 0 };
+  try {
+    const raw = window.localStorage.getItem(storageKey(meetingId));
+    if (!raw) return { freeform: '', lastSaved: 0 };
+    const parsed = JSON.parse(raw) as Partial<PersistedNotes>;
+    return {
+      freeform: typeof parsed.freeform === 'string' ? parsed.freeform : '',
+      lastSaved: typeof parsed.lastSaved === 'number' ? parsed.lastSaved : 0,
+    };
+  } catch {
+    return { freeform: '', lastSaved: 0 };
+  }
+}
+
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
+export function useSmartNotes(meetingId: string) {
+  const [freeform, setFreeformState] = useState<string>('');
+  const [lastSaved, setLastSaved] = useState<number>(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedKeyRef = useRef<string>('');
+
+  // Load when meetingId changes
+  useEffect(() => {
+    const loaded = loadNotes(meetingId);
+    setFreeformState(loaded.freeform);
+    setLastSaved(loaded.lastSaved);
+    loadedKeyRef.current = storageKey(meetingId);
+  }, [meetingId]);
+
+  // Debounced auto-save on freeform changes
+  useEffect(() => {
+    if (!loadedKeyRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const now = Date.now();
+      try {
+        window.localStorage.setItem(
+          loadedKeyRef.current,
+          JSON.stringify({ freeform, lastSaved: now } satisfies PersistedNotes),
+        );
+        setLastSaved(now);
+      } catch (err) {
+        console.error('[smart-notes] save failed:', err);
+      }
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [freeform]);
+
+  const setNotes = useCallback((value: string) => {
+    setFreeformState(value);
+  }, []);
+
+  const appendToNotes = useCallback((snippet: string) => {
+    setFreeformState(prev => {
+      const trimmedPrev = prev.replace(/\s+$/, '');
+      const separator = trimmedPrev.length === 0 ? '' : '\n\n';
+      return `${trimmedPrev}${separator}${snippet}`;
+    });
+  }, []);
+
+  const clearNotes = useCallback(() => {
+    setFreeformState('');
+  }, []);
+
+  return {
+    notes: freeform,
+    setNotes,
+    appendToNotes,
+    clearNotes,
+    lastSaved,
+    wordCount: countWords(freeform),
+  };
+}
