@@ -21,6 +21,20 @@ export function TopicCard({ topic, isCurrent, isBookmarked, onBookmark, onAddToN
         <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
           {isCurrent && <span className="current-indicator" />}
           {topic.title}
+          {isCurrent && (
+            <span style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: '#fff',
+              background: 'var(--zoom-blue, #0E71EB)',
+              padding: '1px 6px',
+              borderRadius: 8,
+              marginLeft: 6,
+              verticalAlign: 'middle',
+            }}>
+              NOW
+            </span>
+          )}
         </h3>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {topic.bullets.length > 0 && (

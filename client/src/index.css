@@ -168,6 +168,25 @@ body {
   border-bottom-color: var(--zoom-blue);
 }
 
+.tab.has-new {
+  position: relative;
+}
+
+.tab.has-new::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--zoom-error, #e53935);
+}
+
+.tab.has-new.active::after {
+  display: none;
+}
+
 /* === Welcome / Onboarding === */
 
 .welcome-view {
@@ -982,6 +1001,13 @@ body {
 .arena-option-btn.selected {
   border-color: var(--zoom-blue);
   background: #e8eeff;
+  animation: answer-pop 0.25s ease-out;
+}
+
+@keyframes answer-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
 }
 
 .arena-option-btn.locked {
@@ -1124,6 +1150,41 @@ body {
   gap: 10px;
   max-height: 400px;
   overflow-y: auto;
+}
+
+.timeline-connector {
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline-connector::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--zoom-border);
+}
+
+.timeline-item {
+  position: relative;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -17px;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--zoom-border);
+  z-index: 1;
+}
+
+.timeline-dot-current {
+  background: var(--zoom-blue);
+  box-shadow: 0 0 0 3px rgba(14, 113, 235, 0.2);
 }
 
 .topic-card {

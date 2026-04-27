@@ -436,6 +436,7 @@ export default function App() {
         arenaResponseCount={arenaHost.responseCount}
         arenaCountdown={arenaHost.countdown}
         arenaLeaderboard={arenaHost.leaderboard}
+        arenaQuestionAccuracy={arenaHost.questionAccuracy}
         arenaError={arenaHost.error}
         arenaQuestions={arenaHost.questions}
         arenaMeetingId={meetingId}

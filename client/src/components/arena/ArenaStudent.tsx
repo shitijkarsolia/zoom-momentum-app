@@ -69,7 +69,7 @@ export function ArenaStudent({
         <div className="arena-student-card">
           <div className="arena-question-header">
             <span className="arena-q-number">Q{currentQuestion.index + 1}/{currentQuestion.total}</span>
-            <span className={`arena-countdown ${countdown <= 5 ? 'urgent' : ''}`}>
+            <span className={`arena-countdown ${countdown <= 2 ? 'urgent' : ''}`}>
               {countdown}s
             </span>
           </div>

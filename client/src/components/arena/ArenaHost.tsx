@@ -11,6 +11,7 @@ interface ArenaHostProps {
   responseCount: number;
   countdown: number;
   leaderboard: LeaderboardEntry[];
+  questionAccuracy: { correct: number; total: number }[];
   error: string | null;
   questions: Question[];
   meetingId?: string;
@@ -32,6 +33,7 @@ export function ArenaHost({
   responseCount,
   countdown,
   leaderboard,
+  questionAccuracy,
   error,
   questions,
   meetingId,
@@ -49,6 +51,7 @@ export function ArenaHost({
   const [tailorInput, setTailorInput] = useState('');
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
   const [showNoContextAlert, setShowNoContextAlert] = useState(false);
+  const [tailorLoading, setTailorLoading] = useState(false);
 
   const handleGenerate = async () => {
     let transcript = '';
@@ -71,6 +74,7 @@ export function ArenaHost({
   };
 
   const handleTailorAppend = async () => {
+    setTailorLoading(true);
     let transcript = '';
     if (meetingId) {
       try {
@@ -81,8 +85,9 @@ export function ArenaHost({
         }
       } catch { /* silent */ }
     }
-    onAppendQuestions(tailorInput || undefined, transcript || undefined);
+    await onAppendQuestions(tailorInput || undefined, transcript || undefined);
     setTailorInput('');
+    setTailorLoading(false);
   };
 
   if (phase === 'idle' || phase === 'loading') {
@@ -244,9 +249,9 @@ export function ArenaHost({
               className="btn btn-secondary"
               style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
               onClick={handleTailorAppend}
-              disabled={!tailorInput.trim()}
+              disabled={!tailorInput.trim() || tailorLoading}
             >
-              Add More
+              {tailorLoading ? <><span className="spinner" /> Adding…</> : 'Add More'}
             </button>
           </div>
         </div>
@@ -268,7 +273,7 @@ export function ArenaHost({
       <div className="arena-host">
         <div className="arena-question-header">
           <span className="arena-q-number">Q{currentIndex + 1}/{totalQuestions}</span>
-          <span className={`arena-countdown ${countdown <= 3 ? 'urgent' : ''}`}>
+          <span className={`arena-countdown ${countdown <= 2 ? 'urgent' : ''}`}>
             {countdown}s
           </span>
         </div>
@@ -306,6 +311,13 @@ export function ArenaHost({
     const isLast = currentIndex >= totalQuestions - 1;
     return (
       <div className="arena-host">
+        {questionAccuracy[currentIndex] && (
+          <div style={{ textAlign: 'center', marginBottom: 8, fontSize: 12, color: 'var(--zoom-text-secondary)' }}>
+            Q{currentIndex + 1}: <strong style={{ color: questionAccuracy[currentIndex].correct === questionAccuracy[currentIndex].total ? 'var(--zoom-success, #43a047)' : 'var(--zoom-text)' }}>
+              {questionAccuracy[currentIndex].correct}/{questionAccuracy[currentIndex].total}
+            </strong> correct
+          </div>
+        )}
         <Leaderboard
           entries={leaderboard}
           title={`After Q${currentIndex + 1}`}
