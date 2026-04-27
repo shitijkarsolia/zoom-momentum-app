@@ -64,7 +64,7 @@ export function TopicCard({ topic, isCurrent, isBookmarked, onBookmark, onAddToN
               className="btn btn-secondary"
               style={{ fontSize: 11, padding: '3px 10px' }}
               onClick={onAddToNotes}
-              title="Add this topic to your notes"
+              aria-label={`Add topic ${topic.title} to your notes`}
             >
               + Note
             </button>

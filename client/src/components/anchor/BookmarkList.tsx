@@ -77,7 +77,7 @@ export function BookmarkList({ bookmarks, onRemove, onAddToNotes }: BookmarkList
                         className="btn btn-secondary"
                         style={{ fontSize: 11, padding: '3px 10px', flex: 1 }}
                         onClick={(e) => { e.stopPropagation(); onAddToNotes(b); }}
-                        title="Add this bookmark to your notes"
+                        aria-label={`Add bookmark ${b.topic} to your notes`}
                       >
                         + Note
                       </button>

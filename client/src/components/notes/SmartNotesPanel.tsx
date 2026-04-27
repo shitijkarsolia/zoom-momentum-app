@@ -12,6 +12,7 @@ interface SmartNotesPanelProps {
   clearNotes: () => void;
   lastSaved: number;
   wordCount: number;
+  saveError?: string | null;
   topics: Topic[];
   glossary: GlossaryEntry[];
   bookmarks: AnchorBookmark[];
@@ -34,6 +35,7 @@ export function SmartNotesPanel({
   clearNotes,
   lastSaved,
   wordCount,
+  saveError,
   topics,
   glossary,
   bookmarks,
@@ -105,6 +107,9 @@ export function SmartNotesPanel({
           <div style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>
             {wordCount} {wordCount === 1 ? 'word' : 'words'} · {savedLabel}
           </div>
+          {saveError && (
+            <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 500 }}>{saveError}</div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button
