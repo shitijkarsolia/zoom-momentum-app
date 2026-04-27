@@ -98,6 +98,9 @@ export function ArenaHost({
             disabled={phase === 'loading'}
           />
           <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
+            {meetingId ? 'Questions will be based on the lecture transcript.' : 'No transcript available — questions will be general trivia.'}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
             Leave blank for general knowledge questions. Be specific for better results.
           </p>
         </div>
@@ -231,6 +234,9 @@ export function ArenaHost({
         </div>
 
         <div className="arena-ready-actions">
+          <button className="btn btn-secondary" onClick={onReset}>
+            Cancel
+          </button>
           <button className="btn btn-secondary" onClick={handleGenerate}>
             Regenerate
           </button>

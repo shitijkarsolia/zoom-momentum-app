@@ -73,28 +73,38 @@ function parseSRT(srt: string): Chunk[] {
 
 let seqNo = 0;
 
-async function emitChunk(chunk: Chunk) {
+async function emitChunk(chunk: Chunk, retries = 3) {
   seqNo++;
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/transcript/segment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        meetingId: MEETING_ID,
-        speaker: chunk.speaker,
-        text: chunk.text,
-        timestamp: Date.now(),
-        seqNo,
-      }),
-    });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/transcript/segment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meetingId: MEETING_ID,
+          speaker: chunk.speaker,
+          text: chunk.text,
+          timestamp: Date.now(),
+          seqNo,
+        }),
+      });
 
-    if (res.ok) {
-      console.log(`[mock] #${seqNo} → "${chunk.text.slice(0, 60)}..."`);
-    } else {
-      console.error(`[mock] #${seqNo} failed: ${res.status}`);
+      if (res.ok) {
+        console.log(`[mock] #${seqNo} → "${chunk.text.slice(0, 60)}..."`);
+        return;
+      } else {
+        console.error(`[mock] #${seqNo} failed: ${res.status}`);
+        return;
+      }
+    } catch (err) {
+      if (attempt < retries) {
+        const delay = attempt * 2000;
+        console.warn(`[mock] #${seqNo} attempt ${attempt} failed, retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        console.error(`[mock] #${seqNo} error after ${retries} attempts:`, err);
+      }
     }
-  } catch (err) {
-    console.error(`[mock] #${seqNo} error:`, err);
   }
 }
 

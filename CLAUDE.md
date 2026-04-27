@@ -20,7 +20,7 @@ npm run dev -w server    # Server dev server only (tsx watch mode)
 npm run build -w server  # Compile server TypeScript to dist/
 ```
 
-No test framework or linter is currently configured.
+Testing: Vitest (`npm test`). Linting: ESLint (`npm run lint`).
 
 ## Running in Zoom (Production Build)
 
@@ -124,13 +124,19 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 - ~~**RTMS secret fallback**~~ — FIXED. Proper empty-string check before falling back to clientSecret.
 - ~~**"Analyze Now" button**~~ — FIXED. Removed from Anchor tab.
 - ~~**PrismaClient instances**~~ — FIXED. Singleton in `server/src/db.ts`.
-- ~~**AI topic-segment silent failure**~~ — FIXED. Returns 500 on error.
-- ~~**AI topic dedup**~~ — FIXED. Fuzzy title matching with token similarity.
+- ~~**AI topic-segment silent failure**~~ — FIXED. Returns null for non-academic content, 500 on real errors.
+- ~~**AI topic dedup**~~ — FIXED. Fuzzy title matching (0.7 threshold), skip short titles, ignore small talk.
+- ~~**BigInt serialization**~~ — FIXED. transcript.ts returns timestamp/seqNo as Numbers.
+- ~~**Participant count**~~ — FIXED. Filters out app's own participantUUID + host. Shows students only.
+- ~~**Sign-in button**~~ — REMOVED. Bookmarks are local-only now.
+- ~~**Mock transcript startup race**~~ — FIXED. Retry with backoff (3 attempts).
+- ~~**RTMS segment overwrite**~~ — FIXED. Upsert + seqCounter initialized from DB.
+- ~~**RTMS timestamps**~~ — FIXED. Microsecond detection and conversion to milliseconds.
+- ~~**WebSocket rejecting Zoom UUIDs**~~ — FIXED. Auto-create meeting on connect.
+- ~~**End Class not notifying students**~~ — FIXED. CLASS_END broadcast + stops AI polling.
 
 ### Open Bugs
-1. **BigInt serialization** — transcript.ts returns segments without converting BigInt to string.
-2. **Participant count** — Updates live via `onParticipantChange` but initial count may include the app itself.
-3. **Sign-in button** — Does nothing on participant side in Zoom context (OAuth flow needs work).
+None currently tracked.
 
 ## Git Config
 - user.name: `shitijkarsolia`

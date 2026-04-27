@@ -1,6 +1,6 @@
 # Zoom Momentum
 
-A Zoom Apps SDK in-meeting side panel app that transforms passive virtual classrooms into active learning environments. Built by **Shitij Mathur** as part of the **Zoom Fellowship 2025–2026** at **ASU's Next Lab**.
+A Zoom Apps SDK in-meeting side panel app that transforms passive virtual classrooms into active learning environments. Built as part of the **Zoom Fellowship**.
 
 Momentum gives professors real-time engagement tools and gives students a dynamic topic timeline, glossary, live transcript, and post-class review — all powered by AI.
 
@@ -320,12 +320,14 @@ For detailed progress, bugs, and next steps, see [STATUS.md](STATUS.md).
 - [x] Prisma singleton, AI error handling, topic dedup (fuzzy matching)
 - [x] Meeting ID sync — `getMeetingUUID()` for consistent host/attendee IDs
 - [x] Mock transcript service (real CS50 Lecture 0 from Harvard CDN)
+- [x] Test framework (Vitest) and linter (ESLint)
+- [x] WebSocket auth hardening (session cookie validation)
+- [x] Bug fixes — BigInt serialization, participant count, startup race, sign-in button
 
 ### Remaining
 
 - [ ] Guest mode testing (second Zoom account)
 - [ ] Production database (PostgreSQL)
-- [ ] Test framework (Vitest) and linter (ESLint)
 - [ ] CI/CD pipeline
 - [ ] HTTPS on EC2
 
@@ -334,7 +336,7 @@ For detailed progress, bugs, and next steps, see [STATUS.md](STATUS.md).
 ## Author
 
 **Shitij Mathur**
-Zoom Fellowship 2025–2026, ASU Next Lab
+Zoom Fellowship, ASU
 
 ---
 

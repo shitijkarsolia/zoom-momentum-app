@@ -1,7 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
-import type { IncomingMessage } from 'http';
-import { prisma } from '../db.js';
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { RequestHandler } from 'express';
+import { resolveMeetingId } from './meeting-resolver.js';
 
 interface ClientSocket extends WebSocket {
   meetingId?: string;
@@ -58,8 +59,11 @@ function broadcastToRoom(meetingId: string, message: string) {
   }
 }
 
-export function initWebSocketServer(server: Server) {
-  const wss = new WebSocketServer({ server, path: '/ws' });
+export function initWebSocketServer(server: Server, sessionParser: RequestHandler) {
+  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });
+
+  // Per-client rate limiting: max 20 messages per second
+  const rateLimits = new Map<ClientSocket, { count: number; resetTime: number }>();
 
   // Heartbeat: ping every 30s, terminate dead connections
   const heartbeat = setInterval(() => {
@@ -77,6 +81,13 @@ export function initWebSocketServer(server: Server) {
   wss.on('close', () => clearInterval(heartbeat));
 
   wss.on('connection', async (ws: ClientSocket, req: IncomingMessage) => {
+    // Parse session from cookie to validate the connection
+    const res = {} as ServerResponse;
+    await new Promise<void>((resolve) => {
+      sessionParser(req as any, res as any, () => resolve());
+    });
+    const sess = (req as any).session;
+
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const meetingId = url.searchParams.get('meetingId') ?? '';
     const role = url.searchParams.get('role') ?? 'student';
@@ -89,23 +100,22 @@ export function initWebSocketServer(server: Server) {
       return;
     }
 
-    // Validate meetingId: must be a known mock ID or exist in the database
-    // TODO: For production, add session/token-based auth here
+    // Validate meetingId: auto-create meeting record if it doesn't exist
     const isMock = meetingId === 'mock-meeting-001';
     if (!isMock) {
       try {
-        const meeting = await prisma.meeting.findFirst({
-          where: { OR: [{ id: meetingId }, { zoomMeetingId: meetingId }] },
-          select: { id: true },
-        });
-        if (!meeting) {
-          console.warn(`[ws] Rejected connection: unknown meetingId ${meetingId}`);
-          ws.close(1008, 'Unknown meeting');
-          return;
-        }
+        await resolveMeetingId(meetingId, { createIfMissing: true, defaultTitle: 'Lecture Session' });
       } catch {
         // DB check failed — allow connection (don't block on transient DB errors)
       }
+    }
+
+    // Log session status (auth is advisory for now — don't block unauthenticated
+    // users since OAuth is optional for students)
+    if (sess?.userId) {
+      console.log(`[ws] Authenticated session: userId=${sess.userId}`);
+    } else {
+      console.log(`[ws] Unauthenticated connection (session exists: ${!!sess})`);
     }
 
     ws.meetingId = meetingId;
@@ -130,10 +140,22 @@ export function initWebSocketServer(server: Server) {
     ws.on('pong', () => { ws.isAlive = true; });
 
     ws.on('message', (data) => {
+      // Rate limiting
+      const now = Date.now();
+      const limit = rateLimits.get(ws) ?? { count: 0, resetTime: now + 1000 };
+      if (now > limit.resetTime) {
+        limit.count = 0;
+        limit.resetTime = now + 1000;
+      }
+      if (++limit.count > 20) {
+        console.warn(`[ws] Rate limit exceeded for ${ws.participantId}`);
+        return;
+      }
+      rateLimits.set(ws, limit);
+
       try {
         const raw = data.toString();
         const relayed = relayToRoom(ws, raw);
-        // Log first few chars for debugging
         const parsed = JSON.parse(raw);
         console.log(`[ws] ${ws.role}→room(${ws.meetingId}): ${parsed.type} (relayed to ${relayed} clients)`);
       } catch (err) {

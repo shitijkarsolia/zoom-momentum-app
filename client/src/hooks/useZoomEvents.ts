@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { MessageType } from '../types/messages';
 
 const zoomSdk = (window as any).zoomSdk as any | undefined;
@@ -13,6 +13,7 @@ export function useZoomEvents({ isHost, broadcast, onMeetingEnd }: UseZoomEvents
   const [meetingEnded, setMeetingEnded] = useState(false);
   const [lateJoinInfo, setLateJoinInfo] = useState<{ topicCount: number; latestTopic: string } | null>(null);
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
+  const lateJoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Late joiner detection:
   // When a student receives FULL_STATE with existing topics, show catch-up info
@@ -24,8 +25,16 @@ export function useZoomEvents({ isHost, broadcast, onMeetingEnd }: UseZoomEvents
         latestTopic: fullStateTopics[fullStateTopics.length - 1]?.title ?? 'Unknown',
       });
       // Auto-dismiss after 8 seconds
-      setTimeout(() => setLateJoinInfo(null), 8000);
+      if (lateJoinTimerRef.current) clearTimeout(lateJoinTimerRef.current);
+      lateJoinTimerRef.current = setTimeout(() => setLateJoinInfo(null), 8000);
     }
+  }, []);
+
+  // Cleanup late join timer on unmount
+  useEffect(() => {
+    return () => {
+      if (lateJoinTimerRef.current) clearTimeout(lateJoinTimerRef.current);
+    };
   }, []);
 
   // Meeting end detection:

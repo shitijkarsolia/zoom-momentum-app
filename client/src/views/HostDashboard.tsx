@@ -3,7 +3,6 @@ import { PollCreator } from '../components/pulse/PollCreator';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
 import { Timeline } from '../components/anchor/Timeline';
-import { GlossaryTab } from '../components/anchor/GlossaryTab';
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { PollDraft, PulsePhase } from '../hooks/usePulse';
@@ -13,7 +12,8 @@ import type { Poll, Question, LeaderboardEntry, Topic, GlossaryEntry } from '../
 const TAB_INFO = {
   pulse: 'Generate AI check-in polls to gauge student understanding. You can edit the question before launching it to everyone.',
   arena: 'Run a timed trivia quiz. AI generates questions from your topic, and students compete on a live leaderboard with scoring.',
-  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline and glossary visible to all students.',
+  anchor: 'AI analyzes your lecture transcript in real time, building a topic timeline visible to all students.',
+  transcript: 'Live transcript of the lecture with speaker attribution and timestamps.',
 } as const;
 
 interface HostDashboardProps {
@@ -61,9 +61,10 @@ interface HostDashboardProps {
   onToggleTranscriptSource: () => void;
   onAnchorStartPolling: () => void;
   onAnchorStopPolling: () => void;
+  onEndClass?: () => void;
 }
 
-type HostTab = 'pulse' | 'arena' | 'anchor';
+type HostTab = 'pulse' | 'arena' | 'anchor' | 'transcript';
 
 export function HostDashboard({
   userName,
@@ -107,6 +108,7 @@ export function HostDashboard({
   onToggleTranscriptSource,
   onAnchorStartPolling,
   onAnchorStopPolling,
+  onEndClass,
 }: HostDashboardProps) {
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
 
@@ -115,7 +117,13 @@ export function HostDashboard({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum — Host</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Participants: {participantCount || '--'}</span>
+          {anchorIsPolling && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              Live
+            </span>
+          )}
+          <span style={{ fontSize: 11, color: 'var(--zoom-text-secondary)' }}>Students: {participantCount || '--'}</span>
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
             <span>{connected ? 'Connected' : 'Connecting…'}</span>
@@ -175,6 +183,12 @@ export function HostDashboard({
                 verticalAlign: 'middle',
               }} />
             )}
+          </button>
+          <button
+            className={`tab ${activeTab === 'transcript' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transcript')}
+          >
+            Transcript
           </button>
         </div>
       </div>
@@ -241,7 +255,7 @@ export function HostDashboard({
               ) : (
                 <button className="btn btn-primary" onClick={onAnchorStartPolling}>Start AI</button>
               )}
-              {isInZoom && (
+              {!isInZoom && (
                 <button
                   className={`btn btn-secondary`}
                   onClick={onToggleTranscriptSource}
@@ -256,24 +270,27 @@ export function HostDashboard({
               <p style={{ color: 'var(--zoom-error)', fontSize: 12 }}>{anchorError}</p>
             )}
             <Timeline topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
-            {anchorGlossary.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <GlossaryTab glossary={anchorGlossary} />
-              </div>
-            )}
-            {meetingId && (
-              <div style={{ marginTop: 8 }}>
-                <TranscriptTab
-                  meetingId={meetingId}
-                  glossary={anchorGlossary}
-                  topics={anchorTopics}
-                  currentTopicId={anchorCurrentTopicId}
-                />
-              </div>
-            )}
           </div>
         )}
+        {activeTab === 'transcript' && meetingId && (
+          <TranscriptTab
+            meetingId={meetingId}
+            glossary={anchorGlossary}
+            topics={anchorTopics}
+            currentTopicId={anchorCurrentTopicId}
+          />
+        )}
       </div>
+
+      {onEndClass && (
+        <button
+          className="btn btn-secondary"
+          style={{ margin: '8px 12px', width: 'calc(100% - 24px)', fontSize: 12 }}
+          onClick={onEndClass}
+        >
+          End Class
+        </button>
+      )}
 
       <div style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', textAlign: 'center' }}>
         Hosting as {userName}

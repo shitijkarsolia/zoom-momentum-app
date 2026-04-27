@@ -183,7 +183,7 @@ async function storeSegment(
   data: { speaker: string; text: string; timestamp: number },
 ): Promise<void> {
   const session = activeSessions.get(meetingUuid);
-  const seqNo = session ? ++session.seqCounter : Date.now();
+  if (!session) return;
 
   const meetingId = await resolveMeetingId(meetingUuid, {
     createIfMissing: true,
@@ -194,8 +194,35 @@ async function storeSegment(
     return;
   }
 
-  await prisma.transcriptSegment.create({
-    data: {
+  // Initialize seqCounter from DB on first segment to avoid overwriting old data
+  if (session.seqCounter === 0) {
+    try {
+      const latest = await prisma.transcriptSegment.findFirst({
+        where: { meetingId },
+        orderBy: { seqNo: 'desc' },
+        select: { seqNo: true },
+      });
+      session.seqCounter = latest ? Number(latest.seqNo) : 0;
+    } catch {
+      // fallback to 0
+    }
+  }
+
+  const seqNo = ++session.seqCounter;
+
+  await prisma.transcriptSegment.upsert({
+    where: {
+      meetingId_seqNo: {
+        meetingId,
+        seqNo: BigInt(seqNo),
+      },
+    },
+    update: {
+      speaker: data.speaker,
+      text: data.text,
+      timestamp: BigInt(data.timestamp ?? Date.now()),
+    },
+    create: {
       meetingId,
       speaker: data.speaker,
       text: data.text,

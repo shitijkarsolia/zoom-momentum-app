@@ -57,7 +57,11 @@ export default function App() {
 
   const handleMeetingEnd = useCallback(() => {
     console.log('[App] Meeting ended');
-  }, []);
+    if (isHost) {
+      messaging.broadcast('CLASS_END', { timestamp: Date.now() });
+      anchorHost.stopPolling();
+    }
+  }, [isHost, messaging.broadcast, anchorHost.stopPolling]);
 
   const zoomEvents = useZoomEvents({
     isHost,
@@ -160,6 +164,9 @@ export default function App() {
           const spPayload = message.payload as { speakerName: string; participantId: string; timestamp: number };
           setStudentActiveSpeaker(spPayload.speakerName);
           console.log('[App] Speaker spotlight:', spPayload.speakerName);
+        } else if (message.type === 'CLASS_END') {
+          console.log('[App] Class ended by host');
+          zoomEvents.simulateMeetingEnd();
         }
       }
       console.log('[App] received message:', message.type, message);
@@ -181,6 +188,7 @@ export default function App() {
     anchorStudent.bookmarkCurrentTopic,
     auth.user?.id,
     zoomEvents.handleFullState,
+    zoomEvents.simulateMeetingEnd,
   ]);
 
   useEffect(() => {
@@ -209,8 +217,8 @@ export default function App() {
       },
       meeting: {
         id: meetingId,
-        startTime: 0,
-        participantCount: 0,
+        startTime: Date.now(),
+        participantCount: zoom.participantCount,
       },
     };
 
@@ -277,6 +285,72 @@ export default function App() {
   }
 
   if (isHost) {
+    // Show post-class summary when meeting ended
+    if (zoomEvents.meetingEnded) {
+      return (
+        <div className="app-container">
+          <div className="card" style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="post-class-summary">
+              <div className="post-class-header">
+                <h1 className="post-class-title">Class Complete</h1>
+              </div>
+
+              <div className="post-class-stats">
+                <div className="stat-card">
+                  <span className="stat-number">{anchorHost.topics.length}</span>
+                  <span className="stat-label">Topics Covered</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-number">{anchorHost.glossary.length}</span>
+                  <span className="stat-label">Terms Extracted</span>
+                </div>
+                {anchorHost.topics.length >= 2 && (
+                  <div className="stat-card">
+                    <span className="stat-number">
+                      {Math.round(((anchorHost.topics[anchorHost.topics.length - 1]?.startTime ?? 0) - (anchorHost.topics[0]?.startTime ?? 0)) / 60_000)}m
+                    </span>
+                    <span className="stat-label">Duration</span>
+                  </div>
+                )}
+              </div>
+
+              {anchorHost.topics.length > 0 && (
+                <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
+                  <h3 className="post-class-section-title">Topics Covered</h3>
+                  <div className="post-class-topics">
+                    {anchorHost.topics.map(topic => (
+                      <div key={topic.id} className="post-class-topic">
+                        <span className="post-class-topic-title">{topic.title}</span>
+                        <ul className="post-class-topic-bullets">
+                          {topic.bullets.slice(0, 2).map((b, i) => (
+                            <li key={i}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {anchorHost.glossary.length > 0 && (
+                <div className="post-class-section" style={{ borderTop: '1px solid var(--zoom-border)', paddingTop: 16 }}>
+                  <h3 className="post-class-section-title">Key Terms</h3>
+                  <div className="post-class-terms">
+                    {anchorHost.glossary.slice(0, 8).map((entry, i) => (
+                      <div key={i} className="post-class-term">
+                        <strong>{entry.term}</strong>
+                        {entry.formula && <code>{entry.formula}</code>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <>
         {demo.isDemoMode && (
@@ -340,6 +414,7 @@ export default function App() {
         isInZoom={demo.isInZoom}
         useMockTranscript={useMockTranscript}
         onToggleTranscriptSource={() => setUseMockTranscript(prev => !prev)}
+        onEndClass={zoomEvents.simulateMeetingEnd}
       />
       </>
     );
@@ -358,9 +433,7 @@ export default function App() {
       <StudentView
       userName={userName}
       connected={demo.isDemoMode || messaging.connected}
-      isSignedIn={auth.isAuthenticated}
-      onSignIn={auth.login}
-      signInLoading={auth.isLoading}
+      anchorIsLive={anchorHost.isPolling}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}
@@ -381,7 +454,7 @@ export default function App() {
       anchorGlossary={anchorStudent.glossary}
       anchorBookmarks={anchorStudent.bookmarks}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
-      authUserId={auth.user?.id ?? null}
+      onRemoveBookmark={anchorStudent.removeBookmark}
       meetingId={meetingId}
       meetingEnded={zoomEvents.meetingEnded}
       lateJoinInfo={zoomEvents.lateJoinInfo}

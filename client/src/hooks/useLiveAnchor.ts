@@ -39,7 +39,7 @@ interface UseAnchorHostOptions {
   isInZoom: boolean;
 }
 
-const POLL_INTERVAL_MS = 30_000; // 30 seconds
+const POLL_INTERVAL_MS = 10_000; // 10 seconds
 
 export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostOptions) {
   const [state, setState] = useState<AnchorHostState>({
@@ -53,10 +53,11 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollingRef = useRef(false); // guard against concurrent fetches
+  const lastBufferRef = useRef(''); // track last analyzed buffer to skip duplicates
 
   const pollTranscript = useCallback(async () => {
     if (pollingRef.current) return;
-    if (!meetingId) return; // no meeting context (browser/dev mode)
+    if (!meetingId) return;
     pollingRef.current = true;
 
     try {
@@ -68,6 +69,13 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
         pollingRef.current = false;
         return; // not enough transcript yet
       }
+
+      // Skip if transcript hasn't changed since last analysis
+      if (buffer === lastBufferRef.current) {
+        pollingRef.current = false;
+        return;
+      }
+      lastBufferRef.current = buffer;
 
       // 2. Get current topic title for context
       const previousTopic = state.currentTopicId
@@ -87,10 +95,17 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
 
       // 4. Process topic
       if (result.topic?.title) {
+        // Skip topics with very short titles (likely small talk)
+        const titleWords = tokenize(result.topic.title);
+        if (titleWords.size < 3) {
+          pollingRef.current = false;
+          return;
+        }
+
         // Check if a topic with similar title already exists to avoid duplicates
         const existingByTitle = state.topics.find(t =>
           t.title.toLowerCase() === result.topic.title.toLowerCase() ||
-          titleSimilarity(t.title, result.topic.title) >= 0.6
+          titleSimilarity(t.title, result.topic.title) >= 0.7
         );
         const topicId = existingByTitle
           ? existingByTitle.id
@@ -294,9 +309,9 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     });
   }, []);
 
-  const bookmarkCurrentTopic = useCallback(async (
-    meetingId: string,
-    userId: string,
+  const bookmarkCurrentTopic = useCallback((
+    _meetingId?: string,
+    _userId?: string,
     options?: {
       topicOverride?: string;
       isAuto?: boolean;
@@ -304,40 +319,28 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
       timestamp?: number;
     },
   ) => {
-    if (!userId) return false;
     const topic = state.topics.find(t => t.id === state.currentTopicId);
-    const topicLabel = options?.topicOverride || (topic ? topic.title : 'I\'m Confused');
+    const topicLabel = options?.topicOverride || (topic ? topic.title : 'Marked for Review');
     const timestamp = options?.timestamp ?? Date.now();
-    try {
-      const res = await fetch('/api/bookmarks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meetingId,
-          userId,
-          topic: topicLabel,
-          timestamp,
-          transcriptSnippet: options?.transcriptSnippet,
-          isAuto: options?.isAuto ?? false,
-        }),
-      });
-      if (res.ok) {
-        setState(prev => ({
-          ...prev,
-          bookmarks: [...prev.bookmarks, {
-            topic: topicLabel,
-            timestamp,
-            isAuto: options?.isAuto ?? false,
-            transcriptSnippet: options?.transcriptSnippet,
-          }],
-        }));
-      }
-      return res.ok;
-    } catch (err) {
-      console.error('[anchor] bookmark error:', err);
-      return false;
-    }
+
+    setState(prev => ({
+      ...prev,
+      bookmarks: [...prev.bookmarks, {
+        topic: topicLabel,
+        timestamp,
+        isAuto: options?.isAuto ?? false,
+        transcriptSnippet: options?.transcriptSnippet,
+      }],
+    }));
+    return true;
   }, [state.currentTopicId, state.topics]);
+
+  const removeBookmark = useCallback((index: number) => {
+    setState(prev => ({
+      ...prev,
+      bookmarks: prev.bookmarks.filter((_, i) => i !== index),
+    }));
+  }, []);
 
   return {
     topics: state.topics,
@@ -347,5 +350,6 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     handleTopicUpdate,
     handleGlossaryUpdate,
     bookmarkCurrentTopic,
+    removeBookmark,
   };
 }
