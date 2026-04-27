@@ -3,9 +3,10 @@ import type { GlossaryEntry } from '../../types/messages';
 
 interface GlossaryTabProps {
   glossary: GlossaryEntry[];
+  onAddToNotes?: (entry: GlossaryEntry) => void;
 }
 
-export function GlossaryTab({ glossary }: GlossaryTabProps) {
+export function GlossaryTab({ glossary, onAddToNotes }: GlossaryTabProps) {
   const [filter, setFilter] = useState('');
 
   const filtered = filter.trim()
@@ -52,9 +53,23 @@ export function GlossaryTab({ glossary }: GlossaryTabProps) {
         <div className="glossary-list">
           {sorted.map((entry, i) => (
             <div key={`${entry.term}-${i}`} className="glossary-entry">
-              <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.term}</div>
-              <div style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', marginTop: 2 }}>
-                {entry.definition}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.term}</div>
+                  <div style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', marginTop: 2 }}>
+                    {entry.definition}
+                  </div>
+                </div>
+                {onAddToNotes && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ fontSize: 10, padding: '2px 8px', flexShrink: 0 }}
+                    onClick={() => onAddToNotes(entry)}
+                    aria-label={`Add term ${entry.term} to your notes`}
+                  >
+                    + Note
+                  </button>
+                )}
               </div>
               {entry.formula && (
                 <code style={{
