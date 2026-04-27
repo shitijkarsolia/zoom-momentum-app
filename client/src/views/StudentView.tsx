@@ -104,12 +104,14 @@ export function StudentView({
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
   const [notesToast, setNotesToast] = useState<string | null>(null);
   const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
+  const notesToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { appendToNotes, ...smartNotesRest } = useSmartNotes(meetingId);
 
   const showNotesToast = useCallback((msg: string) => {
+    if (notesToastTimerRef.current) clearTimeout(notesToastTimerRef.current);
     setNotesToast(msg);
-    setTimeout(() => setNotesToast(null), 1800);
+    notesToastTimerRef.current = setTimeout(() => setNotesToast(null), 1800);
   }, []);
 
   const handleAddTopicToNotes = useCallback((topic: Topic) => {
@@ -338,6 +340,7 @@ export function StudentView({
             clearNotes={smartNotesRest.clearNotes}
             lastSaved={smartNotesRest.lastSaved}
             wordCount={smartNotesRest.wordCount}
+            saveError={smartNotesRest.saveError}
             topics={anchorTopics}
             glossary={anchorGlossary}
             bookmarks={anchorBookmarks}

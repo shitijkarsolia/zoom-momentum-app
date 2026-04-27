@@ -65,7 +65,7 @@ export function GlossaryTab({ glossary, onAddToNotes }: GlossaryTabProps) {
                     className="btn btn-secondary"
                     style={{ fontSize: 10, padding: '2px 8px', flexShrink: 0 }}
                     onClick={() => onAddToNotes(entry)}
-                    title="Add this term to your notes"
+                    aria-label={`Add term ${entry.term} to your notes`}
                   >
                     + Note
                   </button>

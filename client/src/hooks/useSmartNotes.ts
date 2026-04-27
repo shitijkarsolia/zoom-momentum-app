@@ -36,6 +36,7 @@ function countWords(text: string): number {
 export function useSmartNotes(meetingId: string) {
   const [freeform, setFreeformState] = useState<string>('');
   const [lastSaved, setLastSaved] = useState<number>(0);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedKeyRef = useRef<string>('');
   const persistedValueRef = useRef<string>('');
@@ -67,6 +68,8 @@ export function useSmartNotes(meetingId: string) {
         setLastSaved(now);
       } catch (err) {
         console.error('[smart-notes] save failed:', err);
+        const isQuota = err instanceof DOMException && (err.name === 'QuotaExceededError' || err.code === 22);
+        setSaveError(isQuota ? 'Storage full — notes may not be saved' : 'Save failed');
       }
     }, SAVE_DEBOUNCE_MS);
 
@@ -98,5 +101,6 @@ export function useSmartNotes(meetingId: string) {
     clearNotes,
     lastSaved,
     wordCount: countWords(freeform),
+    saveError,
   };
 }
