@@ -205,8 +205,21 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       // Auto-advance to next question after leaderboard display
       autoAdvanceRef.current = setTimeout(() => nextQuestionRef.current(), LEADERBOARD_DISPLAY_SEC * 1000);
 
-      return { ...prev, phase: 'leaderboard', leaderboard: entries, countdown: 0 };
+      return { ...prev, phase: 'leaderboard', leaderboard: entries, countdown: LEADERBOARD_DISPLAY_SEC };
     });
+
+    // Start visual countdown for leaderboard
+    clearTimer();
+    timerRef.current = setInterval(() => {
+      setState(prev => {
+        const newCountdown = prev.countdown - 1;
+        if (newCountdown <= 0) {
+          clearTimer();
+          return { ...prev, countdown: 0 };
+        }
+        return { ...prev, countdown: newCountdown };
+      });
+    }, 1000);
   }, [broadcast, clearTimer]);
 
   const nextQuestion = useCallback(() => {

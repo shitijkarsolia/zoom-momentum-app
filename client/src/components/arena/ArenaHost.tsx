@@ -119,16 +119,9 @@ export function ArenaHost({
             marginBottom: 12,
           }}>
             <p style={{ fontSize: 13, fontWeight: 500, margin: '0 0 4px' }}>No context available</p>
-            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', margin: '0 0 8px' }}>
+            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', margin: 0 }}>
               Enter a topic above or start the live transcript (Anchor tab) so the AI can generate relevant questions.
             </p>
-            <button
-              className="btn btn-secondary"
-              style={{ fontSize: 11, padding: '4px 10px' }}
-              onClick={() => setShowNoContextAlert(false)}
-            >
-              Got it
-            </button>
           </div>
         )}
 
@@ -324,7 +317,7 @@ export function ArenaHost({
           End Quiz
         </button>
         <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
-          Auto-advances in 5 seconds
+          {countdown > 0 ? `Auto-advances in ${countdown}s` : 'Advancing…'}
         </p>
       </div>
     );
