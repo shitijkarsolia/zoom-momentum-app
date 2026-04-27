@@ -8,8 +8,10 @@ vi.mock('./config.js', () => ({
     createAI: {
       apiUrl: 'https://fake-create-ai.test/query',
       token: 'test-token',
-      primaryModel: 'gemini-pro',
-      backupModel: 'claude-3-opus',
+      primaryModel: 'claude4_5_sonnet',
+      primaryProvider: 'aws',
+      backupModel: 'gpt5',
+      backupProvider: 'openai',
     },
     aws: { region: 'us-east-1' },
   },

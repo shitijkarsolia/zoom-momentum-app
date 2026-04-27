@@ -20,7 +20,8 @@ export type MessageType =
   // Events
   | 'SPEAKER_SPOTLIGHT'
   | 'AUTO_BOOKMARK'
-  | 'CLASS_END';
+  | 'CLASS_END'
+  | 'MEETING_RESET';
 
 export interface AppMessage {
   type: MessageType;

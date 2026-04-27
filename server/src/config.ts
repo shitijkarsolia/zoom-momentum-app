@@ -37,8 +37,10 @@ export const config = {
   createAI: {
     apiUrl: optional('CREATE_AI_API_URL', ''),
     token: optional('CREATE_AI_TOKEN', ''),
-    primaryModel: optional('CREATE_AI_PRIMARY_MODEL', 'gemini-pro'),
-    backupModel: optional('CREATE_AI_BACKUP_MODEL', 'claude-3-opus'),
+    primaryModel: optional('CREATE_AI_PRIMARY_MODEL', 'claude4_5_sonnet'),
+    primaryProvider: optional('CREATE_AI_PRIMARY_PROVIDER', 'aws'),
+    backupModel: optional('CREATE_AI_BACKUP_MODEL', 'gpt5'),
+    backupProvider: optional('CREATE_AI_BACKUP_PROVIDER', 'openai'),
   },
 
   zoom_secret_token: optional('ZOOM_SECRET_TOKEN', ''),

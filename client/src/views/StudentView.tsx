@@ -295,13 +295,20 @@ export function StudentView({
           />
         </div>
         {activeTab === 'timeline' && (
-          <Timeline
-            topics={anchorTopics}
-            currentTopicId={anchorCurrentTopicId}
-            bookmarkedTopics={bookmarkedTopics}
-            onBookmark={handleBookmark}
-            onAddToNotes={handleAddTopicToNotes}
-          />
+          <>
+            {!anchorIsLive && anchorTopics.length > 0 && (
+              <div style={{ padding: '8px 14px', textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 11, background: 'var(--zoom-bg)', borderRadius: 8, margin: '0 0 8px' }}>
+                AI paused by professor
+              </div>
+            )}
+            <Timeline
+              topics={anchorTopics}
+              currentTopicId={anchorCurrentTopicId}
+              bookmarkedTopics={bookmarkedTopics}
+              onBookmark={handleBookmark}
+              onAddToNotes={handleAddTopicToNotes}
+            />
+          </>
         )}
         {activeTab === 'glossary' && (
           <GlossaryTab glossary={anchorGlossary} onAddToNotes={handleAddGlossaryToNotes} />
