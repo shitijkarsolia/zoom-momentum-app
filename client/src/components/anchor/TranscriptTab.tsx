@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Topic, GlossaryEntry } from '../../types/messages';
 
 interface TranscriptSegment {
@@ -17,6 +17,7 @@ interface TranscriptTabProps {
 
 export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, showTitle }: TranscriptTabProps) {
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasAtBottomRef = useRef(true);
 
@@ -48,11 +49,21 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, sho
     }
   }, [segments]);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    wasAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 40;
-  };
+    const atBottom = scrollHeight - scrollTop - clientHeight < 40;
+    wasAtBottomRef.current = atBottom;
+    setIsAtBottom(atBottom);
+  }, []);
+
+  const jumpToLatest = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      wasAtBottomRef.current = true;
+      setIsAtBottom(true);
+    }
+  }, []);
 
   if (!meetingId) {
     return (
@@ -139,6 +150,32 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, sho
           );
         })}
       </div>
+
+      {!isAtBottom && segments.length > 0 && (
+        <button
+          onClick={jumpToLatest}
+          style={{
+            position: 'sticky',
+            bottom: 8,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'block',
+            margin: '0 auto',
+            background: 'var(--zoom-brand, #0E71EB)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 16,
+            padding: '4px 14px',
+            fontSize: 11,
+            fontWeight: 500,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            zIndex: 5,
+          }}
+        >
+          ↓ Latest
+        </button>
+      )}
     </div>
   );
 }

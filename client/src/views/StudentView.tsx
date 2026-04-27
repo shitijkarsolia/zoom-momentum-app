@@ -65,7 +65,7 @@ interface StudentViewProps {
   activeSpeaker?: string | null;
 }
 
-const BOOKMARK_SAVED = 'Bookmarked';
+const BOOKMARK_SAVED = 'Bookmarked — view in Bookmarks tab';
 
 type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks' | 'notes';
 
@@ -104,6 +104,10 @@ export function StudentView({
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
   const [notesToast, setNotesToast] = useState<string | null>(null);
   const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
+  const [hasNewGlossary, setHasNewGlossary] = useState(false);
+  const [hasNewTimeline, setHasNewTimeline] = useState(false);
+  const prevGlossaryCountRef = useRef(anchorGlossary.length);
+  const prevTopicCountRef = useRef(anchorTopics.length);
   const notesToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { appendToNotes, ...smartNotesRest } = useSmartNotes(meetingId);
@@ -113,6 +117,21 @@ export function StudentView({
     setNotesToast(msg);
     notesToastTimerRef.current = setTimeout(() => setNotesToast(null), 1800);
   }, []);
+
+  // Track new content for tab badges
+  useEffect(() => {
+    if (anchorGlossary.length > prevGlossaryCountRef.current && activeTab !== 'glossary') {
+      setHasNewGlossary(true);
+    }
+    prevGlossaryCountRef.current = anchorGlossary.length;
+  }, [anchorGlossary.length, activeTab]);
+
+  useEffect(() => {
+    if (anchorTopics.length > prevTopicCountRef.current && activeTab !== 'timeline') {
+      setHasNewTimeline(true);
+    }
+    prevTopicCountRef.current = anchorTopics.length;
+  }, [anchorTopics.length, activeTab]);
 
   const handleAddTopicToNotes = useCallback((topic: Topic) => {
     const lines = [`### ${topic.title}`];
@@ -197,7 +216,7 @@ export function StudentView({
     if (topicTitle && bookmarkedTopics.has(topicTitle)) return;
     onBookmark(undefined, undefined, topicTitle ? { topicOverride: topicTitle } : undefined);
     setBookmarkToast(BOOKMARK_SAVED);
-    setTimeout(() => setBookmarkToast(null), 2200);
+    setTimeout(() => setBookmarkToast(null), 3500);
   }, [onBookmark, bookmarkedTopics]);
 
   // Show PostClassSummary when meeting has ended
@@ -249,9 +268,9 @@ export function StudentView({
             <button
               className="btn btn-secondary"
               style={{ padding: '2px 8px', fontSize: 11, marginLeft: 8, flexShrink: 0 }}
-              onClick={onDismissLateJoin}
+              onClick={() => { setActiveTab('timeline'); onDismissLateJoin(); }}
             >
-              Dismiss
+              View Topics
             </button>
           )}
         </div>
@@ -260,14 +279,14 @@ export function StudentView({
       <div className="card" style={{ padding: '8px 0 0' }}>
         <div className="tabs">
           <button
-            className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
-            onClick={() => setActiveTab('timeline')}
+            className={`tab ${activeTab === 'timeline' ? 'active' : ''} ${hasNewTimeline ? 'has-new' : ''}`}
+            onClick={() => { setActiveTab('timeline'); setHasNewTimeline(false); }}
           >
             Timeline
           </button>
           <button
-            className={`tab ${activeTab === 'glossary' ? 'active' : ''}`}
-            onClick={() => setActiveTab('glossary')}
+            className={`tab ${activeTab === 'glossary' ? 'active' : ''} ${hasNewGlossary ? 'has-new' : ''}`}
+            onClick={() => { setActiveTab('glossary'); setHasNewGlossary(false); }}
           >
             Glossary
           </button>

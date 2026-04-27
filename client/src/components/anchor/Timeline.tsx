@@ -17,9 +17,10 @@ export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark,
     return (
       <div>
         <div className="empty-state">
-          <div className="empty-state-icon">&#9776;</div>
-          <p className="empty-state-text">
-            Topic summaries will appear here as the lecture progresses.
+          <div className="empty-state-icon" style={{ fontSize: 28, opacity: 0.5 }}>&#128203;</div>
+          <p className="empty-state-text">No topics yet</p>
+          <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', margin: '4px 0 0' }}>
+            Topics will appear as your professor lectures.
           </p>
         </div>
       </div>
@@ -28,9 +29,11 @@ export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark,
 
   return (
     <div>
-      <div className="timeline-list">
+      <div className="timeline-list timeline-connector">
         {sorted.map(topic => (
-          <TopicCard
+          <div key={topic.id} className="timeline-item">
+            <div className={`timeline-dot ${topic.id === currentTopicId ? 'timeline-dot-current' : ''}`} />
+            <TopicCard
             key={topic.id}
             topic={topic}
             isCurrent={topic.id === currentTopicId}
@@ -38,6 +41,7 @@ export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark,
             onBookmark={onBookmark ? () => onBookmark(topic.title) : undefined}
             onAddToNotes={onAddToNotes ? () => onAddToNotes(topic) : undefined}
           />
+          </div>
         ))}
       </div>
     </div>

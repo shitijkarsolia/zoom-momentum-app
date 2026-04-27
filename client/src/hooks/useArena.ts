@@ -16,6 +16,7 @@ interface ArenaHostState {
   responses: Map<string, { optionIndex: number; timeMs: number }>;
   scores: Map<string, { name: string; score: number }>;
   leaderboard: LeaderboardEntry[];
+  questionAccuracy: { correct: number; total: number }[];
   error: string | null;
   countdown: number;
 }
@@ -32,6 +33,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     responses: new Map(),
     scores: new Map(),
     leaderboard: [],
+    questionAccuracy: [],
     error: null,
     countdown: 0,
   });
@@ -194,6 +196,15 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
         .sort((a, b) => b.score - a.score)
         .map((entry, i, arr) => ({ ...entry, rank: i === 0 || arr[i - 1]!.score !== entry.score ? i + 1 : arr[i - 1]!.rank }));
 
+      // Compute accuracy for this question
+      const correctIndex = question?.correctIndex ?? 0;
+      let correctCount = 0;
+      for (const [, resp] of prev.responses) {
+        if (resp.optionIndex === correctIndex) correctCount++;
+      }
+      const updatedAccuracy = [...prev.questionAccuracy];
+      updatedAccuracy[prev.currentIndex] = { correct: correctCount, total: prev.responses.size };
+
       broadcast('ARENA_LEADERBOARD', {
         leaderboard: entries.slice(0, 10),
         questionIndex: prev.currentIndex,
@@ -205,7 +216,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       // Auto-advance to next question after leaderboard display
       autoAdvanceRef.current = setTimeout(() => nextQuestionRef.current(), LEADERBOARD_DISPLAY_SEC * 1000);
 
-      return { ...prev, phase: 'leaderboard', leaderboard: entries, countdown: LEADERBOARD_DISPLAY_SEC };
+      return { ...prev, phase: 'leaderboard', leaderboard: entries, questionAccuracy: updatedAccuracy, countdown: LEADERBOARD_DISPLAY_SEC };
     });
 
     // Start visual countdown for leaderboard
@@ -279,6 +290,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       responses: new Map(),
       scores: new Map(),
       leaderboard: [],
+      questionAccuracy: [],
       error: null,
       countdown: 0,
     });

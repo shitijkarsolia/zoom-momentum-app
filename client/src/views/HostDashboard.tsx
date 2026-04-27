@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { PollCreator } from '../components/pulse/PollCreator';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
@@ -39,6 +39,7 @@ interface HostDashboardProps {
   arenaResponseCount: number;
   arenaCountdown: number;
   arenaLeaderboard: LeaderboardEntry[];
+  arenaQuestionAccuracy: { correct: number; total: number }[];
   arenaError: string | null;
   arenaQuestions: Question[];
   arenaMeetingId?: string;
@@ -89,6 +90,7 @@ export function HostDashboard({
   arenaResponseCount,
   arenaCountdown,
   arenaLeaderboard,
+  arenaQuestionAccuracy,
   arenaError,
   arenaQuestions,
   arenaMeetingId,
@@ -117,6 +119,14 @@ export function HostDashboard({
   const [activeTab, setActiveTab] = useState<HostTab>('pulse');
   const [showSettings, setShowSettings] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [hostToast, setHostToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setHostToast(msg);
+    toastTimerRef.current = setTimeout(() => setHostToast(null), 2500);
+  };
 
   return (
     <div className="app-container">
@@ -218,7 +228,7 @@ export function HostDashboard({
                 error={pulseError}
                 onGenerate={onPulseGenerate}
                 onUpdateDraft={onPulseUpdateDraft}
-                onLaunch={onPulseLaunch}
+                onLaunch={() => { onPulseLaunch(); showToast('Poll sent to students'); }}
                 onEndPoll={onPulseEndPoll}
                 onReset={onPulseReset}
               />
@@ -234,13 +244,14 @@ export function HostDashboard({
             responseCount={arenaResponseCount}
             countdown={arenaCountdown}
             leaderboard={arenaLeaderboard}
+            questionAccuracy={arenaQuestionAccuracy}
             error={arenaError}
             questions={arenaQuestions}
             meetingId={arenaMeetingId}
             onFetchQuestions={onArenaFetchQuestions}
             onAppendQuestions={onArenaAppendQuestions}
             onUpdateQuestion={onArenaUpdateQuestion}
-            onStartGame={onArenaStartGame}
+            onStartGame={() => { onArenaStartGame(); showToast('Quiz started'); }}
             onShowLeaderboard={onArenaShowLeaderboard}
             onNextQuestion={onArenaNextQuestion}
             onEndGame={onArenaEndGame}
@@ -393,6 +404,9 @@ export function HostDashboard({
             </div>
           </div>
         </div>
+      )}
+      {hostToast && (
+        <div className="bookmark-toast">{hostToast}</div>
       )}
     </div>
   );
