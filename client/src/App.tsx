@@ -63,6 +63,26 @@ export default function App() {
     }
   }, [isHost, messaging.broadcast, anchorHost.stopPolling]);
 
+  const handleResetMeeting = useCallback(async () => {
+    // 1. Stop AI polling
+    anchorHost.stopPolling();
+    // 2. Clear server transcript
+    if (anchorMeetingId) {
+      try {
+        await fetch(`/api/transcript/segments?meetingId=${encodeURIComponent(anchorMeetingId)}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('[App] Failed to clear transcript:', err);
+      }
+    }
+    // 3. Reset host state
+    anchorHost.resetAnchor();
+    pulseHost.resetPoll();
+    arenaHost.resetArena();
+    // 4. Broadcast reset to students
+    messaging.broadcast('MEETING_RESET', { timestamp: Date.now() });
+    console.log('[App] Meeting reset');
+  }, [anchorMeetingId, anchorHost.stopPolling, anchorHost.resetAnchor, pulseHost.resetPoll, arenaHost.resetArena, messaging.broadcast]);
+
   const zoomEvents = useZoomEvents({
     isHost,
     broadcast: messaging.broadcast,
@@ -167,6 +187,9 @@ export default function App() {
         } else if (message.type === 'CLASS_END') {
           console.log('[App] Class ended by host');
           zoomEvents.simulateMeetingEnd();
+        } else if (message.type === 'MEETING_RESET') {
+          console.log('[App] Meeting reset by host');
+          anchorStudent.resetStudent();
         }
       }
       console.log('[App] received message:', message.type, message);
@@ -381,7 +404,27 @@ export default function App() {
         pulseResponseCount={pulseHost.responseCount}
         pulseActivePoll={pulseHost.activePoll}
         pulseError={pulseHost.error}
-        onPulseGenerate={pulseHost.generatePoll}
+        onPulseGenerate={async (context?: string) => {
+          const latestTopic = anchorHost.topics.length > 0
+            ? anchorHost.topics[anchorHost.topics.length - 1]!
+            : undefined;
+          let transcript = '';
+          if (anchorMeetingId) {
+            try {
+              const res = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(anchorMeetingId)}`);
+              if (res.ok) {
+                const data = await res.json();
+                transcript = data.buffer || '';
+              }
+            } catch { /* silent */ }
+          }
+          pulseHost.generatePoll({
+            context,
+            currentTopic: latestTopic?.title,
+            topicBullets: latestTopic?.bullets,
+            transcript: transcript || undefined,
+          });
+        }}
         onPulseUpdateDraft={pulseHost.updateDraft}
         onPulseLaunch={pulseHost.launchPoll}
         onPulseEndPoll={pulseHost.endPoll}
@@ -393,10 +436,12 @@ export default function App() {
         arenaResponseCount={arenaHost.responseCount}
         arenaCountdown={arenaHost.countdown}
         arenaLeaderboard={arenaHost.leaderboard}
+        arenaQuestionAccuracy={arenaHost.questionAccuracy}
         arenaError={arenaHost.error}
         arenaQuestions={arenaHost.questions}
         arenaMeetingId={meetingId}
         onArenaFetchQuestions={arenaHost.fetchQuestions}
+        onArenaAppendQuestions={arenaHost.appendQuestions}
         onArenaUpdateQuestion={arenaHost.updateQuestion}
         onArenaStartGame={arenaHost.startGame}
         onArenaShowLeaderboard={arenaHost.showLeaderboard}
@@ -415,6 +460,7 @@ export default function App() {
         useMockTranscript={useMockTranscript}
         onToggleTranscriptSource={() => setUseMockTranscript(prev => !prev)}
         onEndClass={zoomEvents.simulateMeetingEnd}
+        onResetMeeting={handleResetMeeting}
       />
       </>
     );
@@ -433,7 +479,7 @@ export default function App() {
       <StudentView
       userName={userName}
       connected={demo.isDemoMode || messaging.connected}
-      anchorIsLive={anchorHost.isPolling}
+      anchorIsLive={anchorStudent.isLive}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}

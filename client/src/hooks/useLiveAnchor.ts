@@ -262,6 +262,7 @@ interface AnchorStudentState {
   currentTopicId: string;
   glossary: GlossaryEntry[];
   bookmarks: AnchorBookmark[];
+  isLive: boolean;
 }
 
 interface UseAnchorStudentOptions {
@@ -281,6 +282,7 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     currentTopicId: '',
     glossary: [],
     bookmarks: [],
+    isLive: false,
   });
 
   const handleTopicUpdate = useCallback((payload: { topic: Topic; topicChanged: boolean }) => {
@@ -296,6 +298,7 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
         ...prev,
         topics: updatedTopics,
         currentTopicId: payload.topic.id,
+        isLive: true,
       };
     });
   }, []);
@@ -342,14 +345,26 @@ export function useAnchorStudent({ send: _send }: UseAnchorStudentOptions) {
     }));
   }, []);
 
+  const resetStudent = useCallback(() => {
+    setState({
+      topics: [],
+      currentTopicId: '',
+      glossary: [],
+      bookmarks: [],
+      isLive: false,
+    });
+  }, []);
+
   return {
     topics: state.topics,
     currentTopicId: state.currentTopicId,
     glossary: state.glossary,
     bookmarks: state.bookmarks,
+    isLive: state.isLive,
     handleTopicUpdate,
     handleGlossaryUpdate,
     bookmarkCurrentTopic,
     removeBookmark,
+    resetStudent,
   };
 }

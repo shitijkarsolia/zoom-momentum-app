@@ -25,24 +25,50 @@ function extractJSON(text: string): any {
 aiRouter.post('/poll-generate', async (req, res) => {
   const context = sanitizeInput(req.body.context ?? '', 500);
   const currentTopic = sanitizeInput(req.body.currentTopic ?? '', 200);
+  const transcript = sanitizeInput(req.body.transcript ?? '', 2000);
+  const topicBullets = Array.isArray(req.body.topicBullets)
+    ? req.body.topicBullets.map((b: string) => sanitizeInput(b, 200)).slice(0, 6)
+    : [];
 
   try {
+    const hasBullets = topicBullets.length > 0;
+    const hasTranscript = transcript.length > 20;
+
+    const hasContext = currentTopic || hasBullets || hasTranscript || context;
+
+    // No lecture context — return a static engagement question instead of hallucinating
+    if (!hasContext) {
+      const fallbacks = [
+        { question: 'Did everyone follow the concept from the last class?', options: ['Yes, completely', 'Mostly, a few gaps', 'Not really', 'I need a recap'] },
+        { question: 'How confident are you with the material so far?', options: ['Very confident', 'Somewhat confident', 'A bit lost', 'Completely lost'] },
+        { question: 'Would you like me to slow down or speed up?', options: ['Slow down please', 'Pace is perfect', 'Speed up a bit', 'Can we revisit something?'] },
+        { question: 'How would you rate your understanding of today\'s topic?', options: ['Solid understanding', 'Getting there', 'Struggling a bit', 'Need more examples'] },
+        { question: 'What would help you most right now?', options: ['More examples', 'A quick recap', 'Practice problems', 'Move to next topic'] },
+      ];
+      const pick = fallbacks[Math.floor(Math.random() * fallbacks.length)]!;
+      res.json({ question: pick.question, options: pick.options, fallback: true });
+      return;
+    }
+
     const prompt = `You are an AI assistant for a live classroom engagement tool. Generate a single multiple-choice check-in poll question that a professor can ask students during a lecture.
 
-${currentTopic ? `The lecture is currently covering: "${currentTopic}"` : 'The professor has not specified the current topic.'}
+${currentTopic ? `The lecture is currently covering: "${currentTopic}"` : ''}
+${hasBullets ? `Key points covered so far:\n${topicBullets.map((b: string) => `- ${b}`).join('\n')}` : ''}
+${hasTranscript ? `Recent transcript from the lecture:\n"${transcript.slice(0, 1000)}"` : ''}
 ${context ? `The professor adds this context: "${context}"` : ''}
 
-Your job is to create a question that helps the professor gauge how well students are following the material. The question should be directly relevant to whatever subject is being taught.
+Your job is to create a question that tests whether students understood what was just taught. The question MUST be specific to the actual content — reference facts, examples, or concepts from the transcript and bullets above.
 
 Respond with ONLY a JSON object — no markdown, no explanation:
 {"question": "...", "options": ["option1", "option2", "option3", "option4"]}
 
 Requirements:
 - Exactly 4 answer options
-- Each option under 10 words
-- If a topic is provided, make the question specific to that topic
-- If no topic is given, ask a general engagement/comprehension question
-- The question must work for any academic subject`;
+- Each option under 15 words
+- Question must reference specific content from the lecture (not generic)
+- Base the question on concrete details actually mentioned
+- One option should be clearly correct, others plausible but wrong
+- Do NOT invent or assume any topic — only use what is provided above`;
 
     const content = await callAI(prompt, { temperature: 0.7, maxTokens: 300 });
     const parsed = extractJSON(content);

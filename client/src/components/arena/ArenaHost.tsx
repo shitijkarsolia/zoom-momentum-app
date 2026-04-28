@@ -11,10 +11,12 @@ interface ArenaHostProps {
   responseCount: number;
   countdown: number;
   leaderboard: LeaderboardEntry[];
+  questionAccuracy: { correct: number; total: number }[];
   error: string | null;
   questions: Question[];
   meetingId?: string;
   onFetchQuestions: (topic?: string, transcript?: string) => void;
+  onAppendQuestions: (topic?: string, transcript?: string) => void;
   onUpdateQuestion: (index: number, updates: Partial<Question>) => void;
   onStartGame: () => void;
   onShowLeaderboard: () => void;
@@ -31,10 +33,12 @@ export function ArenaHost({
   responseCount,
   countdown,
   leaderboard,
+  questionAccuracy,
   error,
   questions,
   meetingId,
   onFetchQuestions,
+  onAppendQuestions,
   onUpdateQuestion,
   onStartGame,
   onShowLeaderboard,
@@ -46,6 +50,8 @@ export function ArenaHost({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [tailorInput, setTailorInput] = useState('');
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
+  const [showNoContextAlert, setShowNoContextAlert] = useState(false);
+  const [tailorLoading, setTailorLoading] = useState(false);
 
   const handleGenerate = async () => {
     let transcript = '';
@@ -60,10 +66,15 @@ export function ArenaHost({
       } catch { /* silent */ }
       setFetchingTranscript(false);
     }
+    if (!topic && !transcript) {
+      setShowNoContextAlert(true);
+      return;
+    }
     onFetchQuestions(topic || undefined, transcript || undefined);
   };
 
-  const handleTailorRegenerate = async () => {
+  const handleTailorAppend = async () => {
+    setTailorLoading(true);
     let transcript = '';
     if (meetingId) {
       try {
@@ -74,9 +85,9 @@ export function ArenaHost({
         }
       } catch { /* silent */ }
     }
-    const combinedTopic = [topic, tailorInput].filter(Boolean).join('. ');
-    onFetchQuestions(combinedTopic || undefined, transcript || undefined);
+    await onAppendQuestions(tailorInput || undefined, transcript || undefined);
     setTailorInput('');
+    setTailorLoading(false);
   };
 
   if (phase === 'idle' || phase === 'loading') {
@@ -88,7 +99,7 @@ export function ArenaHost({
         </p>
 
         <div className="arena-topic-input">
-          <label htmlFor="arena-topic">Topic</label>
+          <label htmlFor="arena-topic">Topic (recommended)</label>
           <input
             id="arena-topic"
             type="text"
@@ -98,14 +109,26 @@ export function ArenaHost({
             disabled={phase === 'loading'}
           />
           <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
-            {meetingId ? 'Questions will be based on the lecture transcript.' : 'No transcript available — questions will be general trivia.'}
-          </p>
-          <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', marginTop: 4 }}>
-            Leave blank for general knowledge questions. Be specific for better results.
+            {meetingId ? 'Questions will be based on the lecture transcript + topic.' : 'Start the transcript or enter a topic for relevant questions.'}
           </p>
         </div>
 
         {error && <p className="poll-error">{error}</p>}
+
+        {showNoContextAlert && (
+          <div style={{
+            background: 'var(--zoom-bg)',
+            border: '1px solid var(--zoom-border)',
+            borderRadius: 8,
+            padding: '12px 14px',
+            marginBottom: 12,
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 500, margin: '0 0 4px' }}>No context available</p>
+            <p style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', margin: 0 }}>
+              Enter a topic above or start the live transcript (Anchor tab) so the AI can generate relevant questions.
+            </p>
+          </div>
+        )}
 
         <button
           className="btn btn-primary"
@@ -212,7 +235,7 @@ export function ArenaHost({
 
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', display: 'block', marginBottom: 4 }}>
-            Tailor these questions (optional)
+            Add more questions on a specific topic
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
@@ -225,10 +248,10 @@ export function ArenaHost({
             <button
               className="btn btn-secondary"
               style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
-              onClick={handleTailorRegenerate}
-              disabled={!tailorInput.trim()}
+              onClick={handleTailorAppend}
+              disabled={!tailorInput.trim() || tailorLoading}
             >
-              Tailor
+              {tailorLoading ? <><span className="spinner" /> Adding…</> : 'Add More'}
             </button>
           </div>
         </div>
@@ -236,9 +259,6 @@ export function ArenaHost({
         <div className="arena-ready-actions">
           <button className="btn btn-secondary" onClick={onReset}>
             Cancel
-          </button>
-          <button className="btn btn-secondary" onClick={handleGenerate}>
-            Regenerate
           </button>
           <button className="btn btn-primary" onClick={onStartGame}>
             Start Game
@@ -253,7 +273,7 @@ export function ArenaHost({
       <div className="arena-host">
         <div className="arena-question-header">
           <span className="arena-q-number">Q{currentIndex + 1}/{totalQuestions}</span>
-          <span className={`arena-countdown ${countdown <= 3 ? 'urgent' : ''}`}>
+          <span className={`arena-countdown ${countdown <= 2 ? 'urgent' : ''}`}>
             {countdown}s
           </span>
         </div>
@@ -291,6 +311,13 @@ export function ArenaHost({
     const isLast = currentIndex >= totalQuestions - 1;
     return (
       <div className="arena-host">
+        {questionAccuracy[currentIndex] && (
+          <div style={{ textAlign: 'center', marginBottom: 8, fontSize: 12, color: 'var(--zoom-text-secondary)' }}>
+            Q{currentIndex + 1}: <strong style={{ color: questionAccuracy[currentIndex].correct === questionAccuracy[currentIndex].total ? 'var(--zoom-success, #43a047)' : 'var(--zoom-text)' }}>
+              {questionAccuracy[currentIndex].correct}/{questionAccuracy[currentIndex].total}
+            </strong> correct
+          </div>
+        )}
         <Leaderboard
           entries={leaderboard}
           title={`After Q${currentIndex + 1}`}
@@ -302,7 +329,7 @@ export function ArenaHost({
           End Quiz
         </button>
         <p style={{ fontSize: 10, color: 'var(--zoom-text-secondary)', textAlign: 'center', marginTop: 4 }}>
-          Auto-advances in 5 seconds
+          {countdown > 0 ? `Auto-advances in ${countdown}s` : 'Advancing…'}
         </p>
       </div>
     );

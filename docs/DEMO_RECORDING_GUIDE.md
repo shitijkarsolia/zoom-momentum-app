@@ -66,39 +66,68 @@ Skip past the intro/housekeeping to a section with dense academic content so the
 
 ## Demo Script
 
-Target length: 3-4 minutes. You'll narrate over this in post.
+Target length: 4-5 minutes. You'll narrate over this in post.
 
-### Scene 1 — Lecture Context (~15 sec)
-- Show the Zoom meeting with the lecture video screen shared
-- Let it play for 10-15 seconds so viewers understand the setting
-- Transcript starts populating in the side panel
+### Scene 1 — Welcome + Setup (~10 sec)
+- **Host:** Show the Welcome screen — personalized greeting, "You are the host of this session", tap "Open Dashboard"
+- **Student:** Brief flash of student Welcome screen, tap "Join Session"
 
-### Scene 2 — Live Transcript (~15 sec)
-- Focus on the student side panel
-- Show transcript segments appearing in real time
-- AI-generated timeline topics start building
+### Scene 2 — Lecture + Live Transcript (~20 sec)
+- **Host:** Screen share the CS50 lecture video in Zoom
+- **Host:** Go to Anchor tab, hit "Start AI" — green dot + "AI Active" appears
+- Show the lecture playing for 10-15 seconds
+- **Student:** Switch to Transcript tab — segments appearing in real time with speaker names, timestamps, and glossary terms highlighted in blue
+- Show the "Live" indicator in the status bar
 
-### Scene 3 — Pulse (Poll) (~30 sec)
-- **Host:** Create a poll from the Pulse tab
-- **Student:** Poll appears, student answers
-- **Host:** Show live results
+### Scene 3 — Timeline + Glossary (~30 sec)
+- **Student:** Switch to Timeline tab — topic cards building up with key takeaways and "Just now" / "Xm ago" timestamps
+- Show a topic expanding to reveal bullet points
+- **Student:** Switch to Glossary tab — terms and definitions populating, formulas in code blocks
+- Use the search bar to filter a specific term
 
-### Scene 4 — Arena (Quiz) (~45 sec)
-- **Host:** Launch a quiz from the Arena tab
-- **Student:** Play through the quiz questions
-- **Host/Student:** Show the leaderboard
+### Scene 4 — Bookmarks (~15 sec)
+- **Student:** Tap "Bookmark" on a topic in the Timeline tab — toast notification "Bookmarked" appears
+- Switch to Bookmarks tab — show the expandable bookmark card with topic name, timestamp, and transcript context
+- Show that already-bookmarked topics show "Bookmarked" (can't re-bookmark)
 
-### Scene 5 — Timeline + Glossary (~30 sec)
-- **Student:** Show the AI-generated timeline with topic segments
-- **Student:** Switch to Glossary tab, show auto-generated terms
+### Scene 5 — Pulse (AI Poll) (~30 sec)
+- **Host:** Switch to Pulse tab, optionally type context like "We just covered binary", hit "Generate Check-In"
+- Show the AI-generated poll preview — editable question and 4 editable options
+- Hit "Launch Poll"
+- **Student:** Poll card overlays the current tab with pulsing "Live Poll" indicator — select an answer, hit "Submit Answer"
+- **Host:** Show live response count updating, hit "End Poll & Show Results"
+- **Host:** Show results bar chart — option letters, percentages, response counts
 
-### Scene 6 — Bookmarks (~15 sec)
-- **Student:** Bookmark a topic from the timeline
-- **Student:** Switch to Bookmarks tab, show saved bookmarks
+### Scene 6 — Arena (Timed Quiz) (~45 sec)
+- **Host:** Switch to Arena tab, type a topic like "Binary and ASCII encoding", hit "Generate Quiz"
+- Show the question review screen — click a question to edit it, show the inline editor with options and "Set correct" buttons
+- Optionally show "Add more questions on a specific topic" input
+- Hit "Start Game"
+- **Student:** "Get ready" screen with bouncing dots, then first question appears with countdown timer
+- Student selects an answer, locks in
+- Show correct answer reveal — green "Correct" or red "Incorrect" with explanation
+- Show the leaderboard between questions (rank, name, score — top 3 highlighted)
+- Let it run through 2-3 questions, then show "Game Over" with final leaderboard
 
-### Scene 7 — End Class (~20 sec)
-- **Host:** Hit End Class
-- **Student:** Show the class-end notification and recovery summary
+### Scene 7 — Late Join (Optional, ~10 sec)
+- If using demo mode: hit "Late Join" button to simulate
+- **Student:** Show the blue late-join alert banner: "You joined late. X topic(s) covered so far. Latest: [topic]"
+- Tap "Dismiss"
+
+### Scene 8 — End Class + Recovery Pack (~30 sec)
+- **Host:** Hit the red "End Class" button at the bottom
+- **Student:** Show the "Class Complete" screen with stats cards:
+  - Topics Covered, Terms Learned, Bookmarks count, Duration
+- Scroll down to see Topics Covered summary and Key Terms
+- Show "Generating your personalized review..." spinner
+- Recovery Pack loads — expandable items based on bookmarked moments with explanation, practice questions, and resources
+- Tap through one recovery item to show the full content
+
+### Bonus — Host Controls (weave in throughout)
+- Status bar: student count updating, connection status dot
+- Anchor tab: "Pause AI" / "Start AI" toggle
+- Settings gear: "Reset Meeting" option (just show it exists, don't tap it)
+- Active speaker: "Speaking: [name]" appearing on student status bar
 
 ---
 
@@ -143,12 +172,43 @@ For each recording separately:
 - Call out the "why" not just the "what" — "Students can bookmark topics so they can review later" beats "Here's the bookmark button."
 - Narrate transitions: "Now let's see what happens on the student side..."
 
+## Feature Checklist
+
+Make sure the demo covers all of these. Check off during your dry run:
+
+**Host Features:**
+- [ ] Welcome screen with personalized greeting + "Open Dashboard"
+- [ ] Status bar: student count, connection status, "Live" indicator
+- [ ] Anchor tab: Start/Pause AI toggle, green "AI Active" dot
+- [ ] Pulse tab: Generate poll → preview/edit → launch → live responses → results bar chart
+- [ ] Arena tab: Generate quiz → review/edit questions → start game → leaderboard → game over
+- [ ] Transcript tab: live segments with speaker names + timestamps
+- [ ] End Class button (red, bottom)
+- [ ] Settings gear with Reset Meeting option
+
+**Student Features:**
+- [ ] Welcome screen + "Join Session"
+- [ ] Timeline tab: topic cards with key points, timestamps, bookmark buttons
+- [ ] Glossary tab: terms, definitions, formulas, search bar
+- [ ] Transcript tab: live segments with glossary terms highlighted in blue
+- [ ] Bookmarks tab: expandable cards with topic, time, context, remove button
+- [ ] Pulse overlay: live poll card, select + submit, auto-dismiss
+- [ ] Arena overlay: countdown timer, answer lock-in, correct/incorrect reveal, leaderboard
+- [ ] Late join alert banner (if applicable)
+- [ ] Active speaker display in status bar
+- [ ] Post-class summary: stats cards, topics, terms
+- [ ] Recovery Pack: personalized review items based on bookmarks
+
 ## General Tips
 
-- Keep the final video under 4 minutes — attention drops fast
+- Keep the final video under 5 minutes — attention drops fast
 - Speed up any AI wait time to 2-3 seconds in the edit
 - Use OpenScreen's zoom effects to draw attention to small UI elements in the side panel
 - Pick a clean desktop wallpaper / hide desktop icons before recording
 - Close notifications on both machines
 - If using side-by-side, label which screen is "Professor" and which is "Student"
 - Export at 1080p minimum for portfolio quality
+- Let the mock/RTMS transcript run for at least 60 seconds before showing Timeline/Glossary — AI needs content to work with
+- The Arena countdown is 15 seconds per question — speed this up in editing
+- Recovery Pack generation takes a few seconds — speed up the spinner in editing
+- Toast notifications (bookmarks, poll submission) last ~2 seconds — don't cut too fast or you'll miss them

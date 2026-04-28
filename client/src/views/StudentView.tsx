@@ -9,6 +9,8 @@ import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { Poll, Topic, GlossaryEntry } from '../types/messages';
 import { BookmarkList } from '../components/anchor/BookmarkList';
 import type { AnchorBookmark } from '../hooks/useLiveAnchor';
+import { useSmartNotes } from '../hooks/useSmartNotes';
+import { SmartNotesPanel } from '../components/notes/SmartNotesPanel';
 
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
 
@@ -17,6 +19,7 @@ const TAB_INFO = {
   glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
   transcript: 'Live transcript of the lecture. Key terms are highlighted.',
   bookmarks: 'Tap "Mark for Review" to bookmark the current moment. Review these after class.',
+  notes: 'Type your own notes during class. Tap "+ Note" on any topic, glossary term, or bookmark to capture it. Download the full set as Markdown anytime.',
 } as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
@@ -62,9 +65,9 @@ interface StudentViewProps {
   activeSpeaker?: string | null;
 }
 
-const BOOKMARK_SAVED = 'Bookmarked';
+const BOOKMARK_SAVED = 'Bookmarked — view in Bookmarks tab';
 
-type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks';
+type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks' | 'notes';
 
 export function StudentView({
   userName,
@@ -99,7 +102,65 @@ export function StudentView({
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+  const [notesToast, setNotesToast] = useState<string | null>(null);
   const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
+  const [hasNewGlossary, setHasNewGlossary] = useState(false);
+  const [hasNewTimeline, setHasNewTimeline] = useState(false);
+  const prevGlossaryCountRef = useRef(anchorGlossary.length);
+  const prevTopicCountRef = useRef(anchorTopics.length);
+  const notesToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { appendToNotes, ...smartNotesRest } = useSmartNotes(meetingId);
+
+  const showNotesToast = useCallback((msg: string) => {
+    if (notesToastTimerRef.current) clearTimeout(notesToastTimerRef.current);
+    setNotesToast(msg);
+    notesToastTimerRef.current = setTimeout(() => setNotesToast(null), 1800);
+  }, []);
+
+  // Track new content for tab badges
+  useEffect(() => {
+    if (anchorGlossary.length > prevGlossaryCountRef.current && activeTab !== 'glossary') {
+      setHasNewGlossary(true);
+    }
+    prevGlossaryCountRef.current = anchorGlossary.length;
+  }, [anchorGlossary.length, activeTab]);
+
+  useEffect(() => {
+    if (anchorTopics.length > prevTopicCountRef.current && activeTab !== 'timeline') {
+      setHasNewTimeline(true);
+    }
+    prevTopicCountRef.current = anchorTopics.length;
+  }, [anchorTopics.length, activeTab]);
+
+  const handleAddTopicToNotes = useCallback((topic: Topic) => {
+    const lines = [`### ${topic.title}`];
+    if (topic.bullets.length > 0) {
+      topic.bullets.forEach(b => lines.push(`- ${b}`));
+    }
+    appendToNotes(lines.join('\n'));
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
+
+  const handleAddGlossaryToNotes = useCallback((entry: GlossaryEntry) => {
+    const lines = [`**${entry.term}** — ${entry.definition}`];
+    if (entry.formula) {
+      lines.push('```');
+      lines.push(entry.formula);
+      lines.push('```');
+    }
+    appendToNotes(lines.join('\n'));
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
+
+  const handleAddBookmarkToNotes = useCallback((bookmark: AnchorBookmark) => {
+    const time = new Date(bookmark.timestamp);
+    const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}`;
+    const tag = bookmark.isAuto ? '⭐ ' : '';
+    const snippet = bookmark.transcriptSnippet ? ` — _"${bookmark.transcriptSnippet}"_` : '';
+    appendToNotes(`- **${timeStr}** ${tag}${bookmark.topic}${snippet}`);
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
 
   // Auto-dismiss poll results after 8s
   const pollResultsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -155,7 +216,7 @@ export function StudentView({
     if (topicTitle && bookmarkedTopics.has(topicTitle)) return;
     onBookmark(undefined, undefined, topicTitle ? { topicOverride: topicTitle } : undefined);
     setBookmarkToast(BOOKMARK_SAVED);
-    setTimeout(() => setBookmarkToast(null), 2200);
+    setTimeout(() => setBookmarkToast(null), 3500);
   }, [onBookmark, bookmarkedTopics]);
 
   // Show PostClassSummary when meeting has ended
@@ -207,9 +268,9 @@ export function StudentView({
             <button
               className="btn btn-secondary"
               style={{ padding: '2px 8px', fontSize: 11, marginLeft: 8, flexShrink: 0 }}
-              onClick={onDismissLateJoin}
+              onClick={() => { setActiveTab('timeline'); onDismissLateJoin(); }}
             >
-              Dismiss
+              View Topics
             </button>
           )}
         </div>
@@ -218,14 +279,14 @@ export function StudentView({
       <div className="card" style={{ padding: '8px 0 0' }}>
         <div className="tabs">
           <button
-            className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
-            onClick={() => setActiveTab('timeline')}
+            className={`tab ${activeTab === 'timeline' ? 'active' : ''} ${hasNewTimeline ? 'has-new' : ''}`}
+            onClick={() => { setActiveTab('timeline'); setHasNewTimeline(false); }}
           >
             Timeline
           </button>
           <button
-            className={`tab ${activeTab === 'glossary' ? 'active' : ''}`}
-            onClick={() => setActiveTab('glossary')}
+            className={`tab ${activeTab === 'glossary' ? 'active' : ''} ${hasNewGlossary ? 'has-new' : ''}`}
+            onClick={() => { setActiveTab('glossary'); setHasNewGlossary(false); }}
           >
             Glossary
           </button>
@@ -241,33 +302,47 @@ export function StudentView({
           >
             Bookmarks{anchorBookmarks.length > 0 ? ` (${anchorBookmarks.length})` : ''}
           </button>
+          <button
+            className={`tab ${activeTab === 'notes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('notes')}
+          >
+            Notes{smartNotesRest.wordCount > 0 ? ` (${smartNotesRest.wordCount}w)` : ''}
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
         <div className="tab-info-bar">
           <FeatureInfo
-            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : activeTab === 'transcript' ? 'Transcript' : 'Bookmarks'}
+            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : activeTab === 'transcript' ? 'Transcript' : activeTab === 'bookmarks' ? 'Bookmarks' : 'Notes'}
             description={TAB_INFO[activeTab]}
           />
         </div>
         {activeTab === 'timeline' && (
-          <Timeline
-            topics={anchorTopics}
-            currentTopicId={anchorCurrentTopicId}
-            bookmarkedTopics={bookmarkedTopics}
-            onBookmark={handleBookmark}
-          />
+          <>
+            {!anchorIsLive && anchorTopics.length > 0 && (
+              <div style={{ padding: '8px 14px', textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 11, background: 'var(--zoom-bg)', borderRadius: 8, margin: '0 0 8px' }}>
+                AI paused by professor
+              </div>
+            )}
+            <Timeline
+              topics={anchorTopics}
+              currentTopicId={anchorCurrentTopicId}
+              bookmarkedTopics={bookmarkedTopics}
+              onBookmark={handleBookmark}
+              onAddToNotes={handleAddTopicToNotes}
+            />
+          </>
         )}
         {activeTab === 'glossary' && (
-          <GlossaryTab glossary={anchorGlossary} />
+          <GlossaryTab glossary={anchorGlossary} onAddToNotes={handleAddGlossaryToNotes} />
         )}
         {activeTab === 'transcript' && (
           <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
         )}
         {activeTab === 'bookmarks' && (
           <div>
-            <BookmarkList bookmarks={anchorBookmarks} onRemove={onRemoveBookmark} />
+            <BookmarkList bookmarks={anchorBookmarks} onRemove={onRemoveBookmark} onAddToNotes={handleAddBookmarkToNotes} />
             {anchorBookmarks.length === 0 && (
               <div style={{ padding: 16, textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
                 No bookmarks yet. Tap "Bookmark" on a topic to save it for review.
@@ -275,10 +350,29 @@ export function StudentView({
             )}
           </div>
         )}
+        {activeTab === 'notes' && (
+          <SmartNotesPanel
+            meetingId={meetingId}
+            userName={userName}
+            notes={smartNotesRest.notes}
+            setNotes={smartNotesRest.setNotes}
+            clearNotes={smartNotesRest.clearNotes}
+            lastSaved={smartNotesRest.lastSaved}
+            wordCount={smartNotesRest.wordCount}
+            saveError={smartNotesRest.saveError}
+            topics={anchorTopics}
+            glossary={anchorGlossary}
+            bookmarks={anchorBookmarks}
+          />
+        )}
       </div>
 
       {bookmarkToast && (
         <div className="bookmark-toast">{bookmarkToast}</div>
+      )}
+
+      {notesToast && (
+        <div className="bookmark-toast" style={{ background: 'var(--zoom-brand, #0E71EB)' }}>{notesToast}</div>
       )}
 
       {pollResults && !pollResultsDismissed && (

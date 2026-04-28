@@ -4,7 +4,7 @@ Last updated: April 7, 2026
 
 ## Current State
 
-The app builds, runs locally, and **loads inside a real Zoom meeting**. All core features are code-complete. RTMS live transcription tested and working. **Host↔student messaging now works via WebSocket relay.** AI backend uses CREATE AI (gemini-pro → claude-3-opus) with Bedrock fallback. Demo mode auto-enables outside Zoom for browser testing.
+The app builds, runs locally, and **loads inside a real Zoom meeting**. All core features are code-complete. RTMS live transcription tested and working. **Host↔student messaging now works via WebSocket relay.** AI backend uses CREATE AI (claude4_5_sonnet → gpt5) with Bedrock fallback. Demo mode auto-enables outside Zoom for browser testing.
 
 ### Resolved Blockers
 
@@ -32,7 +32,7 @@ The app builds, runs locally, and **loads inside a real Zoom meeting**. All core
 | Demo Mode | Complete, tested | Auto-enabled outside Zoom, role switcher, sim buttons, transcript toggle |
 | Mock Transcript | Complete, tested | Fetches real CS50 Lecture 0 SRT (700 chunks) from Harvard CDN |
 | SDK Config | Fixed | Uses `window.zoomSdk` from CDN, not npm import |
-| AI Backend | Complete | CREATE AI (gemini-pro/claude-3-opus) with Bedrock fallback |
+| AI Backend | Complete | CREATE AI (claude4_5_sonnet/gpt5) with Bedrock fallback |
 
 ---
 

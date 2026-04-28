@@ -69,7 +69,7 @@ npm run dev -w mock-transcript
   - `meeting-resolver.ts` — Auto-creates Meeting records from Zoom UUIDs or mock IDs
   - `rtms-ingest.ts` — RTMS WebSocket client, transcript storage, session lifecycle
   - `websocket.ts` — WebSocket relay server for host↔student messaging (rooms by meetingId)
-  - `ai-client.ts` — Tiered AI client with failover (CREATE AI gemini-pro → claude-3-opus → Bedrock)
+  - `ai-client.ts` — Tiered AI client with failover (CREATE AI claude4_5_sonnet → gpt5 → Bedrock)
 - **Database** — Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema in `server/prisma/schema.prisma`
 
 ### Mock Transcript (`mock-transcript/`)
@@ -96,17 +96,18 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 ## AI Backend
 
 - **Primary:** ASU CREATE AI platform (`https://api-main.aiml.asu.edu/query`)
-  - Model 1: `gemini-pro` (primary — 100% quality, ~2.1s avg latency)
-  - Model 2: `claude-3-opus` (backup — 100% quality, ~2.2s avg latency)
+  - Model 1: `claude4_5_sonnet` via `aws` (primary)
+  - Model 2: `gpt5` via `openai` (backup)
 - **Fallback:** AWS Bedrock, region `us-east-1`
   - Model: `meta.llama3-70b-instruct-v1:0` (Llama 3 70B via Converse API)
   - IAM role: `zoom-momentum-ec2-role`
-- Failover chain: gemini-pro → claude-3-opus → Bedrock (automatic, per-request)
+- Failover chain: claude4_5_sonnet → gpt5 → Bedrock (automatic, per-request)
 - Tiered logic lives in `server/src/ai-client.ts`
 - CREATE AI config is optional — if env vars are missing, falls back to Bedrock
-- Env vars: `CREATE_AI_API_URL`, `CREATE_AI_TOKEN`, `CREATE_AI_PRIMARY_MODEL`, `CREATE_AI_BACKUP_MODEL`
+- CREATE AI requires `request_source: "override_params"` with `model_name` + `model_provider` to override project defaults (service tokens use project defaults otherwise)
+- Env vars: `CREATE_AI_API_URL`, `CREATE_AI_TOKEN`, `CREATE_AI_PRIMARY_MODEL`, `CREATE_AI_PRIMARY_PROVIDER`, `CREATE_AI_BACKUP_MODEL`, `CREATE_AI_BACKUP_PROVIDER`
+- Available models list: https://api-main.aiml.asu.edu docs (requires admin token) or CREATE AI documentation portal
 - Benchmark scripts in `poc/` (benchmark.mjs, benchmark-quality.mjs)
-- Migration plan: `poc/AI_MIGRATION_PLAN.md`
 
 ## Zoom SDK Integration (CRITICAL)
 

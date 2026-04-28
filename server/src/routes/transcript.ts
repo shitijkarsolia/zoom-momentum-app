@@ -88,6 +88,33 @@ transcriptRouter.get('/segments', async (req, res) => {
     res.status(500).json({ error: 'Failed to get segments' });
   }
 });
+
+// DELETE /api/transcript/segments?meetingId=xxx — Clear all segments for a meeting (reset)
+transcriptRouter.delete('/segments', async (req, res) => {
+  try {
+    const meetingId = req.query.meetingId as string;
+    if (!meetingId) {
+      res.status(400).json({ error: 'meetingId is required' });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ deleted: 0 });
+      return;
+    }
+
+    const result = await prisma.transcriptSegment.deleteMany({
+      where: { meetingId: resolvedMeetingId },
+    });
+
+    res.json({ deleted: result.count });
+  } catch (err) {
+    console.error('[transcript] delete segments error:', err);
+    res.status(500).json({ error: 'Failed to delete segments' });
+  }
+});
+
 transcriptRouter.get('/buffer', async (req, res) => {
   try {
     const meetingId = req.query.meetingId as string;
