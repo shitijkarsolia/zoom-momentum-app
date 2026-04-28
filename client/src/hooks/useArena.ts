@@ -4,7 +4,7 @@ import type { Question, LeaderboardEntry, MessageType } from '../types/messages'
 export type ArenaHostPhase = 'idle' | 'loading' | 'ready' | 'question' | 'leaderboard' | 'finished';
 export type ArenaStudentPhase = 'waiting' | 'question' | 'answered' | 'leaderboard' | 'finished';
 
-const QUESTION_TIME_SEC = 10;
+const QUESTION_TIME_SEC = 5;
 const LEADERBOARD_DISPLAY_SEC = 5;
 
 // --- Host Hook ---
@@ -16,6 +16,7 @@ interface ArenaHostState {
   responses: Map<string, { optionIndex: number; timeMs: number }>;
   scores: Map<string, { name: string; score: number }>;
   leaderboard: LeaderboardEntry[];
+  questionAccuracy: { correct: number; total: number }[];
   error: string | null;
   countdown: number;
 }
@@ -32,6 +33,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     responses: new Map(),
     scores: new Map(),
     leaderboard: [],
+    questionAccuracy: [],
     error: null,
     countdown: 0,
   });
@@ -79,6 +81,27 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load quiz';
       setState(prev => ({ ...prev, phase: 'idle', error: message }));
+    }
+  }, []);
+
+  const appendQuestions = useCallback(async (topic?: string, transcript?: string) => {
+    try {
+      const res = await fetch('/api/ai/quiz-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, transcript, questionCount: 3 }),
+      });
+      if (!res.ok) throw new Error('Failed to generate questions');
+      const data = await res.json();
+      if (!data.questions?.length) throw new Error('No questions received');
+
+      setState(prev => ({
+        ...prev,
+        questions: [...prev.questions, ...data.questions],
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate questions';
+      setState(prev => ({ ...prev, error: message }));
     }
   }, []);
 
@@ -173,6 +196,15 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
         .sort((a, b) => b.score - a.score)
         .map((entry, i, arr) => ({ ...entry, rank: i === 0 || arr[i - 1]!.score !== entry.score ? i + 1 : arr[i - 1]!.rank }));
 
+      // Compute accuracy for this question
+      const correctIndex = question?.correctIndex ?? 0;
+      let correctCount = 0;
+      for (const [, resp] of prev.responses) {
+        if (resp.optionIndex === correctIndex) correctCount++;
+      }
+      const updatedAccuracy = [...prev.questionAccuracy];
+      updatedAccuracy[prev.currentIndex] = { correct: correctCount, total: prev.responses.size };
+
       broadcast('ARENA_LEADERBOARD', {
         leaderboard: entries.slice(0, 10),
         questionIndex: prev.currentIndex,
@@ -184,8 +216,21 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       // Auto-advance to next question after leaderboard display
       autoAdvanceRef.current = setTimeout(() => nextQuestionRef.current(), LEADERBOARD_DISPLAY_SEC * 1000);
 
-      return { ...prev, phase: 'leaderboard', leaderboard: entries, countdown: 0 };
+      return { ...prev, phase: 'leaderboard', leaderboard: entries, questionAccuracy: updatedAccuracy, countdown: LEADERBOARD_DISPLAY_SEC };
     });
+
+    // Start visual countdown for leaderboard
+    clearTimer();
+    timerRef.current = setInterval(() => {
+      setState(prev => {
+        const newCountdown = prev.countdown - 1;
+        if (newCountdown <= 0) {
+          clearTimer();
+          return { ...prev, countdown: 0 };
+        }
+        return { ...prev, countdown: newCountdown };
+      });
+    }, 1000);
   }, [broadcast, clearTimer]);
 
   const nextQuestion = useCallback(() => {
@@ -245,6 +290,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
       responses: new Map(),
       scores: new Map(),
       leaderboard: [],
+      questionAccuracy: [],
       error: null,
       countdown: 0,
     });
@@ -256,6 +302,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     currentQuestion: state.questions[state.currentIndex] ?? null,
     totalQuestions: state.questions.length,
     fetchQuestions,
+    appendQuestions,
     updateQuestion,
     startGame,
     handleAnswer,
