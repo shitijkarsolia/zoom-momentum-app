@@ -479,7 +479,7 @@ export default function App() {
       <StudentView
       userName={userName}
       connected={demo.isDemoMode || messaging.connected}
-      anchorIsLive={anchorStudent.isLive}
+      anchorIsLive={demo.isDemoMode ? anchorHost.isPolling : anchorStudent.isLive}
       activePoll={pulseStudent.activePoll}
       selectedOption={pulseStudent.selectedOption}
       hasAnswered={pulseStudent.hasAnswered}
@@ -495,9 +495,9 @@ export default function App() {
       arenaExplanation={arenaStudent.explanation}
       arenaFinalLeaderboard={arenaStudent.finalLeaderboard}
       onArenaSelectAndSubmit={arenaStudent.selectAndSubmit}
-      anchorTopics={anchorStudent.topics}
-      anchorCurrentTopicId={anchorStudent.currentTopicId}
-      anchorGlossary={anchorStudent.glossary}
+      anchorTopics={demo.isDemoMode ? anchorHost.topics : anchorStudent.topics}
+      anchorCurrentTopicId={demo.isDemoMode ? anchorHost.currentTopicId : anchorStudent.currentTopicId}
+      anchorGlossary={demo.isDemoMode ? anchorHost.glossary : anchorStudent.glossary}
       anchorBookmarks={anchorStudent.bookmarks}
       onBookmark={anchorStudent.bookmarkCurrentTopic}
       onRemoveBookmark={anchorStudent.removeBookmark}
