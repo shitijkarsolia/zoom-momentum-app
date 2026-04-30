@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { resolveMeetingId } from '../services/meeting-resolver.js';
+import { getTranslatedSegments, getTranslatedGlossary, SUPPORTED_LANGS } from '../services/translator.js';
 export const transcriptRouter = Router();
 
 // POST /api/transcript/segment — Store a transcript chunk (from RTMS or mock)
@@ -76,6 +77,19 @@ transcriptRouter.get('/segments', async (req, res) => {
       take: 50,
     });
 
+    const lang = (req.query.lang as string || '').toLowerCase();
+    if (lang && lang !== 'en' && SUPPORTED_LANGS.has(lang)) {
+      const source = segments.reverse().map(s => ({
+        seqNo: Number(s.seqNo),
+        speaker: s.speaker,
+        text: s.text,
+        timestamp: s.timestamp,
+      }));
+      const translated = await getTranslatedSegments(resolvedMeetingId, lang, source);
+      res.json({ segments: translated });
+      return;
+    }
+
     res.json({
       segments: segments.reverse().map(s => ({
         speaker: s.speaker,
@@ -148,5 +162,31 @@ transcriptRouter.get('/buffer', async (req, res) => {
   } catch (err) {
     console.error('[transcript] buffer error:', err);
     res.status(500).json({ error: 'Failed to get buffer' });
+  }
+});
+
+transcriptRouter.post('/translate-glossary', async (req, res) => {
+  try {
+    const { meetingId, lang, terms } = req.body;
+    if (!meetingId || !lang || !Array.isArray(terms)) {
+      res.status(400).json({ error: 'meetingId, lang, and terms[] are required' });
+      return;
+    }
+    if (lang === 'en' || !SUPPORTED_LANGS.has(lang)) {
+      res.json({ terms });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ terms });
+      return;
+    }
+
+    const translated = await getTranslatedGlossary(resolvedMeetingId, lang, terms);
+    res.json({ terms: translated });
+  } catch (err) {
+    console.error('[transcript] translate-glossary error:', err);
+    res.status(500).json({ error: 'Failed to translate glossary' });
   }
 });
