@@ -2,7 +2,20 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { resolveMeetingId } from '../services/meeting-resolver.js';
 import { getTranslatedSegments, getTranslatedGlossary, SUPPORTED_LANGS } from '../services/translator.js';
+import { getActiveRtmsMeetingId } from '../services/rtms-ingest.js';
 export const transcriptRouter = Router();
+
+async function resolveWithRtmsFallback(meetingId: string): Promise<string | null> {
+  const resolved = await resolveMeetingId(meetingId, { createIfMissing: false });
+  if (resolved) return resolved;
+
+  const rtmsId = getActiveRtmsMeetingId();
+  if (rtmsId && rtmsId !== meetingId) {
+    console.log(`[transcript] UUID fallback: SDK "${meetingId}" → RTMS "${rtmsId}"`);
+    return resolveMeetingId(rtmsId, { createIfMissing: false });
+  }
+  return null;
+}
 
 // POST /api/transcript/segment — Store a transcript chunk (from RTMS or mock)
 transcriptRouter.post('/segment', async (req, res) => {
@@ -64,7 +77,7 @@ transcriptRouter.get('/segments', async (req, res) => {
       return;
     }
 
-    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    const resolvedMeetingId = await resolveWithRtmsFallback(meetingId);
     if (!resolvedMeetingId) {
       res.json({ segments: [] });
       return;
@@ -137,7 +150,7 @@ transcriptRouter.get('/buffer', async (req, res) => {
       return;
     }
 
-    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    const resolvedMeetingId = await resolveWithRtmsFallback(meetingId);
     if (!resolvedMeetingId) {
       res.json({ buffer: '', segmentCount: 0 });
       return;
