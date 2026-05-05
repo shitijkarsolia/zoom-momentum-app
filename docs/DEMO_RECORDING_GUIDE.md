@@ -306,20 +306,45 @@ Target length: ~8-10 minutes raw, cut to 4-5 minutes in post. Record professor a
 
 ## Recording Workflow
 
-### Step 1 — Dry run
-Run through the full script once without recording. Verify:
-- RTMS produces transcript from screen-shared audio (or switch to mock)
-- AI generates topics and glossary within a reasonable time
-- Pulse and Arena work end-to-end between host and student
-- Language switching works (pre-warm the cache)
-- Note any wait times you'll need to speed up in editing
+Since you're recording professor and student sides separately (not simultaneously), you'll do two passes through the same Zoom meeting, then combine the footage in post.
 
-### Step 2 — Record raw footage
-- Open OpenScreen on both laptops
-- Start recording on both machines
-- Walk through the script — don't worry about pacing or mistakes, you'll fix in post
-- Let AI processing run (you'll speed these parts up later)
-- Stop recording on both machines
+### Pass 1 — Professor Side
+
+1. Start the Zoom meeting, open the Momentum side panel on the professor laptop
+2. Start screen recording (OpenScreen or OBS)
+3. Screen share the CS50 lecture video with audio in Zoom
+4. Walk through the full script from the professor perspective:
+   - Welcome screen → Open Dashboard
+   - Anchor tab: Start AI, show transcript flowing, wait for topics
+   - Pulse: generate poll, launch it (no one answers — that's fine, you'll cut to student footage in post)
+   - Arena: generate quiz, start game (same — runs through with no student, you'll intercut later)
+   - End Class
+5. Stop recording
+6. **Keep the meeting running** — don't end it yet if you want the same transcript data for the student pass
+
+### Pass 2 — Student Side
+
+1. On the other laptop, join the same Zoom meeting as a student (or start a new meeting and re-run the lecture)
+2. Start screen recording
+3. Walk through the full script from the student perspective:
+   - Timeline tab: show topics building up
+   - Glossary tab: search, + Note
+   - Transcript tab: show English, then switch languages (Español → 中文 → العربية → English)
+   - Bookmarks: bookmark a topic, show Bookmarks tab
+   - Notes: show captured content
+   - When the professor launches Pulse/Arena (you can do this from the professor laptop at the same time, or re-record those moments separately): answer the poll, play the arena game
+   - Post-class: show recovery pack after End Class
+4. Stop recording
+
+### Handling Interactive Features (Pulse, Arena)
+
+Pulse and Arena need both sides active at the same time. Two approaches:
+
+**Option A — Record simultaneously for just those scenes:**
+When you reach Pulse/Arena in the student pass, have the professor laptop open too. Launch the poll/quiz from professor, answer from student. You get both screens live for those 2-3 minutes.
+
+**Option B — Record each side separately, intercut in post:**
+Record the professor launching the poll and showing results. Then in a separate take, record the student receiving and answering the poll. Match them up in editing — the viewer won't notice they weren't simultaneous.
 
 ### Step 3 — Polish in OpenScreen
 For each recording separately:
@@ -330,12 +355,30 @@ For each recording separately:
 - Export both polished recordings
 
 ### Step 4 — Combine in DaVinci Resolve
-- Import both polished recordings
-- Arrange on the timeline — cut between host and student views, or use side-by-side for simultaneous moments (Pulse voting, Arena gameplay)
+- Import both polished recordings (professor + student)
+- Create your timeline — for most scenes you'll show one side at a time, cutting between them
+- For Pulse/Arena scenes, use **side-by-side split screen** to show both perspectives
+- Add **"Professor"** and **"Student"** labels when showing split screen so the viewer knows which is which
 - **Record voiceover** — narrate each scene, explaining what's happening and why it matters
-- **Face cam** — record a webcam intro ("Hi, I'm [name], and this is Zoom Momentum...") and overlay as PiP in the corner for the first 10-15 seconds
+- **Face cam** (optional) — record a webcam intro and overlay as PiP for the first 10-15 seconds
 - Speed up / slow down as needed — you have full control
 - Export final video
+
+### Editing Order for the Final Cut
+
+The final video doesn't need to follow the order you recorded. Arrange scenes like this:
+
+1. **Opening** — Zoom meeting with lecture playing (student or professor view)
+2. **Professor: Welcome + Dashboard** — cut from professor recording
+3. **Professor: Anchor tab** — transcript flowing, AI extracting topics
+4. **Cut to Student: Timeline** — topics appearing, bullet points
+5. **Cut to Student: Glossary** — terms, search, + Note
+6. **Cut to Student: Transcript** — English, then language switching montage
+7. **Split screen: Pulse** — professor launches, student answers, results
+8. **Split screen: Arena** — quiz gameplay, leaderboard
+9. **Cut to Student: Bookmarks + Notes** — captured content
+10. **Split screen: End Class** — professor ends, student sees recovery pack
+11. **Closing** — side-by-side or fade out
 
 ---
 
@@ -395,3 +438,6 @@ Make sure the demo covers all of these. Check off during your dry run:
 - The Arena countdown is 15 seconds per question — speed this up in editing
 - Recovery Pack generation takes a few seconds — speed up the spinner in editing
 - Toast notifications (bookmarks, poll submission) last ~2 seconds — don't cut too fast or you'll miss them
+- Since you're recording passes separately, you can redo any scene without affecting the other side
+- For Pulse/Arena, the easiest approach is to have both laptops open at the same time for just those scenes
+- Reference video for style/pacing: https://www.youtube.com/watch?v=qYNweeDHiyU

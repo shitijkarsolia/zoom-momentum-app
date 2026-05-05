@@ -44,6 +44,13 @@ export function getActiveSessions(): Map<string, ActiveSession> {
   return activeSessions;
 }
 
+export function getActiveRtmsMeetingId(): string | null {
+  for (const [meetingUuid] of activeSessions) {
+    return meetingUuid;
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Start an RTMS session for a meeting
 // ---------------------------------------------------------------------------
