@@ -22,6 +22,7 @@ export default function App() {
   const [studentActiveSpeaker, setStudentActiveSpeaker] = useState<string | null>(null);
   const [demoRole, setDemoRole] = useState<'host' | 'student'>('host');
   const [useMockTranscript, setUseMockTranscript] = useState(demo.isDemoMode);
+  const [wsStudentCount, setWsStudentCount] = useState(0);
 
   // In demo mode, override meetingId and role
   const isHost = demo.isDemoMode ? demoRole === 'host' : zoom.isHost;
@@ -91,6 +92,17 @@ export default function App() {
 
   useEffect(() => {
     messageRouterRef.current = (message: AppMessage) => {
+      // Track WebSocket-based student count from server messages
+      if ((message as any).senderRole === 'server') {
+        const payload = message.payload as { participantId?: string; role?: string };
+        if (message.type === 'PARTICIPANT_JOINED' && payload.role === 'student') {
+          setWsStudentCount(c => c + 1);
+        } else if (message.type === 'PARTICIPANT_LEFT' && payload.role === 'student') {
+          setWsStudentCount(c => Math.max(0, c - 1));
+        }
+        return;
+      }
+
       if (isHost) {
         if (message.type === 'POLL_RESPONSE') {
           const payload = message.payload as { pollId: string; optionIndex: number };
@@ -398,7 +410,7 @@ export default function App() {
         <HostDashboard
         userName={userName}
         connected={demo.isDemoMode || messaging.connected}
-        participantCount={zoom.participantCount}
+        participantCount={Math.max(zoom.participantCount, wsStudentCount)}
         pulsePhase={pulseHost.phase}
         pulseDraft={pulseHost.draft}
         pulseResponseCount={pulseHost.responseCount}
