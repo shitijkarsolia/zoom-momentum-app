@@ -83,3 +83,27 @@ model RecoveryPack {
   items     String   // JSON string: Array of { topic, explanation, practice, resource }
   createdAt DateTime @default(now())
 }
+
+model TranslatedSegment {
+  id        Int    @id @default(autoincrement())
+  meetingId String
+  seqNo     Int
+  lang      String
+  text      String
+  speaker   String
+  timestamp BigInt
+
+  @@unique([meetingId, seqNo, lang])
+  @@index([meetingId, lang, seqNo])
+}
+
+model TranslatedGlossary {
+  id         Int    @id @default(autoincrement())
+  meetingId  String
+  termKey    String
+  lang       String
+  term       String
+  definition String
+
+  @@unique([meetingId, termKey, lang])
+}

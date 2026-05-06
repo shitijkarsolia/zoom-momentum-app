@@ -154,16 +154,18 @@ export function useZoomSdk(): ZoomContext {
 export async function startRTMS(): Promise<boolean> {
   if (!zoomSdk) return false;
   try {
-    await zoomSdk.callZoomApi('startRTMS', {
-      audioOptions: { rawAudio: false },
-      transcriptOptions: { caption: true },
-    });
-    console.log('[useZoomSdk] RTMS started');
+    const result = await Promise.race([
+      zoomSdk.callZoomApi('startRTMS', {
+        audioOptions: { rawAudio: false },
+        transcriptOptions: { caption: true },
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
+    ]);
+    console.log('[useZoomSdk] RTMS started', result);
     return true;
   } catch (err: any) {
-    // 10308 = RTMS already running — treat as success
-    if (err?.code === '10308') {
-      console.log('[useZoomSdk] RTMS already running');
+    if (err?.code === '10308' || err?.message === 'timeout') {
+      console.log(`[useZoomSdk] RTMS ${err?.message === 'timeout' ? 'timed out (may already be running)' : 'already running'}`);
       return true;
     }
     console.error('[useZoomSdk] startRTMS failed:', err);

@@ -9,28 +9,39 @@ interface TranscriptSegment {
 
 interface TranscriptTabProps {
   meetingId: string;
+  lang?: string;
   glossary: GlossaryEntry[];
   topics: Topic[];
   currentTopicId: string;
   showTitle?: boolean;
 }
 
-export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, showTitle }: TranscriptTabProps) {
+export function TranscriptTab({ meetingId, lang = 'en', glossary, topics, currentTopicId, showTitle }: TranscriptTabProps) {
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [isTranslating, setIsTranslating] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasAtBottomRef = useRef(true);
+  const prevLangRef = useRef(lang);
 
   useEffect(() => {
     if (!meetingId) return;
 
+    if (prevLangRef.current !== lang) {
+      setIsTranslating(lang !== 'en');
+      prevLangRef.current = lang;
+    }
+
     const fetchSegments = async () => {
       try {
-        const res = await fetch(`/api/transcript/segments?meetingId=${encodeURIComponent(meetingId)}`);
+        let url = `/api/transcript/segments?meetingId=${encodeURIComponent(meetingId)}`;
+        if (lang && lang !== 'en') url += `&lang=${encodeURIComponent(lang)}`;
+        const res = await fetch(url);
         if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data.segments)) {
           setSegments(data.segments);
+          setIsTranslating(false);
         }
       } catch {
         // silent
@@ -40,7 +51,7 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, sho
     fetchSegments();
     const interval = setInterval(fetchSegments, 5_000);
     return () => clearInterval(interval);
-  }, [meetingId]);
+  }, [meetingId, lang]);
 
   // Auto-scroll only if user was already at the bottom
   useEffect(() => {
@@ -107,12 +118,15 @@ export function TranscriptTab({ meetingId, glossary, topics, currentTopicId, sho
       <div
         ref={scrollRef}
         onScroll={handleScroll}
+        dir={lang === 'ar' ? 'rtl' : undefined}
         style={{
           maxHeight: 400,
           overflowY: 'auto',
           fontSize: 13,
           color: 'var(--zoom-text)',
           padding: '4px 0',
+          opacity: isTranslating ? 0.4 : 1,
+          transition: 'opacity 0.3s ease-in',
         }}
       >
         {segments.map((seg, i) => {
