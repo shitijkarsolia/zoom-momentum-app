@@ -92,7 +92,7 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
           return;
         }
 
-        // Skip server-generated messages like PARTICIPANT_JOINED
+        // Handle server-generated messages (PARTICIPANT_JOINED, PARTICIPANT_LEFT)
         if ((parsed as any).senderRole === 'server') {
           // If host, broadcast full state to catch up new participants
           if (isHost && (parsed as any).type === 'PARTICIPANT_JOINED' && stateRef.current) {
@@ -107,6 +107,7 @@ export function useMessaging({ isHost, participantId, onMessage }: UseMessagingO
             ws.send(JSON.stringify(fullState));
             console.log('[useMessaging] sent FULL_STATE for new participant');
           }
+          onMessageRef.current(parsed);
           return;
         }
 

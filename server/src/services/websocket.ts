@@ -59,6 +59,17 @@ function broadcastToRoom(meetingId: string, message: string) {
   }
 }
 
+export function getActiveHostMeetingId(): string | null {
+  for (const [meetingId, clients] of rooms) {
+    for (const client of clients) {
+      if (client.role === 'host' && client.readyState === WebSocket.OPEN) {
+        return meetingId;
+      }
+    }
+  }
+  return null;
+}
+
 export function initWebSocketServer(server: Server, sessionParser: RequestHandler) {
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });
 
@@ -164,6 +175,16 @@ export function initWebSocketServer(server: Server, sessionParser: RequestHandle
     });
 
     ws.on('close', () => {
+      if (ws.meetingId) {
+        broadcastToRoom(ws.meetingId, JSON.stringify({
+          type: 'PARTICIPANT_LEFT',
+          payload: { participantId: ws.participantId, role: ws.role },
+          seq: 0,
+          timestamp: Date.now(),
+          senderId: 'server',
+          senderRole: 'server',
+        }));
+      }
       removeFromRoom(ws);
     });
 
