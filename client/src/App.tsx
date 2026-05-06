@@ -415,6 +415,7 @@ export default function App() {
         pulseDraft={pulseHost.draft}
         pulseResponseCount={pulseHost.responseCount}
         pulseActivePoll={pulseHost.activePoll}
+        pulseResponses={pulseHost.responses}
         pulseError={pulseHost.error}
         onPulseGenerate={async (context?: string) => {
           const latestTopic = anchorHost.topics.length > 0

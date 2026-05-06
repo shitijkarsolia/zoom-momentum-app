@@ -470,6 +470,23 @@ body {
   outline: none;
 }
 
+.poll-edit-field textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--zoom-border);
+  border-radius: var(--zoom-radius);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.poll-edit-field textarea:focus {
+  border-color: var(--zoom-blue);
+}
+
 .poll-edit-field input:focus {
   border-color: var(--zoom-blue);
 }
@@ -682,6 +699,8 @@ body {
   font-size: 14px;
   color: var(--zoom-text-secondary);
   font-style: italic;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .poll-results-bars {
