@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Topic, GlossaryEntry } from '../types/messages';
 import type { MessageType } from '../types/messages';
-import { startRTMS, stopRTMS } from './useZoomSdk';
+import { startRTMS } from './useZoomSdk';
 
 const STOP_WORDS = new Set(['a','an','the','and','or','of','in','on','to','for','with','is','are','was','were','by','at','from','as','how','what','why','when','where','using','about','into','through','during','its','this','that']);
 
@@ -52,8 +52,8 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
   });
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollingRef = useRef(false); // guard against concurrent fetches
-  const lastBufferRef = useRef(''); // track last analyzed buffer to skip duplicates
+  const pollingRef = useRef(false);
+  const lastBufferRef = useRef('');
 
   const pollTranscript = useCallback(async () => {
     if (pollingRef.current) return;
@@ -61,13 +61,12 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
     pollingRef.current = true;
 
     try {
-      // 1. Fetch the rolling transcript buffer
       const bufferRes = await fetch(`/api/transcript/buffer?meetingId=${encodeURIComponent(meetingId)}`);
       const { buffer } = bufferRes.ok ? await bufferRes.json() : { buffer: '' };
 
       if (!buffer || buffer.trim().length < 20) {
         pollingRef.current = false;
-        return; // not enough transcript yet
+        return;
       }
 
       // Skip if transcript hasn't changed since last analysis
@@ -197,17 +196,30 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
 
   const startPolling = useCallback(async () => {
     if (timerRef.current) return;
+    if (!meetingId) return;
     setState(prev => ({ ...prev, isPolling: true }));
 
-    if (isInZoom) {
-      const ok = await startRTMS();
-      console.log(`[anchor] RTMS start ${ok ? 'succeeded' : 'failed (will poll anyway)'}`);
-    }
-
-    // Poll immediately, then on interval
+    // Start polling immediately
     pollTranscript();
     timerRef.current = setInterval(pollTranscript, POLL_INTERVAL_MS);
-  }, [pollTranscript, isInZoom]);
+
+    // Start RTMS in background (don't block polling)
+    if (isInZoom) {
+      (async () => {
+        try {
+          await fetch('/api/rtms/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meetingId }),
+          });
+          const ok = await startRTMS();
+          console.log(`[anchor] RTMS start ${ok ? 'succeeded' : 'failed (will poll anyway)'}`);
+        } catch (err) {
+          console.warn('[anchor] RTMS setup error:', err);
+        }
+      })();
+    }
+  }, [pollTranscript, isInZoom, meetingId]);
 
   const stopPolling = useCallback(async () => {
     if (timerRef.current) {
@@ -215,12 +227,7 @@ export function useAnchorHost({ broadcast, meetingId, isInZoom }: UseAnchorHostO
       timerRef.current = null;
     }
     setState(prev => ({ ...prev, isPolling: false }));
-
-    if (isInZoom) {
-      const ok = await stopRTMS();
-      console.log(`[anchor] RTMS stop ${ok ? 'succeeded' : 'failed'}`);
-    }
-  }, [isInZoom]);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {

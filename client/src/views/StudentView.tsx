@@ -101,6 +101,7 @@ export function StudentView({
   activeSpeaker,
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
+  const [lang, setLang] = useState(() => localStorage.getItem('momentum.lang') || 'en');
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
   const [notesToast, setNotesToast] = useState<string | null>(null);
   const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
@@ -247,6 +248,19 @@ export function StudentView({
               Live
             </span>
           )}
+          <select
+            value={lang}
+            onChange={e => { setLang(e.target.value); localStorage.setItem('momentum.lang', e.target.value); }}
+            style={{ fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--zoom-border)', background: 'var(--zoom-bg)', color: 'var(--zoom-text)', cursor: 'pointer' }}
+            aria-label="Transcript language"
+          >
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="zh">中文</option>
+            <option value="hi">हिन्दी</option>
+            <option value="ar">العربية</option>
+            <option value="fr">Français</option>
+          </select>
           {activeSpeaker && (
             <span style={{ fontSize: 11, color: 'var(--zoom-brand)', fontWeight: 500 }}>
               Speaking: {activeSpeaker}
@@ -335,10 +349,10 @@ export function StudentView({
           </>
         )}
         {activeTab === 'glossary' && (
-          <GlossaryTab glossary={anchorGlossary} onAddToNotes={handleAddGlossaryToNotes} />
+          <GlossaryTab glossary={anchorGlossary} lang={lang} meetingId={meetingId} onAddToNotes={handleAddGlossaryToNotes} />
         )}
         {activeTab === 'transcript' && (
-          <TranscriptTab meetingId={meetingId} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+          <TranscriptTab meetingId={meetingId} lang={lang} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
         )}
         {activeTab === 'bookmarks' && (
           <div>

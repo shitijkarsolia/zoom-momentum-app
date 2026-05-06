@@ -1,7 +1,21 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { resolveMeetingId } from '../services/meeting-resolver.js';
+import { getTranslatedSegments, getTranslatedGlossary, SUPPORTED_LANGS } from '../services/translator.js';
+import { getActiveRtmsMeetingId } from '../services/rtms-ingest.js';
 export const transcriptRouter = Router();
+
+async function resolveWithRtmsFallback(meetingId: string): Promise<string | null> {
+  const resolved = await resolveMeetingId(meetingId, { createIfMissing: false });
+  if (resolved) return resolved;
+
+  const rtmsId = getActiveRtmsMeetingId();
+  if (rtmsId && rtmsId !== meetingId) {
+    console.log(`[transcript] UUID fallback: SDK "${meetingId}" → RTMS "${rtmsId}"`);
+    return resolveMeetingId(rtmsId, { createIfMissing: false });
+  }
+  return null;
+}
 
 // POST /api/transcript/segment — Store a transcript chunk (from RTMS or mock)
 transcriptRouter.post('/segment', async (req, res) => {
@@ -63,7 +77,7 @@ transcriptRouter.get('/segments', async (req, res) => {
       return;
     }
 
-    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    const resolvedMeetingId = await resolveWithRtmsFallback(meetingId);
     if (!resolvedMeetingId) {
       res.json({ segments: [] });
       return;
@@ -75,6 +89,19 @@ transcriptRouter.get('/segments', async (req, res) => {
       orderBy: { seqNo: 'desc' },
       take: 50,
     });
+
+    const lang = (req.query.lang as string || '').toLowerCase();
+    if (lang && lang !== 'en' && SUPPORTED_LANGS.has(lang)) {
+      const source = segments.reverse().map(s => ({
+        seqNo: Number(s.seqNo),
+        speaker: s.speaker,
+        text: s.text,
+        timestamp: s.timestamp,
+      }));
+      const translated = await getTranslatedSegments(resolvedMeetingId, lang, source);
+      res.json({ segments: translated });
+      return;
+    }
 
     res.json({
       segments: segments.reverse().map(s => ({
@@ -123,7 +150,7 @@ transcriptRouter.get('/buffer', async (req, res) => {
       return;
     }
 
-    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    const resolvedMeetingId = await resolveWithRtmsFallback(meetingId);
     if (!resolvedMeetingId) {
       res.json({ buffer: '', segmentCount: 0 });
       return;
@@ -148,5 +175,31 @@ transcriptRouter.get('/buffer', async (req, res) => {
   } catch (err) {
     console.error('[transcript] buffer error:', err);
     res.status(500).json({ error: 'Failed to get buffer' });
+  }
+});
+
+transcriptRouter.post('/translate-glossary', async (req, res) => {
+  try {
+    const { meetingId, lang, terms } = req.body;
+    if (!meetingId || !lang || !Array.isArray(terms)) {
+      res.status(400).json({ error: 'meetingId, lang, and terms[] are required' });
+      return;
+    }
+    if (lang === 'en' || !SUPPORTED_LANGS.has(lang)) {
+      res.json({ terms });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ terms });
+      return;
+    }
+
+    const translated = await getTranslatedGlossary(resolvedMeetingId, lang, terms);
+    res.json({ terms: translated });
+  } catch (err) {
+    console.error('[transcript] translate-glossary error:', err);
+    res.status(500).json({ error: 'Failed to translate glossary' });
   }
 });
