@@ -26,6 +26,15 @@ Testing: Vitest (`npm test`). Linting: ESLint (`npm run lint`).
 
 The app must be served as a production build through Express for Zoom to work:
 ```bash
+# Quick start (kills old processes, builds, starts server + ngrok)
+./start.sh
+
+# Or with mock transcript fallback
+./start.sh --mock
+```
+
+Manual steps:
+```bash
 # 1. Build client
 npm run build -w client
 
@@ -39,6 +48,13 @@ npm run dev -w server
 npm run dev -w mock-transcript
 ```
 
+The server and ngrok also run as systemd user services (auto-restart, survive reboots):
+```bash
+systemctl --user status zoom-momentum.service
+systemctl --user status zoom-ngrok.service
+systemctl --user restart zoom-momentum.service
+```
+
 ## Architecture
 
 ### Client (`client/src/`)
@@ -50,8 +66,8 @@ npm run dev -w mock-transcript
   - `usePulse` / `useArena` / `useLiveAnchor` — Feature-specific state management
   - `useZoomEvents` — Active speaker, meeting end, late joiner detection
   - `useDemoMode` — Auto-detects demo mode (outside Zoom), provides mock meetingId
-- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs + TranscriptTab), `StudentView` (Timeline/Glossary/Transcript tabs), `WelcomeView`, `AuthView`
-- **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard), `anchor/` (timeline, glossary, transcript, bookmarks), `recovery/` (post-class summary), `shared/` (feature info)
+- **Views** — `HostDashboard` (Pulse/Arena/Anchor tabs + TranscriptTab), `StudentView` (Timeline/Glossary/Transcript tabs + language dropdown), `WelcomeView`, `AuthView`
+- **Components** — `pulse/` (polls), `arena/` (trivia/leaderboard), `anchor/` (timeline, glossary, transcript, bookmarks), `recovery/` (post-class summary), `notes/` (smart notes panel), `shared/` (feature info)
 - **DevPreview.tsx** — REMOVED. Replaced by demo mode in App.tsx
 - **Demo Mode** — Auto-enabled when running outside Zoom. Role switcher + simulation buttons (late join, meeting end, speaker). Transcript source toggle (Live/Mock) available inside Zoom only.
 - **Types** — `messages.ts` defines the full message protocol and state types
@@ -62,15 +78,17 @@ npm run dev -w mock-transcript
 - **Routes:**
   - `auth.ts` — OAuth PKCE (`/authorize`, `/callback`, `/me`)
   - `ai.ts` — AI endpoints (`/poll-generate`, `/quiz-generate`, `/topic-segment`, `/recovery-pack`, `/detect-cues`)
-  - `transcript.ts` — Transcript storage with meeting-resolver (`POST /segment`, `GET /buffer`)
+  - `transcript.ts` — Transcript storage with meeting-resolver and RTMS UUID fallback (`POST /segment`, `GET /segments`, `GET /buffer`, `POST /translate-glossary`)
   - `bookmarks.ts` — Bookmark CRUD with meeting-resolver
-  - `rtms.ts` — RTMS webhook receiver + stream client
+  - `rtms.ts` — RTMS webhook receiver, stream client, meeting ID registration (`POST /start`)
 - **Services:**
   - `meeting-resolver.ts` — Auto-creates Meeting records from Zoom UUIDs or mock IDs
-  - `rtms-ingest.ts` — RTMS WebSocket client, transcript storage, session lifecycle
+  - `rtms-ingest.ts` — RTMS WebSocket client, transcript storage, session lifecycle, active session lookup
   - `websocket.ts` — WebSocket relay server for host↔student messaging (rooms by meetingId)
+  - `translator.ts` — Server-side translation with DB caching (batch AI calls, concurrency locks, English fallback)
   - `ai-client.ts` — Tiered AI client with failover (CREATE AI claude4_5_sonnet → gpt5 → Bedrock)
 - **Database** — Prisma ORM with SQLite (dev) / PostgreSQL (prod). Schema in `server/prisma/schema.prisma`
+  - Models: User, Meeting, TranscriptSegment, Bookmark, QuizSet, RecoveryPack, TranslatedSegment, TranslatedGlossary
 
 ### Mock Transcript (`mock-transcript/`)
 - Fetches real CS50 Lecture 0 SRT from Harvard CDN, parses into ~700 chunks, POSTs to `/api/transcript/segment` every 3 seconds
@@ -123,6 +141,7 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 ### Resolved
 - ~~**P0: Host↔Student Messaging**~~ — FIXED. Replaced Zoom SDK `postMessage`/`onMessage` with WebSocket relay through Express.
 - ~~**RTMS secret fallback**~~ — FIXED. Proper empty-string check before falling back to clientSecret.
+- ~~**RTMS UUID mismatch**~~ — FIXED. Zoom SDK UUID differs from RTMS webhook UUID. Server-side fallback in transcript routes checks active RTMS sessions when SDK UUID doesn't resolve.
 - ~~**"Analyze Now" button**~~ — FIXED. Removed from Anchor tab.
 - ~~**PrismaClient instances**~~ — FIXED. Singleton in `server/src/db.ts`.
 - ~~**AI topic-segment silent failure**~~ — FIXED. Returns null for non-academic content, 500 on real errors.
@@ -138,6 +157,31 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 
 ### Open Bugs
 None currently tracked.
+
+## RTMS Integration (CRITICAL)
+
+The Zoom SDK meeting UUID and the RTMS webhook `meeting_uuid` are different identifiers for the same meeting. This is handled transparently:
+
+1. Client calls `POST /api/rtms/start` with its SDK meeting UUID before calling `startRTMS()`
+2. Server stores this as `pendingMeetingId`
+3. When `meeting.rtms_started` webhook arrives, server maps the webhook UUID to the pending client UUID
+4. Transcript segments are stored under the RTMS UUID (as provided by the webhook)
+5. When client polls `GET /segments?meetingId=SDK_UUID`, the server falls back to checking active RTMS sessions if the SDK UUID doesn't resolve — transparently returning data from the RTMS UUID
+
+Key files: `server/src/routes/rtms.ts`, `server/src/services/rtms-ingest.ts`, `server/src/routes/transcript.ts`
+
+## Live Multilingual Transcript
+
+Students can switch between 6 languages (English, Spanish, Chinese, Hindi, Arabic, French) via a dropdown in the status bar. Translation is server-side with DB caching:
+
+- One AI call per (segment, language) pair — shared across all students
+- `TranslatedSegment` and `TranslatedGlossary` models cache results
+- `GET /segments?lang=es` returns translated segments transparently
+- `POST /translate-glossary` translates glossary terms on demand
+- Arabic renders RTL automatically
+- Fade-in UX on language switch
+
+Key files: `server/src/services/translator.ts`, `client/src/views/StudentView.tsx` (dropdown), `client/src/components/anchor/TranscriptTab.tsx`, `client/src/components/anchor/GlossaryTab.tsx`
 
 ## Git Config
 - user.name: `shitijkarsolia`
