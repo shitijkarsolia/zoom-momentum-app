@@ -9,6 +9,7 @@ import { aiRouter } from './routes/ai.js';
 import { transcriptRouter } from './routes/transcript.js';
 import { bookmarkRouter } from './routes/bookmarks.js';
 import { rtmsRouter } from './routes/rtms.js';
+import { demoRouter } from './routes/demo.js';
 import { shutdownAllSessions } from './services/rtms-ingest.js';
 import { initWebSocketServer } from './services/websocket.js';
 
@@ -59,6 +60,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/transcript', transcriptRouter);
 app.use('/api/bookmarks', bookmarkRouter);
 app.use('/api/rtms', rtmsRouter);
+app.use('/api/demo', demoRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

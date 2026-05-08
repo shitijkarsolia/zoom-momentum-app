@@ -21,7 +21,9 @@ export type MessageType =
   | 'SPEAKER_SPOTLIGHT'
   | 'AUTO_BOOKMARK'
   | 'CLASS_END'
-  | 'MEETING_RESET';
+  | 'MEETING_RESET'
+  | 'PARTICIPANT_JOINED'
+  | 'PARTICIPANT_LEFT';
 
 export interface AppMessage {
   type: MessageType;

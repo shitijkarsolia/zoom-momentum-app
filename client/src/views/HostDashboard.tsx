@@ -25,6 +25,7 @@ interface HostDashboardProps {
   pulseDraft: PollDraft | null;
   pulseResponseCount: number;
   pulseActivePoll: Poll | null;
+  pulseResponses: Map<string, number>;
   pulseError: string | null;
   onPulseGenerate: (context?: string) => void;
   onPulseUpdateDraft: (updates: Partial<PollDraft>) => void;
@@ -77,6 +78,7 @@ export function HostDashboard({
   pulseDraft,
   pulseResponseCount,
   pulseActivePoll,
+  pulseResponses,
   pulseError,
   onPulseGenerate,
   onPulseUpdateDraft,
@@ -226,6 +228,8 @@ export function HostDashboard({
                 draft={pulseDraft}
                 responseCount={pulseResponseCount}
                 error={pulseError}
+                activePoll={pulseActivePoll}
+                responses={pulseResponses}
                 onGenerate={onPulseGenerate}
                 onUpdateDraft={onPulseUpdateDraft}
                 onLaunch={() => { onPulseLaunch(); showToast('Poll sent to students'); }}
