@@ -326,34 +326,6 @@ h3 {
   color: rgba(246, 247, 251, 0.95);
 }
 
-.hero-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: rgba(246, 247, 251, 0.84);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.hero-label::before,
-.hero-label::after {
-  content: "";
-  width: 28px;
-  height: 1px;
-  background: rgba(246, 247, 251, 0.28);
-}
-
-.hero-label-top {
-  margin-bottom: 20px;
-}
-
-.hero-label-bottom {
-  margin-top: 18px;
-}
-
 .hero-flower {
   display: inline-flex;
   width: clamp(28px, 3vw, 42px);
@@ -406,7 +378,6 @@ h3 {
 
 .feature-card,
 .credit-card,
-.cta-card,
 .app-window,
 .demo-frame,
 .product-loop {
@@ -648,8 +619,7 @@ h3 {
 
 .demo-section .section-heading h2,
 #features .section-heading h2,
-.fellowship-credit-section .section-heading h2,
-.cta-section h2 {
+.fellowship-credit-section .section-heading h2 {
   max-width: 15ch;
 }
 
@@ -740,14 +710,13 @@ h3 {
 }
 
 .feature-card,
-.credit-card,
-.cta-card {
+.credit-card {
   padding: 26px;
 }
 
-.fellowship-credit-section,
-.cta-section {
+.fellowship-credit-section {
   padding-top: 72px;
+  padding-bottom: 72px;
 }
 
 .features-grid {
@@ -928,38 +897,6 @@ h3 {
   transform: translate(2px, -2px);
 }
 
-.cta-section {
-  display: grid;
-  place-items: center;
-  text-align: center;
-}
-
-.cta-section .section-heading,
-.cta-card .eyebrow,
-.cta-card h2,
-.cta-card p {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.cta-card {
-  width: 100%;
-  max-width: 880px;
-  text-align: center;
-}
-
-.cta-card h2 {
-  max-width: 18ch;
-}
-
-.cta-card p {
-  max-width: 60ch;
-  margin-top: 14px;
-}
-
-.cta-card .hero-actions {
-  justify-content: center;
-}
 
 .site-footer {
   display: flex;
@@ -1077,11 +1014,6 @@ h3 {
     display: none;
   }
 
-  .hero-label::before,
-  .hero-label::after {
-    width: 16px;
-  }
-
   section {
     padding: 50px 0;
   }
@@ -1093,8 +1025,7 @@ h3 {
 
   .eyebrow,
   .credit-kicker,
-  .feature-topline p,
-  .hero-label {
+  .feature-topline p {
     letter-spacing: 0.08em;
   }
 
@@ -1132,8 +1063,7 @@ h3 {
   }
 
   .feature-card,
-  .credit-card,
-  .cta-card {
+  .credit-card {
     padding: 22px;
   }
 
