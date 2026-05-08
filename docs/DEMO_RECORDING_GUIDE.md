@@ -8,11 +8,10 @@ Recording guide for the Zoom Momentum demo.
 
 | Tool | Purpose | Platform | Cost |
 |------|---------|----------|------|
-| [OBS Studio](https://obsproject.com/) | Screen recording, scene switching, live mic capture | Mac, Windows, Linux | Free, open source |
+| [Cap](https://cap.so/) | Screen recording with cursor effects, backgrounds, 4K/60fps | Mac, Windows | Free, open source |
 | [Kdenlive](https://kdenlive.org/) | Video editing, trimming, speed ramps, titles | Mac, Windows, Linux | Free, open source |
-| [Shotcut](https://shotcut.org/) | Alternative editor if Kdenlive doesn't suit you | Mac, Windows, Linux | Free, open source |
 
-**Why OBS?** It captures your full desktop (both Zoom windows side by side) with your mic in one take. You can set up scenes ahead of time — one for full desktop, one cropped to professor side, one cropped to student side — and switch between them live with hotkeys. No post-sync needed.
+**Why Cap?** Native, lightweight, records in 4K@60fps with hardware acceleration. Has built-in cursor effects, customizable backgrounds, and rounded corners — polished output without post-processing. Open source (Tauri + Rust). Export to MP4 or share instantly.
 
 ---
 
@@ -65,15 +64,15 @@ Before recording, open the student Transcript tab and switch to Spanish and Chin
 
 ---
 
-## OBS Setup
+## Cap Setup
 
-1. **Scene: Full Desktop** — capture entire screen showing both Zoom windows side by side
-2. **Scene: Professor** — crop to the professor Zoom window (side panel visible)
-3. **Scene: Student** — crop to the student Zoom window (side panel visible)
-4. **Audio** — enable your mic input, disable desktop audio (you don't want Zoom sounds doubling)
-5. **Hotkeys** — assign keys (e.g., F1/F2/F3) to switch scenes live while recording
+1. Download from [cap.so](https://cap.so/) and install
+2. Select screen recording mode — capture the full desktop (both Zoom windows tiled side by side)
+3. Enable mic input for live narration
+4. Optional: enable webcam for a face cam overlay during intro
+5. Use Studio Mode for local editing before export
 
-Record at 1080p, 30fps, high quality preset.
+Record at highest quality (4K if your display supports it).
 
 ---
 
@@ -110,6 +109,8 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 > "I'm sharing a lecture video with audio. Zoom's RTMS captures the speech and sends it to our app. The AI processes the transcript every 10 seconds — extracting topics, key terms, and glossary entries automatically."
 
 *[Wait for transcript to flow and a topic to appear — speed up in post if needed]*
+
+**Timing note**: Let the lecture run for at least 60-90 seconds before moving to Scene 2. The AI needs enough transcript content to extract meaningful topics and glossary terms. Skip past the CS50 intro music to where Malan starts talking about binary/representation — that's where the dense academic content begins.
 
 ### Scene 2 — Student Timeline + Glossary (1:20 – 2:30)
 
@@ -157,11 +158,17 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 
 *[Professor side: click Pulse tab, type context, click "Generate Check-In"]*
 
+**Poll context to type**: `"Did students understand how binary represents numbers and letters?"`
+
+Other good options depending on where the lecture is:
+- `"Check if students understand the difference between ASCII and Unicode"`
+- `"Are students clear on how RGB values create colors?"`
+
 > "AI generates a contextual poll. The professor reviews it and launches."
 
 *[Click "Launch Poll"]*
 *[Student side: show poll appearing, select an option, submit]*
-*[Professor side: show bar chart filling in as bots + you respond]*
+*[Professor side: show bar chart filling in live as bots + you respond]*
 
 > "Results come in real time — the professor sees exactly where students are."
 
@@ -173,6 +180,13 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 > "Arena turns review into a competitive game."
 
 *[Professor side: click Arena tab, enter topic, generate quiz]*
+
+**Arena topic to type**: `"Binary, ASCII, and number representation"`
+
+Other good options:
+- `"How computers represent text and images"`
+- `"Algorithms and computational thinking"`
+
 *[Show question review screen briefly, click "Start Game"]*
 
 *[Student side: show countdown, answer questions]*
@@ -223,20 +237,25 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 
 ## Recording Workflow (Single Take)
 
-1. Set up OBS with your scenes (full desktop, professor crop, student crop)
-2. Tile both Zoom desktop apps side by side on your screen
-3. Start the Zoom meeting on both apps (host first, then student joins)
-4. Open the Momentum side panel on the host app
-5. Start mock bots: `curl -X POST http://localhost:3001/api/demo/start-bots`
-6. Wait ~40s for bots to trickle in (student count rises on host dashboard)
-7. Open the Momentum side panel on the student app
-8. Pre-warm translation cache (switch to Spanish/Chinese once on student side)
-9. Hit **Record** in OBS
-10. Start narrating — follow the script above, switching OBS scenes with hotkeys as needed
-11. When done, stop recording
-12. Stop bots: `curl -X POST http://localhost:3001/api/demo/stop-bots`
+1. Tile both Zoom desktop apps side by side on your screen
+2. Start the Zoom meeting on both apps (host first, then student joins)
+3. Open the Momentum side panel on the **host** app
+4. Start mock bots:
+   ```bash
+   curl -X POST http://localhost:3001/api/demo/start-bots
+   ```
+5. Wait ~40s for bots to trickle in (student count rises on host dashboard)
+6. Open the Momentum side panel on the **student** app
+7. Pre-warm translation cache (switch to Spanish/Chinese once on student side)
+8. Hit **Record** in Cap
+9. Start narrating — follow the script above
+10. When done, stop recording
+11. Stop bots:
+    ```bash
+    curl -X POST http://localhost:3001/api/demo/stop-bots
+    ```
 
-### Post-Recording (Kdenlive or Shotcut)
+### Post-Recording (Cap Studio Mode or Kdenlive)
 
 Minimal editing since you recorded in one take:
 - **Trim** the start/end dead air
@@ -244,7 +263,7 @@ Minimal editing since you recorded in one take:
 - **Cut** any flubs — re-record just that section if needed and splice in
 - **Add** a title card at the start: project name, your name, fellowship name
 - **Add** a brief end card with GitHub link / contact
-- Export at 1080p
+- Export at 1080p+
 
 ---
 
@@ -286,3 +305,22 @@ Make sure the demo covers all of these:
 - Recovery Pack generation takes a few seconds — speed up in editing
 - If you flub a line, pause 3 seconds and re-say it — easy to cut in post
 - Reference video for style/pacing: https://www.youtube.com/watch?v=qYNweeDHiyU
+
+---
+
+## Timing Guide (CS50 Lecture 0)
+
+The lecture covers: binary, ASCII, Unicode, RGB colors, algorithms, pseudocode, Scratch.
+
+**When to trigger each feature:**
+
+| Time into lecture | What's happened | What to demo |
+|---|---|---|
+| 0:00 – 1:00 | Malan introduces CS50, mentions binary | Start AI, let transcript flow |
+| 1:00 – 2:00 | Binary representation, bits, bytes | Show Timeline + Glossary (terms like "binary", "bit", "byte" appear) |
+| 2:00 – 3:00 | ASCII, Unicode, emoji representation | Show Transcript tab + language switching |
+| 3:00+ | Enough content accumulated | Launch Pulse poll and Arena quiz |
+
+**Key**: Don't launch Pulse or Arena too early. The AI needs 60-90 seconds of transcript to generate contextual questions. If you launch too early, the generated questions will be generic.
+
+**Suggested lecture skip point**: Jump to ~5:00 in the CS50 video (past intro/housekeeping) where Malan starts explaining binary with light bulbs. This gives dense academic content immediately.
