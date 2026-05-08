@@ -1,6 +1,15 @@
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const revealElements = document.querySelectorAll(".reveal");
 
+const header = document.querySelector(".site-header");
+if (header) {
+  const updateScrolled = () => {
+    header.classList.toggle("is-scrolled", window.scrollY > 12);
+  };
+  updateScrolled();
+  window.addEventListener("scroll", updateScrolled, { passive: true });
+}
+
 if (prefersReducedMotion || !("IntersectionObserver" in window)) {
   revealElements.forEach((element) => element.classList.add("is-visible"));
 } else {
