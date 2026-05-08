@@ -1,5 +1,56 @@
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const revealElements = document.querySelectorAll(".reveal");
+const header = document.querySelector(".site-header");
+
+const getAnchorOffset = () => {
+  if (!header) return 34;
+
+  const headerStyle = window.getComputedStyle(header);
+  const headerHeight = header.getBoundingClientRect().height;
+
+  return headerStyle.position === "sticky" ? headerHeight + 34 : 34;
+};
+
+const scrollToAnchor = (hash, behavior = "smooth") => {
+  if (!hash || hash === "#") return;
+
+  const target = document.querySelector(hash);
+  if (!target) return;
+
+  const anchorTarget = target.querySelector(".section-heading") || target;
+  const top = anchorTarget.getBoundingClientRect().top + window.scrollY - getAnchorOffset();
+
+  window.scrollTo({
+    top: Math.max(top, 0),
+    behavior: prefersReducedMotion ? "auto" : behavior,
+  });
+};
+
+document.querySelectorAll('a[href^="#"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    const hash = link.getAttribute("href");
+    if (!hash || hash === "#") return;
+
+    event.preventDefault();
+    history.pushState(null, "", hash);
+    scrollToAnchor(hash);
+  });
+});
+
+const correctInitialHashScroll = () => {
+  if (!window.location.hash) return;
+
+  requestAnimationFrame(() => {
+    window.setTimeout(() => scrollToAnchor(window.location.hash, "auto"), 80);
+    window.setTimeout(() => scrollToAnchor(window.location.hash, "auto"), 360);
+  });
+};
+
+if (document.readyState === "complete") {
+  correctInitialHashScroll();
+} else {
+  window.addEventListener("load", correctInitialHashScroll);
+}
 
 if (prefersReducedMotion || !("IntersectionObserver" in window)) {
   revealElements.forEach((element) => element.classList.add("is-visible"));
