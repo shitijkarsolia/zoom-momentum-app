@@ -39,7 +39,7 @@ npm run dev -w server
 
 ### 2. Transcript source: RTMS (live)
 
-Screen share a recorded lecture video (e.g., https://www.youtube.com/watch?v=qYNweeDHiyU) with audio in Zoom. Zoom's RTMS service performs speech-to-text and sends transcript text to the app automatically.
+Screen share the lecture video (https://www.youtube.com/watch?v=qYNweeDHiyU) with audio in Zoom. Zoom's RTMS service performs speech-to-text and sends transcript text to the app automatically.
 
 Start RTMS from the host side panel before playing the lecture video.
 
@@ -110,7 +110,7 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 
 *[Wait for transcript to flow and a topic to appear — speed up in post if needed]*
 
-**Timing note**: Let the lecture run for at least 60-90 seconds before moving to Scene 2. The AI needs enough transcript content to extract meaningful topics and glossary terms. Skip past the CS50 intro music to where Malan starts talking about binary/representation — that's where the dense academic content begins.
+**Timing note**: Let the lecture run for at least 60-90 seconds before moving to Scene 2. The AI needs enough transcript content to extract meaningful topics and glossary terms. Skip to a section with dense academic content for best results.
 
 ### Scene 2 — Student Timeline + Glossary (1:20 – 2:30)
 
@@ -158,11 +158,11 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 
 *[Professor side: click Pulse tab, type context, click "Generate Check-In"]*
 
-**Poll context to type**: `"Did students understand how binary represents numbers and letters?"`
+**Poll context to type**: `"Did students understand the key concepts just discussed?"`
 
 Other good options depending on where the lecture is:
-- `"Check if students understand the difference between ASCII and Unicode"`
-- `"Are students clear on how RGB values create colors?"`
+- `"Check if students can explain the main topic covered"`
+- `"Are students clear on the terminology introduced?"`
 
 > "AI generates a contextual poll. The professor reviews it and launches."
 
@@ -181,11 +181,11 @@ Other good options depending on where the lecture is:
 
 *[Professor side: click Arena tab, enter topic, generate quiz]*
 
-**Arena topic to type**: `"Binary, ASCII, and number representation"`
+**Arena topic to type**: Leave blank or type a topic based on what the AI has extracted so far (check the Anchor tab for topics)
 
 Other good options:
-- `"How computers represent text and images"`
-- `"Algorithms and computational thinking"`
+- Use the latest topic title from the Timeline
+- `"Key concepts from the lecture so far"`
 
 *[Show question review screen briefly, click "Start Game"]*
 
@@ -304,23 +304,54 @@ Make sure the demo covers all of these:
 - The Arena countdown is 15 seconds per question — speed this up in editing
 - Recovery Pack generation takes a few seconds — speed up in editing
 - If you flub a line, pause 3 seconds and re-say it — easy to cut in post
-- Reference video for style/pacing: https://www.youtube.com/watch?v=qYNweeDHiyU
 
 ---
 
-## Timing Guide (CS50 Lecture 0)
-
-The lecture covers: binary, ASCII, Unicode, RGB colors, algorithms, pseudocode, Scratch.
+## Timing Guide
 
 **When to trigger each feature:**
 
-| Time into lecture | What's happened | What to demo |
-|---|---|---|
-| 0:00 – 1:00 | Malan introduces CS50, mentions binary | Start AI, let transcript flow |
-| 1:00 – 2:00 | Binary representation, bits, bytes | Show Timeline + Glossary (terms like "binary", "bit", "byte" appear) |
-| 2:00 – 3:00 | ASCII, Unicode, emoji representation | Show Transcript tab + language switching |
-| 3:00+ | Enough content accumulated | Launch Pulse poll and Arena quiz |
+| Time into lecture | What to demo |
+|---|---|
+| 0:00 – 1:00 | Start AI, let transcript flow |
+| 1:00 – 2:00 | Show Timeline + Glossary (terms start appearing) |
+| 2:00 – 3:00 | Show Transcript tab + language switching |
+| 3:00+ | Launch Pulse poll and Arena quiz (AI has enough content) |
 
 **Key**: Don't launch Pulse or Arena too early. The AI needs 60-90 seconds of transcript to generate contextual questions. If you launch too early, the generated questions will be generic.
 
-**Suggested lecture skip point**: Jump to ~5:00 in the CS50 video (past intro/housekeeping) where Malan starts explaining binary with light bulbs. This gives dense academic content immediately.
+---
+
+## Mock Student Bots — Quick Reference
+
+**Start bots** (after opening host side panel in Zoom):
+```bash
+curl -X POST http://localhost:3001/api/demo/start-bots
+```
+
+**Custom bot count** (default is 8, max 13):
+```bash
+curl -X POST http://localhost:3001/api/demo/start-bots \
+  -H "Content-Type: application/json" -d '{"count": 12}'
+```
+
+**Check status**:
+```bash
+curl http://localhost:3001/api/demo/status
+```
+
+**Stop bots**:
+```bash
+curl -X POST http://localhost:3001/api/demo/stop-bots
+```
+
+**What bots do:**
+- Trickle in over ~40 seconds (host student count rises in real time)
+- Auto-respond to Pulse polls in 2-5 seconds with clustered answers
+- Auto-answer Arena questions in 0.8-4 seconds using skill-based accuracy
+- Show on leaderboard as: Liam Wirth, Advikaa Kapil, Shitij Mathur, Yash Sawant, Neha Kashyap, Amanda Federico, Jesus Franco Yescas, etc.
+
+**Troubleshooting:**
+- "No active host meeting found" → open the host side panel first, then retry
+- Bots not responding to arena → make sure you started the game AFTER bots connected (check status endpoint)
+
