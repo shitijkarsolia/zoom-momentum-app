@@ -233,8 +233,7 @@ section {
   letter-spacing: 0.16em;
 }
 
-h1,
-h2 {
+h1 {
   margin: 0;
   font-family: "Cormorant Garamond", serif;
   font-weight: 600;
@@ -242,9 +241,13 @@ h2 {
 }
 
 h2 {
+  margin: 0;
   max-width: 12ch;
-  font-size: clamp(2.5rem, 5vw, 4.6rem);
-  line-height: 0.95;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(2.35rem, 4.4vw, 4.1rem);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: -0.065em;
 }
 
 h3 {
@@ -296,6 +299,8 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
   line-height: 0.92;
   font-size: clamp(4.2rem, 12vw, 9.8rem);
   letter-spacing: -0.02em;
@@ -401,8 +406,7 @@ h3 {
 .credit-card,
 .cta-card,
 .app-window,
-.demo-frame,
-.product-loop {
+.demo-frame {
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--panel);
@@ -412,23 +416,23 @@ h3 {
 
 .app-window {
   position: absolute;
-  width: min(100%, 360px);
+  width: min(100%, 326px);
   overflow: hidden;
   transition: transform 260ms ease;
 }
 
 .hero-window-host {
-  top: 9%;
-  left: clamp(-54px, -4vw, -22px);
+  top: 10%;
+  left: clamp(-86px, -5.6vw, -34px);
   transform: rotate(-5deg);
-  opacity: 0.58;
+  opacity: 0.42;
 }
 
 .hero-window-student {
-  right: clamp(-54px, -4vw, -22px);
-  bottom: 9%;
+  right: clamp(-86px, -5.6vw, -34px);
+  bottom: 8%;
   transform: rotate(4deg);
-  opacity: 0.62;
+  opacity: 0.46;
   background: rgba(11, 31, 96, 0.82);
 }
 
@@ -624,15 +628,12 @@ h3 {
   margin-bottom: 14px;
 }
 
-.demo-section {
-  padding-top: 46px;
-}
-
 .demo-section .section-heading {
   display: grid;
-  grid-template-columns: minmax(0, 0.84fr) minmax(280px, 1fr);
-  gap: 28px;
-  align-items: end;
+  grid-template-columns: minmax(0, 0.58fr) minmax(320px, 1fr);
+  gap: clamp(18px, 2.6vw, 30px);
+  align-items: center;
+  margin-bottom: 22px;
 }
 
 .demo-section .section-heading h2,
@@ -644,7 +645,7 @@ h3 {
 
 .demo-frame {
   margin: 0;
-  padding: clamp(16px, 2.6vw, 28px);
+  padding: clamp(14px, 2.2vw, 24px);
   background:
     radial-gradient(circle at 26% 18%, rgba(246, 207, 82, 0.13), transparent 28%),
     var(--panel);
@@ -709,9 +710,8 @@ h3 {
 .demo-video strong {
   width: min(100%, 18ch);
   max-width: 18ch;
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(2rem, 4vw, 3.8rem);
-  line-height: 0.94;
+  font-size: clamp(1.8rem, 3.3vw, 3rem);
+  line-height: 0.98;
   letter-spacing: -0.05em;
   text-wrap: balance;
 }
@@ -794,16 +794,23 @@ h3 {
 .product-loop {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
+  gap: 0;
   margin-top: 24px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .product-loop div {
   display: grid;
   gap: 8px;
   padding: 22px;
-  background: rgba(255, 255, 255, 0.035);
+  background: transparent;
+}
+
+.product-loop div + div {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .product-loop span {
@@ -828,6 +835,12 @@ h3 {
   background:
     radial-gradient(circle at top right, rgba(246, 207, 82, 0.08), transparent 36%),
     var(--panel);
+}
+
+.fellowship-credit-section .credit-card,
+.cta-card {
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: 0 24px 70px rgba(1, 7, 30, 0.18);
 }
 
 .profile-row + .profile-row {
@@ -908,6 +921,11 @@ h3 {
     display: grid;
   }
 
+  .product-loop div + div {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 0;
+  }
+
   .hero-stage {
     min-height: 660px;
   }
@@ -966,8 +984,18 @@ h3 {
   }
 
   .hero-title {
-    font-size: clamp(3rem, 12vw, 4.4rem);
+    font-size: clamp(2.7rem, 10.8vw, 3.75rem);
     line-height: 0.95;
+  }
+
+  .hero-wordmark-wrap,
+  .hero-copy {
+    max-width: 100%;
+  }
+
+  .hero-text,
+  .hero-copy {
+    overflow-wrap: anywhere;
   }
 
   .word-momentum-row {
@@ -987,6 +1015,7 @@ h3 {
 
   section {
     padding: 50px 0;
+    scroll-margin-top: 24px;
   }
 
   .site-nav {
@@ -999,6 +1028,7 @@ h3 {
   .feature-topline p,
   .hero-label {
     letter-spacing: 0.08em;
+    text-wrap: balance;
   }
 
   .hero-copy {
@@ -1021,17 +1051,25 @@ h3 {
 
   .brand,
   .site-nav {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
   .site-nav {
     width: 100%;
     display: flex;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 4px;
     overflow-x: auto;
     padding-bottom: 2px;
     scrollbar-width: none;
+    font-size: 0.78rem;
+  }
+
+  .site-nav a {
+    flex: 0 0 auto;
+    padding: 7px 6px;
+    white-space: nowrap;
   }
 
   .feature-card,

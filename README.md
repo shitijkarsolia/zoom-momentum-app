@@ -140,6 +140,8 @@ All real-time communication uses the Zoom SDK's `sendMessage` / `onMessage`:
 
 The app runs on an **EC2 instance** at `zoom.shitijmathur.tech` with HTTPS.
 
+For the separate static Vercel websites (`nextlab-zoom-fellows` and `zoom-momentum`), see [`docs/static-websites-progress.md`](docs/static-websites-progress.md).
+
 ### Zoom Marketplace Configuration
 
 The Zoom App is registered and configured on [marketplace.zoom.us](https://marketplace.zoom.us):
@@ -255,7 +257,9 @@ zoom-momentum/
       schema.prisma                # Database schema
 
   mock-transcript/                 # Dev-only mock RTMS service
-  product-page/                    # Marketing landing page
+  product-page/                    # Older marketing source material
+  nextlab-zoom-fellows/            # Static Vercel site: fellows hub
+  zoom-momentum/                   # Static Vercel site: product page
 ```
 
 ## Tech Stack
