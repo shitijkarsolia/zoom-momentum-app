@@ -78,50 +78,50 @@ Record at highest quality (4K if your display supports it).
 
 ## Demo Script
 
-Target length: ~5-7 minutes in one take. You're recording both screens simultaneously on one display and narrating live. Keep it conversational — you're showing something you built.
+Target length: ~5-7 minutes in one take. You're recording both screens simultaneously on one display and narrating live. Talk like you're showing a friend what you built — not presenting to a panel.
 
-### Intro — Who You Are + What This Is (0:00 – 0:40)
+### Intro — The Problem + What You Built (0:00 – 0:50)
 
 **Show**: Full desktop with both Zoom windows visible, lecture not yet playing
 
 **Narrate**:
-> "Hey, I'm [Your Name] — I'm a [your role, e.g., CS student at ASU / software engineer]. This is Zoom Momentum, a project I built for the Next Lab Zoom Fellowship."
+> "Hey, I'm [Your Name], and this is Zoom Momentum — something I built for the Next Lab Zoom Fellowship."
 
-> "The problem: virtual lectures are passive. Students zone out, miss key terms, and have no way to catch up. Professors can't tell if anyone's following along."
+> "Here's the situation: you're a student in a Zoom lecture. The professor's talking, you're trying to keep up, but you miss a term, you zone out for 30 seconds, and now you're lost. There's no rewind button. There's no one to ask 'what did I miss?' And the professor has no idea that half the class stopped following 10 minutes ago."
 
-> "Zoom Momentum is a side panel app built with the Zoom Apps SDK that turns passive lectures into active learning — in real time. Let me show you how it works."
+> "Zoom Momentum fixes that. It's a side panel that lives right inside the Zoom meeting — it listens to the lecture, pulls out the key topics and terms in real time, translates everything for international students, and gives the professor tools to actually check if people are keeping up. Let me show you."
 
 *[Pause 2s]*
 
-### Scene 1 — Starting the Lecture (0:40 – 1:20)
+### Scene 1 — Starting the Lecture (0:50 – 1:30)
 
-**Show**: Professor side (switch to Professor scene or keep full desktop)
+**Show**: Professor side
 
 *[Show the Welcome screen briefly — "You are the host of this session"]*
 *[Click "Open Dashboard"]*
 
 **Narrate**:
-> "On the professor side, you get three tools: Pulse for live polls, Arena for trivia games, and Anchor for AI-powered lecture analysis."
+> "So this is what the professor sees. Three tabs — Pulse for quick polls, Arena for trivia games, and Anchor which is the AI engine that does the heavy lifting."
 
 *[Click the Anchor tab, click Start AI]*
 *[Start screen sharing the lecture video with audio]*
 
-> "I'm sharing a lecture video with audio. Zoom's RTMS captures the speech and sends it to our app. The AI processes the transcript every 10 seconds — extracting topics, key terms, and glossary entries automatically."
+> "Once I start the AI and share the lecture audio, it starts transcribing and analyzing everything being said. Every 10 seconds it looks at what was just discussed and pulls out topics, definitions, and key terms — completely automatically."
 
 *[Wait for transcript to flow and a topic to appear — speed up in post if needed]*
 
 **Timing note**: Let the lecture run for at least 60-90 seconds before moving to Scene 2. The AI needs enough transcript content to extract meaningful topics and glossary terms. Skip to a section with dense academic content for best results.
 
-### Scene 2 — Student Timeline + Glossary (1:20 – 2:30)
+### Scene 2 — Student Timeline + Glossary (1:30 – 2:30)
 
 **Show**: Student side
 
 **Narrate**:
-> "On the student side, topics appear automatically as the lecture progresses. Each one has bullet-point takeaways."
+> "Now here's what the student sees. As the professor talks, these topic cards just appear — each one is a summary of what was just covered, with bullet points."
 
 *[Show Timeline tab with topics, click one to expand]*
 
-> "The Glossary tab collects every technical term mentioned. Students can search and add terms to their notes."
+> "And over here in the Glossary — every technical term the professor mentions gets defined automatically. If I want to save one for later, I just hit '+ Note' and it goes into my personal notes."
 
 *[Switch to Glossary tab, type a search, click "+ Note" on an entry]*
 
@@ -130,31 +130,32 @@ Target length: ~5-7 minutes in one take. You're recording both screens simultane
 **Show**: Student side — Transcript tab
 
 **Narrate**:
-> "The transcript streams live with glossary terms highlighted. But here's where it gets powerful for international students."
+> "This is the live transcript — everything the professor says, streaming in real time. Glossary terms are highlighted so you can spot them."
+
+*[Show transcript scrolling with highlighted terms]*
+
+> "Now imagine you're an international student and English isn't your first language. Watch this."
 
 *[Click language dropdown]*
-
-> "Pick a language — the entire transcript translates live."
-
 *[Select Español, pause 3s]*
 
-> "Every segment is translated once on the server and cached. Thirty students on Spanish means one AI call, not thirty."
+> "The whole transcript just switched to Spanish. And this isn't running a separate AI call for every student — it translates each segment once on the server and caches it. So if 30 students pick Spanish, it's still just one AI call."
 
 *[Switch to 中文, pause 3s]*
 *[Switch to العربية, pause 3s]*
 
-> "Arabic renders right-to-left automatically."
+> "Chinese, Arabic — and notice Arabic flips to right-to-left automatically."
 
 *[Switch back to English — instant]*
 
-> "English is instant — no AI call needed."
+> "Switching back to English is instant since it's the original."
 
 ### Scene 4 — Pulse: AI-Powered Polls (3:30 – 4:30)
 
 **Show**: Full desktop (both sides visible)
 
 **Narrate**:
-> "When the professor wants to check understanding, they open Pulse."
+> "Okay so the professor's been lecturing for a few minutes. They want to know — did people actually get that? They open Pulse."
 
 *[Professor side: click Pulse tab, type context, click "Generate Check-In"]*
 
@@ -164,20 +165,20 @@ Other good options depending on where the lecture is:
 - `"Check if students can explain the main topic covered"`
 - `"Are students clear on the terminology introduced?"`
 
-> "AI generates a contextual poll. The professor reviews it and launches."
+> "They type a quick note about what to check, hit generate, and the AI creates a poll based on what was actually just said in the lecture. They can edit it, then launch."
 
 *[Click "Launch Poll"]*
 *[Student side: show poll appearing, select an option, submit]*
 *[Professor side: show bar chart filling in live as bots + you respond]*
 
-> "Results come in real time — the professor sees exactly where students are."
+> "Students get the poll instantly, tap their answer, and the professor sees results filling in live. No more 'does everyone understand?' followed by silence."
 
 ### Scene 5 — Arena: Timed Trivia Game (4:30 – 5:40)
 
 **Show**: Full desktop
 
 **Narrate**:
-> "Arena turns review into a competitive game."
+> "Now if the professor wants to make review actually fun — there's Arena. It's basically a timed quiz game."
 
 *[Professor side: click Arena tab, enter topic, generate quiz]*
 
@@ -187,15 +188,17 @@ Other good options:
 - Use the latest topic title from the Timeline
 - `"Key concepts from the lecture so far"`
 
+> "Pick a topic, generate questions — the AI writes them based on the lecture content. The professor can review and edit, then start the game."
+
 *[Show question review screen briefly, click "Start Game"]*
 
 *[Student side: show countdown, answer questions]*
 
-> "Students get timed questions. Speed and accuracy both matter."
+> "Students get a countdown timer, they lock in their answer, and they're scored on both accuracy and speed."
 
 *[Show leaderboard after final question — bot names competing with you]*
 
-> "A live leaderboard ranks everyone. It's competitive, fun, and reinforces the material."
+> "After each round there's a leaderboard. It's competitive, people actually pay attention, and it reinforces what was just taught."
 
 ### Scene 6 — Bookmarks + Notes (5:40 – 6:20)
 
@@ -204,12 +207,12 @@ Other good options:
 *[Switch to Timeline, click Bookmark on a topic]*
 
 **Narrate**:
-> "Students can bookmark topics. The AI also auto-bookmarks moments when the professor says 'this is important.'"
+> "Students can bookmark any topic they want to come back to. And the AI also auto-bookmarks moments where the professor says things like 'this will be on the exam' or 'pay attention to this.'"
 
 *[Show Bookmarks tab]*
 *[Switch to Notes tab]*
 
-> "Everything captured goes into Notes — downloadable as Markdown."
+> "Everything you've saved — bookmarks, glossary terms, your own typed notes — it's all here. You can download it as Markdown when you're done."
 
 ### Scene 7 — End of Class + Recovery Pack (6:20 – 7:00)
 
@@ -218,20 +221,20 @@ Other good options:
 *[Professor side: click "End Class"]*
 
 **Narrate**:
-> "When the professor ends the session, students get a personalized Recovery Pack."
+> "When the professor ends the session, every student gets a personalized Recovery Pack."
 
 *[Student side: show stats cards, then recovery pack generating]*
 
-> "AI generates a study guide based on what each student bookmarked — explanations, practice problems, and resources. Every student gets a different pack."
+> "It looks at what you bookmarked, what topics were covered, and generates a custom study guide — explanations, practice questions, suggested resources. Two students who bookmarked different things get completely different packs."
 
 *[Scroll through recovery pack items]*
 
-### Closing (7:00 – 7:20)
+### Closing (7:00 – 7:15)
 
 **Narrate**:
-> "Zoom Momentum — real-time AI analysis, live multilingual support, interactive polls and games, personalized study materials. All inside the Zoom meeting, no extra apps needed. Built with the Zoom Apps SDK, React, Express, and Claude AI."
+> "That's Zoom Momentum — it lives inside the meeting, no extra apps, no extra tabs. The professor gets real-time feedback, students get real-time support, and everyone walks away with something useful. Thanks for watching."
 
-*[Pause 2s, fade out or stop recording]*
+*[Stop recording]*
 
 ---
 
