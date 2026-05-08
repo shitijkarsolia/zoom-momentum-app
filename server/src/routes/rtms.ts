@@ -9,12 +9,25 @@ import {
 
 export const rtmsRouter = Router();
 
+let pendingMeetingId: string | null = null;
+
+export function consumePendingMeetingId(): string | null {
+  const id = pendingMeetingId;
+  pendingMeetingId = null;
+  return id;
+}
+
 // ---------------------------------------------------------------------------
 // Webhook HMAC signature verification
 // ---------------------------------------------------------------------------
 
+function getRtmsSecret(): string {
+  const token = config.zoom_secret_token;
+  return token && token.trim().length > 0 ? token : config.zoom.clientSecret;
+}
+
 function verifyWebhookSignature(req: { headers: Record<string, any>; body: any }): boolean {
-  const secret = config.zoom_secret_token || config.zoom.clientSecret;
+  const secret = getRtmsSecret();
 
   const signature = req.headers['x-zm-signature'] as string | undefined;
   const timestamp = req.headers['x-zm-request-timestamp'] as string | undefined;
@@ -62,7 +75,7 @@ rtmsRouter.post('/webhook', async (req, res) => {
     }
 
     const hashForValidate = crypto
-      .createHmac('sha256', config.zoom_secret_token || config.zoom.clientSecret)
+      .createHmac('sha256', getRtmsSecret())
       .update(plainToken)
       .digest('hex');
 
@@ -87,9 +100,15 @@ rtmsRouter.post('/webhook', async (req, res) => {
 
   try {
     switch (event) {
-      case 'meeting.rtms_started':
+      case 'meeting.rtms_started': {
+        const clientMeetingId = consumePendingMeetingId();
+        if (clientMeetingId && clientMeetingId !== payload.meeting_uuid) {
+          console.log(`[rtms] Mapping webhook UUID ${payload.meeting_uuid} → client meeting ${clientMeetingId}`);
+          payload.meeting_uuid = clientMeetingId;
+        }
         await startRTMSSession(payload);
         break;
+      }
 
       case 'meeting.rtms_stopped':
         await stopRTMSSession(payload?.meeting_uuid);
@@ -114,4 +133,20 @@ rtmsRouter.get('/health', (_req, res) => {
     activeSessions: sessions.size,
     meetings: Array.from(sessions.keys()),
   });
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/rtms/start — Client registers its meeting ID before calling startRTMS
+// The next rtms_started webhook will be mapped to this meeting ID
+// ---------------------------------------------------------------------------
+
+rtmsRouter.post('/start', (req, res) => {
+  const { meetingId } = req.body;
+  if (!meetingId) {
+    res.status(400).json({ error: 'meetingId is required' });
+    return;
+  }
+  pendingMeetingId = meetingId;
+  console.log(`[rtms] Client registered pending meeting: ${meetingId}`);
+  res.json({ status: 'ok' });
 });

@@ -3,10 +3,12 @@ import type { Topic } from '../../types/messages';
 interface TopicCardProps {
   topic: Topic;
   isCurrent: boolean;
+  isBookmarked?: boolean;
   onBookmark?: () => void;
+  onAddToNotes?: () => void;
 }
 
-export function TopicCard({ topic, isCurrent, onBookmark }: TopicCardProps) {
+export function TopicCard({ topic, isCurrent, isBookmarked, onBookmark, onAddToNotes }: TopicCardProps) {
   const elapsed = Math.round((Date.now() - topic.startTime) / 60_000);
   const timeLabel = elapsed < 1 ? 'Just now' : `${elapsed}m ago`;
 
@@ -19,6 +21,20 @@ export function TopicCard({ topic, isCurrent, onBookmark }: TopicCardProps) {
         <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
           {isCurrent && <span className="current-indicator" />}
           {topic.title}
+          {isCurrent && (
+            <span style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: '#fff',
+              background: 'var(--zoom-blue, #0E71EB)',
+              padding: '1px 6px',
+              borderRadius: 8,
+              marginLeft: 6,
+              verticalAlign: 'middle',
+            }}>
+              NOW
+            </span>
+          )}
         </h3>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {topic.bullets.length > 0 && (
@@ -45,14 +61,29 @@ export function TopicCard({ topic, isCurrent, onBookmark }: TopicCardProps) {
           ))}
         </ul>
       )}
-      {onBookmark && (
-        <button
-          className="btn btn-secondary"
-          style={{ marginTop: 8, fontSize: 12, padding: '4px 10px' }}
-          onClick={onBookmark}
-        >
-          Bookmark
-        </button>
+      {(onBookmark || onAddToNotes) && (
+        <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {onBookmark && (
+            <button
+              className={`btn ${isBookmarked ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: 11, padding: '3px 10px' }}
+              onClick={onBookmark}
+              disabled={isBookmarked}
+            >
+              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+            </button>
+          )}
+          {onAddToNotes && (
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: 11, padding: '3px 10px' }}
+              onClick={onAddToNotes}
+              aria-label={`Add topic ${topic.title} to your notes`}
+            >
+              + Note
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

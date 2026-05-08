@@ -35,11 +35,11 @@ export function PollCreator({
         </p>
 
         <div className="poll-context-input">
-          <label htmlFor="poll-context">Context (optional)</label>
+          <label htmlFor="poll-context">Context (recommended)</label>
           <input
             id="poll-context"
             type="text"
-            placeholder="e.g., 'We just covered the chain rule'"
+            placeholder="e.g., 'Did everyone understand the concept of arrays?'"
             value={context}
             onChange={e => setContext(e.target.value)}
             disabled={phase === 'generating'}

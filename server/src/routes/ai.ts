@@ -1,23 +1,12 @@
 import { Router } from 'express';
-import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
-import { config } from '../config.js';
-
-const bedrock = new BedrockRuntimeClient({ region: config.aws.region });
-const MODEL_ID = 'meta.llama3-70b-instruct-v1:0';
-
-async function callAI(prompt: string, opts?: { temperature?: number; maxTokens?: number }): Promise<string> {
-  const resp = await bedrock.send(new ConverseCommand({
-    modelId: MODEL_ID,
-    messages: [{ role: 'user', content: [{ text: prompt }] }],
-    inferenceConfig: {
-      maxTokens: opts?.maxTokens ?? 1000,
-      temperature: opts?.temperature ?? 0.7,
-    },
-  }));
-  return resp.output?.message?.content?.[0]?.text ?? '';
-}
+import { callAI } from '../ai-client.js';
 
 export const aiRouter = Router();
+
+/** Sanitize user input before interpolating into AI prompts */
+function sanitizeInput(text: string, maxLen: number): string {
+  return text.replace(/[`\\]/g, '').slice(0, maxLen).trim();
+}
 
 /** Extract JSON from a response that may contain markdown fences or conversational text */
 function extractJSON(text: string): any {
@@ -34,25 +23,52 @@ function extractJSON(text: string): any {
 // ────────────────── Poll Generate ──────────────────
 
 aiRouter.post('/poll-generate', async (req, res) => {
-  const { context, currentTopic } = req.body;
+  const context = sanitizeInput(req.body.context ?? '', 500);
+  const currentTopic = sanitizeInput(req.body.currentTopic ?? '', 200);
+  const transcript = sanitizeInput(req.body.transcript ?? '', 2000);
+  const topicBullets = Array.isArray(req.body.topicBullets)
+    ? req.body.topicBullets.map((b: string) => sanitizeInput(b, 200)).slice(0, 6)
+    : [];
 
   try {
+    const hasBullets = topicBullets.length > 0;
+    const hasTranscript = transcript.length > 20;
+
+    const hasContext = currentTopic || hasBullets || hasTranscript || context;
+
+    // No lecture context — return a static engagement question instead of hallucinating
+    if (!hasContext) {
+      const fallbacks = [
+        { question: 'Did everyone follow the concept from the last class?', options: ['Yes, completely', 'Mostly, a few gaps', 'Not really', 'I need a recap'] },
+        { question: 'How confident are you with the material so far?', options: ['Very confident', 'Somewhat confident', 'A bit lost', 'Completely lost'] },
+        { question: 'Would you like me to slow down or speed up?', options: ['Slow down please', 'Pace is perfect', 'Speed up a bit', 'Can we revisit something?'] },
+        { question: 'How would you rate your understanding of today\'s topic?', options: ['Solid understanding', 'Getting there', 'Struggling a bit', 'Need more examples'] },
+        { question: 'What would help you most right now?', options: ['More examples', 'A quick recap', 'Practice problems', 'Move to next topic'] },
+      ];
+      const pick = fallbacks[Math.floor(Math.random() * fallbacks.length)]!;
+      res.json({ question: pick.question, options: pick.options, fallback: true });
+      return;
+    }
+
     const prompt = `You are an AI assistant for a live classroom engagement tool. Generate a single multiple-choice check-in poll question that a professor can ask students during a lecture.
 
-${currentTopic ? `The lecture is currently covering: "${currentTopic}"` : 'The professor has not specified the current topic.'}
+${currentTopic ? `The lecture is currently covering: "${currentTopic}"` : ''}
+${hasBullets ? `Key points covered so far:\n${topicBullets.map((b: string) => `- ${b}`).join('\n')}` : ''}
+${hasTranscript ? `Recent transcript from the lecture:\n"${transcript.slice(0, 1000)}"` : ''}
 ${context ? `The professor adds this context: "${context}"` : ''}
 
-Your job is to create a question that helps the professor gauge how well students are following the material. The question should be directly relevant to whatever subject is being taught.
+Your job is to create a question that tests whether students understood what was just taught. The question MUST be specific to the actual content — reference facts, examples, or concepts from the transcript and bullets above.
 
 Respond with ONLY a JSON object — no markdown, no explanation:
 {"question": "...", "options": ["option1", "option2", "option3", "option4"]}
 
 Requirements:
 - Exactly 4 answer options
-- Each option under 10 words
-- If a topic is provided, make the question specific to that topic
-- If no topic is given, ask a general engagement/comprehension question
-- The question must work for any academic subject`;
+- Each option under 15 words
+- Question must reference specific content from the lecture (not generic)
+- Base the question on concrete details actually mentioned
+- One option should be clearly correct, others plausible but wrong
+- Do NOT invent or assume any topic — only use what is provided above`;
 
     const content = await callAI(prompt, { temperature: 0.7, maxTokens: 300 });
     const parsed = extractJSON(content);
@@ -70,45 +86,59 @@ Requirements:
 // ────────────────── Topic Segment ──────────────────
 
 aiRouter.post('/topic-segment', async (req, res) => {
-  const { transcript, previousTopic } = req.body;
+  const transcript = sanitizeInput(req.body.transcript ?? '', 5000);
+  const previousTopic = sanitizeInput(req.body.previousTopic ?? '', 200);
 
-  if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 20) {
+  if (transcript.length < 20) {
     return res.json({ topicChanged: false, topic: null, glossaryTerms: [] });
   }
 
   try {
-    const prompt = `You are an AI assistant that analyzes live lecture transcripts in real time. Your job is to identify the current topic being discussed and extract key terms for a student-facing sidebar.
+    const prompt = `You are an AI assistant analyzing a live university lecture transcript. Your job is to help students follow along by identifying what's being taught and extracting useful study material.
 
 ${previousTopic ? `The previous topic was: "${previousTopic}"` : 'This is the beginning of the lecture.'}
 
 Here is the most recent transcript excerpt:
 "${transcript.slice(0, 2000)}"
 
-Analyze this and respond with ONLY a JSON object — no markdown, no explanation:
+Respond with ONLY a JSON object — no markdown, no explanation:
 {
   "topicChanged": true or false,
   "topic": {
-    "title": "Concise topic title (3-6 words)",
-    "bullets": ["Key takeaway 1", "Key takeaway 2", "Key takeaway 3"]
+    "title": "Descriptive topic title (e.g., 'How Computers Represent Text Using ASCII')",
+    "bullets": ["Specific fact or concept explained", "Example the professor gave", "Key insight or takeaway"]
   },
   "glossaryTerms": [
-    {"term": "Term", "definition": "Brief definition", "formula": "formula if applicable, otherwise null"}
+    {"term": "Term", "definition": "Clear, study-worthy definition (1-2 sentences)", "formula": "formula if applicable, otherwise null"}
   ]
 }
 
 Guidelines:
-- Set topicChanged to true only if the lecturer clearly shifted to a new subject or sub-topic
-- Even when topicChanged is false, update the bullets to reflect the latest content
-- Include 2-4 concise bullet points summarizing the current discussion
-- Extract 0-3 technical terms, definitions, or formulas that were mentioned
-- The formula field is optional — include only for STEM subjects where applicable
-- Keep all text concise — this is rendered in a narrow sidebar panel
-- This must work for ANY academic subject (science, history, literature, business, etc.)`;
+- Set topicChanged to true only if the lecturer clearly shifted to a NEW substantive academic subject
+- Set topicChanged to false if the transcript contains ANY of: small talk, greetings, technical setup issues, audio checks, administrative remarks, personal comments (e.g. being hungry, tired), off-topic conversation, or casual discussion that is not lecture material
+- If the content is not academic or educational, return {"topicChanged": false, "topic": null, "glossaryTerms": []}
+- NEVER create topics about: microphone/audio setup, greetings, attendance, personal remarks, or class logistics
+- Topic title should be descriptive enough that a student can recall what was covered (8-12 words)
+- Bullets must be SPECIFIC to what was actually said — not generic summaries
+  - Good: "ASCII uses 7-8 bits to represent 128-256 characters including letters, digits, and symbols"
+  - Bad: "Computers use binary to represent characters"
+  - Good: "Professor demonstrated counting to 7 using 3 bits with volunteer fingers"
+  - Bad: "Binary representation was discussed"
+- Include concrete examples, numbers, or analogies the professor used
+- Include 2-4 bullets per topic
+- Glossary definitions should be detailed enough to study from — not just 2-3 words
+  - Good: "ASCII — American Standard Code for Information Interchange. A character encoding standard that maps numbers (0-127) to letters, digits, punctuation, and control characters. For example, 'A' = 65, 'a' = 97."
+  - Bad: "ASCII — Character encoding standard"
+- Extract 0-3 glossary terms that were actually explained in the transcript
+- Keep text concise but informative — this renders in a narrow sidebar panel`;
 
     const content = await callAI(prompt, { temperature: 0.3, maxTokens: 600 });
     const parsed = extractJSON(content);
-    if (typeof parsed.topicChanged !== 'boolean' || !parsed.topic?.title) {
-      throw new Error('Invalid topic-segment format from AI');
+
+    // AI returns null topic for non-academic content — that's valid
+    if (!parsed.topic || !parsed.topic.title) {
+      res.json({ topicChanged: false, topic: null, glossaryTerms: [] });
+      return;
     }
 
     res.json({
@@ -121,22 +151,16 @@ Guidelines:
     });
   } catch (err) {
     console.error('[ai] topic-segment error:', err);
-    const words = transcript.split(/\s+/);
-    const title = previousTopic || 'Lecture in Progress';
-    res.json({
-      topicChanged: false,
-      topic: { title, bullets: [`Discussing: ${words.slice(0, 8).join(' ')}…`] },
-      glossaryTerms: [],
-      fallback: true,
-    });
+    res.status(500).json({ error: 'Topic analysis failed' });
   }
 });
 
 // ────────────────── Quiz Generate ──────────────────
 
 aiRouter.post('/quiz-generate', async (req, res) => {
-  const { transcript, topic, questionCount } = req.body;
-  const count = Math.min(questionCount ?? 5, 10);
+  const transcript = sanitizeInput(req.body.transcript ?? '', 5000);
+  const topic = sanitizeInput(req.body.topic ?? '', 200);
+  const count = Math.min(req.body.questionCount ?? 5, 10);
 
   try {
     const hasContext = topic || transcript;
@@ -182,10 +206,16 @@ aiRouter.post('/recovery-pack', async (req, res) => {
     return;
   }
 
+  if (bookmarks.length > 50) {
+    res.status(400).json({ error: 'Too many bookmarks (max 50)' });
+    return;
+  }
+
   try {
     const bookmarkSummary = bookmarks
+      .slice(0, 50)
       .map((b: { topic: string; timestamp: number }, i: number) =>
-        `${i + 1}. "${b.topic}" (bookmarked at ${new Date(b.timestamp).toLocaleTimeString()})`)
+        `${i + 1}. "${sanitizeInput(b.topic ?? '', 200)}" (bookmarked at ${new Date(b.timestamp).toLocaleTimeString()})`)
       .join('\n');
 
     const topicSummary = Array.isArray(topics)
@@ -226,9 +256,9 @@ Requirements:
 // ────────────────── Detect Cues ──────────────────
 
 aiRouter.post('/detect-cues', async (req, res) => {
-  const { transcript } = req.body;
+  const transcript = sanitizeInput(req.body.transcript ?? '', 2000);
 
-  if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 20) {
+  if (transcript.length < 20) {
     return res.json({ hasCue: false, cues: [] });
   }
 

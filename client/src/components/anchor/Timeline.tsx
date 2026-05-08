@@ -4,21 +4,23 @@ import { TopicCard } from './TopicCard';
 interface TimelineProps {
   topics: Topic[];
   currentTopicId: string;
-  onBookmark?: (topicId: string) => void;
+  bookmarkedTopics?: Set<string>;
+  onBookmark?: (topicTitle: string) => void;
+  onAddToNotes?: (topic: Topic) => void;
 }
 
-export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) {
+export function Timeline({ topics, currentTopicId, bookmarkedTopics, onBookmark, onAddToNotes }: TimelineProps) {
   // Show newest first
   const sorted = [...topics].sort((a, b) => b.startTime - a.startTime);
 
   if (sorted.length === 0) {
     return (
       <div>
-        <h2 className="card-title">Live Anchor</h2>
         <div className="empty-state">
-          <div className="empty-state-icon">&#9776;</div>
-          <p className="empty-state-text">
-            Topic summaries will appear here as the lecture progresses.
+          <div className="empty-state-icon" style={{ fontSize: 28, opacity: 0.5 }}>&#128203;</div>
+          <p className="empty-state-text">No topics yet</p>
+          <p style={{ fontSize: 11, color: 'var(--zoom-text-secondary)', margin: '4px 0 0' }}>
+            Topics will appear as your professor lectures.
           </p>
         </div>
       </div>
@@ -27,15 +29,19 @@ export function Timeline({ topics, currentTopicId, onBookmark }: TimelineProps) 
 
   return (
     <div>
-      <h2 className="card-title">Live Anchor</h2>
-      <div className="timeline-list">
+      <div className="timeline-list timeline-connector">
         {sorted.map(topic => (
-          <TopicCard
+          <div key={topic.id} className="timeline-item">
+            <div className={`timeline-dot ${topic.id === currentTopicId ? 'timeline-dot-current' : ''}`} />
+            <TopicCard
             key={topic.id}
             topic={topic}
             isCurrent={topic.id === currentTopicId}
-            onBookmark={onBookmark ? () => onBookmark(topic.id) : undefined}
+            isBookmarked={bookmarkedTopics?.has(topic.title)}
+            onBookmark={onBookmark ? () => onBookmark(topic.title) : undefined}
+            onAddToNotes={onAddToNotes ? () => onAddToNotes(topic) : undefined}
           />
+          </div>
         ))}
       </div>
     </div>

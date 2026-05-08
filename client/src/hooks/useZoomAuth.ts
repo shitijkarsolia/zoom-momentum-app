@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import zoomSdk from '@zoom/appssdk';
+
+const zoomSdk = (window as any).zoomSdk as any | undefined;
 
 interface AuthState {
   user: { id: string; displayName: string; email: string; role: string } | null;
@@ -35,6 +36,15 @@ export function useZoomAuth() {
   }, []);
 
   const login = useCallback(async () => {
+    if (!zoomSdk) {
+      setAuth((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: 'Sign-in requires the Zoom app (not available in demo mode)',
+      }));
+      return;
+    }
+
     try {
       setAuth((prev) => ({ ...prev, isLoading: true, error: null }));
 

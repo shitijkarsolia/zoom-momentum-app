@@ -1,14 +1,16 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db.js';
 import { resolveMeetingId } from '../services/meeting-resolver.js';
-
-const prisma = new PrismaClient();
 export const bookmarkRouter = Router();
 
 // POST /api/bookmarks — Create a bookmark
 bookmarkRouter.post('/', async (req, res) => {
   try {
-    const { userId, meetingId, timestamp, topic, transcriptSnippet, isAuto } = req.body;
+    const sessionUserId = req.session?.userId;
+    const { meetingId, timestamp, topic, transcriptSnippet, isAuto } = req.body;
+
+    // Use session userId if authenticated, fall back to body userId for unauthenticated auto-bookmarks
+    const userId = sessionUserId || req.body.userId;
 
     if (!userId || !meetingId || !topic) {
       res.status(400).json({ error: 'userId, meetingId, and topic are required' });
@@ -51,13 +53,14 @@ bookmarkRouter.post('/', async (req, res) => {
   }
 });
 
-// GET /api/bookmarks?meetingId=xxx&userId=xxx — Get bookmarks for a meeting
+// GET /api/bookmarks?meetingId=xxx — Get bookmarks for authenticated user
 bookmarkRouter.get('/', async (req, res) => {
   try {
-    const { meetingId, userId } = req.query as { meetingId?: string; userId?: string };
+    const { meetingId } = req.query as { meetingId?: string };
+    const userId = req.session?.userId || (req.query.userId as string);
 
     if (!meetingId || !userId) {
-      res.status(400).json({ error: 'meetingId and userId are required' });
+      res.status(400).json({ error: 'meetingId is required' });
       return;
     }
 

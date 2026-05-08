@@ -12,16 +12,16 @@ export type MessageType =
   | 'ARENA_END'
   // Live Anchor
   | 'TOPIC_UPDATE'
-  | 'BULLET_UPDATE'
   | 'GLOSSARY_UPDATE'
   // Professor's Pulse
   | 'POLL_START'
   | 'POLL_RESPONSE'
   | 'POLL_RESULTS'
-  // Zoom SDK Events
-  | 'LATE_JOIN_SUMMARY'
+  // Events
   | 'SPEAKER_SPOTLIGHT'
-  | 'AUTO_BOOKMARK';
+  | 'AUTO_BOOKMARK'
+  | 'CLASS_END'
+  | 'MEETING_RESET';
 
 export interface AppMessage {
   type: MessageType;
