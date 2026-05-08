@@ -1,77 +1,143 @@
 /**
  * Mock Transcript Service
  *
- * Simulates RTMS transcript output by POSTing transcript chunks
- * to the backend at regular intervals. Used for local development
- * so Live Anchor, Glossary, Auto-Bookmarks, and Recovery Agent
- * can be built without a live Zoom meeting.
+ * Fetches a real CS50 lecture transcript (SRT) from Harvard's CDN
+ * and POSTs chunks to the backend at regular intervals. Used for
+ * local development so Live Anchor, Glossary, Auto-Bookmarks, and
+ * Recovery Agent can be tested with realistic lecture content.
  *
  * Usage: npm run dev -w mock-transcript
  */
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:3001';
 const MEETING_ID = process.env.MOCK_MEETING_ID ?? 'mock-meeting-001';
-const INTERVAL_MS = 3000; // Emit one chunk every 3 seconds
+const INTERVAL_MS = 3000;
+const SRT_URL = 'https://cdn.cs50.net/2023/fall/lectures/0/lang/en/lecture0.srt';
 
-// Sample lecture transcript (math lecture on derivatives)
-const TRANSCRIPT_CHUNKS = [
-  { speaker: 'Professor', text: "Alright everyone, let's get started. Today we're going to talk about derivatives." },
-  { speaker: 'Professor', text: 'A derivative measures how a function changes as its input changes.' },
-  { speaker: 'Professor', text: "Think of it as the slope of the tangent line at any point on a curve." },
-  { speaker: 'Professor', text: "The formal definition uses limits. We write f prime of x equals the limit as h approaches zero of f of x plus h minus f of x, all divided by h." },
-  { speaker: 'Professor', text: "Let's start with a simple example. If f of x equals x squared, what's the derivative?" },
-  { speaker: 'Professor', text: "Using the power rule, we bring down the exponent and subtract one. So f prime of x equals 2x." },
-  { speaker: 'Professor', text: "The power rule is one of the most important rules you'll learn. For any function x to the n, the derivative is n times x to the n minus 1." },
-  { speaker: 'Professor', text: "Now let's move on to a new topic — the chain rule." },
-  { speaker: 'Professor', text: "The chain rule is used when you have a composition of functions, like f of g of x." },
-  { speaker: 'Professor', text: "The chain rule says: the derivative of f of g of x equals f prime of g of x times g prime of x." },
-  { speaker: 'Professor', text: "This is really important for the exam, make sure you understand this concept." },
-  { speaker: 'Professor', text: "Let me give you an example. If h of x equals the square root of 3x plus 1..." },
-  { speaker: 'Professor', text: "We can rewrite this as 3x plus 1 to the power of one half." },
-  { speaker: 'Professor', text: "The outer function is u to the one half, and the inner function is 3x plus 1." },
-  { speaker: 'Professor', text: "Applying the chain rule: one half times 3x plus 1 to the negative one half, times 3." },
-  { speaker: 'Professor', text: "Which simplifies to 3 over 2 times the square root of 3x plus 1." },
-];
+interface Chunk {
+  speaker: string;
+  text: string;
+}
+
+function parseSRT(srt: string): Chunk[] {
+  const lines = srt.split('\n');
+  const rawTexts: string[] = [];
+  let current: string[] = [];
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    // Skip sequence numbers, timestamps, empty lines
+    if (!line || /^\d+$/.test(line) || /^\d{2}:\d{2}/.test(line)) {
+      if (current.length) {
+        const text = current.join(' ');
+        // Skip pure sound effects like [MUSIC PLAYING]
+        if (!/^\[.*\]$/.test(text)) {
+          const cleaned = text.replace(/\[.*?\]\s*/g, '').trim();
+          if (cleaned.length > 5) rawTexts.push(cleaned);
+        }
+        current = [];
+      }
+      continue;
+    }
+    current.push(line);
+  }
+  if (current.length) {
+    const text = current.join(' ').replace(/\[.*?\]\s*/g, '').trim();
+    if (text.length > 5) rawTexts.push(text);
+  }
+
+  // Merge into ~2-3 sentence chunks
+  const merged: string[] = [];
+  let buf = '';
+  for (const t of rawTexts) {
+    buf = buf ? `${buf} ${t}` : t;
+    if (buf.length > 150) {
+      merged.push(buf);
+      buf = '';
+    }
+  }
+  if (buf) merged.push(buf);
+
+  // Skip intro music — find where Malan starts the actual lecture
+  let start = 0;
+  for (let i = 0; i < merged.length; i++) {
+    if (/my name is david/i.test(merged[i])) { start = i; break; }
+    if (/welcome/i.test(merged[i]) && i > 5) { start = i; break; }
+  }
+
+  return merged.slice(start).map((text) => ({
+    speaker: 'Professor Malan',
+    text,
+  }));
+}
 
 let seqNo = 0;
 
-async function emitChunk(chunk: (typeof TRANSCRIPT_CHUNKS)[number]) {
+async function emitChunk(chunk: Chunk, retries = 3) {
   seqNo++;
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/transcript/segment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        meetingId: MEETING_ID,
-        speaker: chunk.speaker,
-        text: chunk.text,
-        timestamp: Date.now(),
-        seqNo,
-      }),
-    });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/transcript/segment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meetingId: MEETING_ID,
+          speaker: chunk.speaker,
+          text: chunk.text,
+          timestamp: Date.now(),
+          seqNo,
+        }),
+      });
 
-    if (res.ok) {
-      console.log(`[mock] #${seqNo} → "${chunk.text.slice(0, 60)}..."`);
-    } else {
-      console.error(`[mock] #${seqNo} failed: ${res.status}`);
+      if (res.ok) {
+        console.log(`[mock] #${seqNo} → "${chunk.text.slice(0, 60)}..."`);
+        return;
+      } else {
+        console.error(`[mock] #${seqNo} failed: ${res.status}`);
+        return;
+      }
+    } catch (err) {
+      if (attempt < retries) {
+        const delay = attempt * 2000;
+        console.warn(`[mock] #${seqNo} attempt ${attempt} failed, retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        console.error(`[mock] #${seqNo} error after ${retries} attempts:`, err);
+      }
     }
-  } catch (err) {
-    console.error(`[mock] #${seqNo} error:`, err);
   }
 }
 
 async function run() {
+  console.log(`[mock-transcript] Fetching CS50 lecture transcript from ${SRT_URL}...`);
+
+  let chunks: Chunk[];
+  try {
+    const res = await fetch(SRT_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const srt = await res.text();
+    chunks = parseSRT(srt);
+    console.log(`[mock-transcript] Parsed ${chunks.length} chunks from SRT`);
+  } catch (err) {
+    console.error('[mock-transcript] Failed to fetch SRT, using fallback:', err);
+    chunks = [
+      { speaker: 'Professor Malan', text: "This is CS50, Harvard University's introduction to the intellectual enterprises of computer science and the art of programming." },
+      { speaker: 'Professor Malan', text: "My name is David Malan. And I actually took this class, CS50, myself back in 1996 as a sophomore." },
+      { speaker: 'Professor Malan', text: "What ultimately matters in this course is not so much where you end up relative to your classmates, but where you end up relative to yourself when you began." },
+    ];
+  }
+
   console.log(`[mock-transcript] Starting — posting to ${BACKEND_URL}`);
   console.log(`[mock-transcript] Meeting ID: ${MEETING_ID}`);
-  console.log(`[mock-transcript] ${TRANSCRIPT_CHUNKS.length} chunks, ${INTERVAL_MS}ms interval\n`);
+  console.log(`[mock-transcript] ${chunks.length} chunks, ${INTERVAL_MS}ms interval\n`);
 
-  for (const chunk of TRANSCRIPT_CHUNKS) {
+  for (const chunk of chunks) {
     await emitChunk(chunk);
     await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS));
   }
 
-  console.log('\n[mock-transcript] All chunks emitted. Restarting in 5s...');
-  setTimeout(run, 5000);
+  console.log('\n[mock-transcript] All chunks emitted. Restarting in 10s...');
+  setTimeout(run, 10_000);
 }
 
 run();

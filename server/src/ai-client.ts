@@ -1,0 +1,81 @@
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+import { config } from './config.js';
+
+const bedrock = new BedrockRuntimeClient({ region: config.aws.region });
+const BEDROCK_MODEL = 'meta.llama3-70b-instruct-v1:0';
+
+export interface AIOptions {
+  temperature?: number;
+  maxTokens?: number;
+  timeout?: number;
+}
+
+async function callCreateAI(prompt: string, model: string, provider: string, opts?: AIOptions): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), opts?.timeout ?? 30000);
+
+  try {
+    const resp = await fetch(config.createAI.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.createAI.token}`,
+      },
+      body: JSON.stringify({
+        query: prompt,
+        request_source: 'override_params',
+        model_name: model,
+        model_provider: provider,
+      }),
+      signal: controller.signal,
+    });
+
+    const data = await resp.json() as { response?: string };
+    if (!data.response) throw new Error(`Empty response from CREATE AI (${model})`);
+    console.log(`[ai] Served by CREATE AI (${model} via ${provider})`);
+    return data.response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function callBedrock(prompt: string, opts?: AIOptions): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), opts?.timeout ?? 15000);
+
+  try {
+    const resp = await bedrock.send(new ConverseCommand({
+      modelId: BEDROCK_MODEL,
+      messages: [{ role: 'user', content: [{ text: prompt }] }],
+      inferenceConfig: {
+        maxTokens: opts?.maxTokens ?? 1000,
+        temperature: opts?.temperature ?? 0.7,
+      },
+    }), { abortSignal: controller.signal });
+    console.log('[ai] Served by Bedrock (Llama 3 70B)');
+    return resp.output?.message?.content?.[0]?.text ?? '';
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function callAI(prompt: string, opts?: AIOptions): Promise<string> {
+  const hasCreateAI = config.createAI.apiUrl && config.createAI.token;
+
+  if (hasCreateAI) {
+    try {
+      return await callCreateAI(prompt, config.createAI.primaryModel, config.createAI.primaryProvider, opts);
+    } catch (err: any) {
+      console.warn(`[ai] ${config.createAI.primaryModel} failed:`, err.message);
+    }
+
+    try {
+      return await callCreateAI(prompt, config.createAI.backupModel, config.createAI.backupProvider, opts);
+    } catch (err: any) {
+      console.warn(`[ai] ${config.createAI.backupModel} failed, falling back to Bedrock:`, err.message);
+    }
+  }
+
+  // Try 3: Bedrock
+  return await callBedrock(prompt, opts);
+}

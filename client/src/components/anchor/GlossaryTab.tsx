@@ -1,19 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GlossaryEntry } from '../../types/messages';
 
 interface GlossaryTabProps {
   glossary: GlossaryEntry[];
+  lang?: string;
+  meetingId?: string;
+  onAddToNotes?: (entry: GlossaryEntry) => void;
 }
 
-export function GlossaryTab({ glossary }: GlossaryTabProps) {
+export function GlossaryTab({ glossary, lang = 'en', meetingId, onAddToNotes }: GlossaryTabProps) {
   const [filter, setFilter] = useState('');
+  const [translatedTerms, setTranslatedTerms] = useState<Array<{ term: string; definition: string }> | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const prevLangRef = useRef(lang);
+  const prevCountRef = useRef(glossary.length);
+
+  useEffect(() => {
+    if (lang === 'en' || !meetingId || glossary.length === 0) {
+      setTranslatedTerms(null);
+      setIsTranslating(false);
+      return;
+    }
+
+    const langChanged = prevLangRef.current !== lang;
+    const countChanged = prevCountRef.current !== glossary.length;
+    prevLangRef.current = lang;
+    prevCountRef.current = glossary.length;
+
+    if (!langChanged && !countChanged && translatedTerms) return;
+
+    if (langChanged) setIsTranslating(true);
+
+    const controller = new AbortController();
+    fetch('/api/transcript/translate-glossary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        meetingId,
+        lang,
+        terms: glossary.map(g => ({ term: g.term, definition: g.definition })),
+      }),
+      signal: controller.signal,
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.terms)) setTranslatedTerms(data.terms);
+        setIsTranslating(false);
+      })
+      .catch(() => {
+        setTranslatedTerms(null);
+        setIsTranslating(false);
+      });
+
+    return () => controller.abort();
+  }, [lang, meetingId, glossary.length]);
+
+  const displayGlossary = translatedTerms
+    ? glossary.map((g, i) => ({
+        ...g,
+        term: translatedTerms[i]?.term ?? g.term,
+        definition: translatedTerms[i]?.definition ?? g.definition,
+      }))
+    : glossary;
 
   const filtered = filter.trim()
-    ? glossary.filter(g =>
+    ? displayGlossary.filter(g =>
         g.term.toLowerCase().includes(filter.toLowerCase()) ||
         g.definition.toLowerCase().includes(filter.toLowerCase())
       )
-    : glossary;
+    : displayGlossary;
 
   // Show newest first
   const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
@@ -49,12 +104,26 @@ export function GlossaryTab({ glossary }: GlossaryTabProps) {
           </p>
         </div>
       ) : (
-        <div className="glossary-list">
+        <div className="glossary-list" dir={lang === 'ar' ? 'rtl' : undefined} style={{ opacity: isTranslating ? 0.4 : 1, transition: 'opacity 0.3s ease-in' }}>
           {sorted.map((entry, i) => (
             <div key={`${entry.term}-${i}`} className="glossary-entry">
-              <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.term}</div>
-              <div style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', marginTop: 2 }}>
-                {entry.definition}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.term}</div>
+                  <div style={{ fontSize: 12, color: 'var(--zoom-text-secondary)', marginTop: 2 }}>
+                    {entry.definition}
+                  </div>
+                </div>
+                {onAddToNotes && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ fontSize: 10, padding: '2px 8px', flexShrink: 0 }}
+                    onClick={() => onAddToNotes(entry)}
+                    aria-label={`Add term ${entry.term} to your notes`}
+                  >
+                    + Note
+                  </button>
+                )}
               </div>
               {entry.formula && (
                 <code style={{

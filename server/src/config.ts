@@ -34,5 +34,14 @@ export const config = {
     region: optional('AWS_REGION', 'us-east-1'),
   },
 
+  createAI: {
+    apiUrl: optional('CREATE_AI_API_URL', ''),
+    token: optional('CREATE_AI_TOKEN', ''),
+    primaryModel: optional('CREATE_AI_PRIMARY_MODEL', 'claude4_5_sonnet'),
+    primaryProvider: optional('CREATE_AI_PRIMARY_PROVIDER', 'aws'),
+    backupModel: optional('CREATE_AI_BACKUP_MODEL', 'gpt5'),
+    backupProvider: optional('CREATE_AI_BACKUP_PROVIDER', 'openai'),
+  },
+
   zoom_secret_token: optional('ZOOM_SECRET_TOKEN', ''),
 } as const;

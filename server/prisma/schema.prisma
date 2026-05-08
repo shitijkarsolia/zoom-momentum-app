@@ -47,6 +47,7 @@ model TranscriptSegment {
   seqNo     BigInt
 
   @@unique([meetingId, seqNo])
+  @@index([meetingId])
 }
 
 model Bookmark {
@@ -60,6 +61,9 @@ model Bookmark {
   transcriptSnippet String?
   isAuto            Boolean  @default(false)
   createdAt         DateTime @default(now())
+
+  @@index([meetingId])
+  @@index([userId])
 }
 
 model QuizSet {
@@ -78,4 +82,28 @@ model RecoveryPack {
   meeting   Meeting  @relation(fields: [meetingId], references: [id])
   items     String   // JSON string: Array of { topic, explanation, practice, resource }
   createdAt DateTime @default(now())
+}
+
+model TranslatedSegment {
+  id        Int    @id @default(autoincrement())
+  meetingId String
+  seqNo     Int
+  lang      String
+  text      String
+  speaker   String
+  timestamp BigInt
+
+  @@unique([meetingId, seqNo, lang])
+  @@index([meetingId, lang, seqNo])
+}
+
+model TranslatedGlossary {
+  id         Int    @id @default(autoincrement())
+  meetingId  String
+  termKey    String
+  lang       String
+  term       String
+  definition String
+
+  @@unique([meetingId, termKey, lang])
 }

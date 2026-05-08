@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { PollCard } from '../components/pulse/PollCard';
 import { PollResults } from '../components/pulse/PollResults';
 import { ArenaStudent } from '../components/arena/ArenaStudent';
@@ -7,11 +7,19 @@ import { GlossaryTab } from '../components/anchor/GlossaryTab';
 import { PostClassSummary } from '../components/recovery/PostClassSummary';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { Poll, Topic, GlossaryEntry } from '../types/messages';
+import { BookmarkList } from '../components/anchor/BookmarkList';
 import type { AnchorBookmark } from '../hooks/useLiveAnchor';
+import { useSmartNotes } from '../hooks/useSmartNotes';
+import { SmartNotesPanel } from '../components/notes/SmartNotesPanel';
+
+import { TranscriptTab } from '../components/anchor/TranscriptTab';
 
 const TAB_INFO = {
-  timeline: 'Topics and key takeaways appear here as your professor lectures. Tap "I\'m Confused" to bookmark moments for review after class.',
+  timeline: 'Topics and key takeaways appear here as your professor lectures.',
   glossary: 'Technical terms and definitions extracted from the lecture. Use the search bar to find specific terms.',
+  transcript: 'Live transcript of the lecture. Key terms are highlighted.',
+  bookmarks: 'Tap "Mark for Review" to bookmark the current moment. Review these after class.',
+  notes: 'Type your own notes during class. Tap "+ Note" on any topic, glossary term, or bookmark to capture it. Download the full set as Markdown anytime.',
 } as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
@@ -19,11 +27,8 @@ import type { ArenaStudentPhase } from '../hooks/useArena';
 interface StudentViewProps {
   userName: string;
   connected: boolean;
-  isSignedIn?: boolean;
-  onSignIn?: () => void;
-  signInLoading?: boolean;
-  authUserId?: string | null;
   meetingId: string;
+  anchorIsLive?: boolean;
   // Pulse props
   activePoll: Poll | null;
   selectedOption: number | null;
@@ -51,27 +56,24 @@ interface StudentViewProps {
   anchorCurrentTopicId: string;
   anchorGlossary: GlossaryEntry[];
   anchorBookmarks: AnchorBookmark[];
-  onBookmark: (meetingId: string, userId: string) => Promise<boolean>;
-  // Events props (wired by Events teammate)
+  onBookmark: (meetingId?: string, userId?: string, options?: { topicOverride?: string }) => boolean;
+  onRemoveBookmark: (index: number) => void;
+  // Events props
   meetingEnded?: boolean;
   lateJoinInfo?: { topicCount: number; latestTopic: string } | null;
   onDismissLateJoin?: () => void;
   activeSpeaker?: string | null;
 }
 
-const BOOKMARK_SAVED = 'Bookmarked';
-const BOOKMARK_SIGN_IN = 'Sign in to save bookmarks';
+const BOOKMARK_SAVED = 'Bookmarked — view in Bookmarks tab';
 
-type StudentTab = 'timeline' | 'glossary';
+type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks' | 'notes';
 
 export function StudentView({
   userName,
   connected,
-  isSignedIn = false,
-  onSignIn,
-  signInLoading = false,
-  authUserId = null,
   meetingId,
+  anchorIsLive = false,
   activePoll,
   selectedOption,
   hasAnswered,
@@ -92,20 +94,91 @@ export function StudentView({
   anchorGlossary,
   anchorBookmarks,
   onBookmark,
+  onRemoveBookmark,
   meetingEnded = false,
   lateJoinInfo,
   onDismissLateJoin,
   activeSpeaker,
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
+  const [lang, setLang] = useState(() => localStorage.getItem('momentum.lang') || 'en');
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+  const [notesToast, setNotesToast] = useState<string | null>(null);
+  const [pollResultsDismissed, setPollResultsDismissed] = useState(false);
+  const [hasNewGlossary, setHasNewGlossary] = useState(false);
+  const [hasNewTimeline, setHasNewTimeline] = useState(false);
+  const prevGlossaryCountRef = useRef(anchorGlossary.length);
+  const prevTopicCountRef = useRef(anchorTopics.length);
+  const notesToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { appendToNotes, ...smartNotesRest } = useSmartNotes(meetingId);
+
+  const showNotesToast = useCallback((msg: string) => {
+    if (notesToastTimerRef.current) clearTimeout(notesToastTimerRef.current);
+    setNotesToast(msg);
+    notesToastTimerRef.current = setTimeout(() => setNotesToast(null), 1800);
+  }, []);
+
+  // Track new content for tab badges
+  useEffect(() => {
+    if (anchorGlossary.length > prevGlossaryCountRef.current && activeTab !== 'glossary') {
+      setHasNewGlossary(true);
+    }
+    prevGlossaryCountRef.current = anchorGlossary.length;
+  }, [anchorGlossary.length, activeTab]);
+
+  useEffect(() => {
+    if (anchorTopics.length > prevTopicCountRef.current && activeTab !== 'timeline') {
+      setHasNewTimeline(true);
+    }
+    prevTopicCountRef.current = anchorTopics.length;
+  }, [anchorTopics.length, activeTab]);
+
+  const handleAddTopicToNotes = useCallback((topic: Topic) => {
+    const lines = [`### ${topic.title}`];
+    if (topic.bullets.length > 0) {
+      topic.bullets.forEach(b => lines.push(`- ${b}`));
+    }
+    appendToNotes(lines.join('\n'));
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
+
+  const handleAddGlossaryToNotes = useCallback((entry: GlossaryEntry) => {
+    const lines = [`**${entry.term}** — ${entry.definition}`];
+    if (entry.formula) {
+      lines.push('```');
+      lines.push(entry.formula);
+      lines.push('```');
+    }
+    appendToNotes(lines.join('\n'));
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
+
+  const handleAddBookmarkToNotes = useCallback((bookmark: AnchorBookmark) => {
+    const time = new Date(bookmark.timestamp);
+    const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}`;
+    const tag = bookmark.isAuto ? '⭐ ' : '';
+    const snippet = bookmark.transcriptSnippet ? ` — _"${bookmark.transcriptSnippet}"_` : '';
+    appendToNotes(`- **${timeStr}** ${tag}${bookmark.topic}${snippet}`);
+    showNotesToast('Added to notes');
+  }, [appendToNotes, showNotesToast]);
+
+  // Auto-dismiss poll results after 8s
+  const pollResultsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (pollResults) {
+      setPollResultsDismissed(false);
+      pollResultsTimerRef.current = setTimeout(() => setPollResultsDismissed(true), 8000);
+      return () => { if (pollResultsTimerRef.current) clearTimeout(pollResultsTimerRef.current); };
+    }
+  }, [pollResults]);
 
   // --- Recovery state for meeting end ---
   const [recoveryItems, setRecoveryItems] = useState<{ topic: string; explanation: string; practice: string; resource: string }[]>([]);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
-    if (!meetingEnded || !authUserId || !meetingId) return;
+    if (!meetingEnded || !meetingId) return;
     let cancelled = false;
     setRecoveryLoading(true);
     const bookmarks = anchorBookmarks.map((bookmark) => ({
@@ -134,27 +207,18 @@ export function StudentView({
       .catch(() => { if (!cancelled) setRecoveryItems([]); })
       .finally(() => { if (!cancelled) setRecoveryLoading(false); });
     return () => { cancelled = true; };
-  }, [meetingEnded, authUserId, meetingId, anchorBookmarks, anchorTopics]);
+  }, [meetingEnded, meetingId, anchorBookmarks, anchorTopics]);
 
-  const showArena = arenaPhase !== 'waiting' || arenaCurrentQuestion !== null;
+  const showArena = arenaPhase === 'question' || arenaPhase === 'answered' || arenaPhase === 'leaderboard' || arenaPhase === 'finished';
 
-  const handleBookmark = useCallback(async () => {
-    if (!authUserId) {
-      setBookmarkToast(BOOKMARK_SIGN_IN);
-      setTimeout(() => setBookmarkToast(null), 2800);
-      return;
-    }
-    if (!meetingId) {
-      setBookmarkToast('Meeting not detected');
-      setTimeout(() => setBookmarkToast(null), 2200);
-      return;
-    }
-    const ok = await onBookmark(meetingId, authUserId);
-    if (ok) {
-      setBookmarkToast(BOOKMARK_SAVED);
-      setTimeout(() => setBookmarkToast(null), 2200);
-    }
-  }, [onBookmark, authUserId, meetingId]);
+  const bookmarkedTopics = new Set(anchorBookmarks.map(b => b.topic));
+
+  const handleBookmark = useCallback((topicTitle?: string) => {
+    if (topicTitle && bookmarkedTopics.has(topicTitle)) return;
+    onBookmark(undefined, undefined, topicTitle ? { topicOverride: topicTitle } : undefined);
+    setBookmarkToast(BOOKMARK_SAVED);
+    setTimeout(() => setBookmarkToast(null), 3500);
+  }, [onBookmark, bookmarkedTopics]);
 
   // Show PostClassSummary when meeting has ended
   if (meetingEnded) {
@@ -178,21 +242,29 @@ export function StudentView({
       <div className="status-bar">
         <span style={{ fontWeight: 600 }}>Momentum</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {anchorIsLive && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              Live
+            </span>
+          )}
+          <select
+            value={lang}
+            onChange={e => { setLang(e.target.value); localStorage.setItem('momentum.lang', e.target.value); }}
+            style={{ fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--zoom-border)', background: 'var(--zoom-bg)', color: 'var(--zoom-text)', cursor: 'pointer' }}
+            aria-label="Transcript language"
+          >
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="zh">中文</option>
+            <option value="hi">हिन्दी</option>
+            <option value="ar">العربية</option>
+            <option value="fr">Français</option>
+          </select>
           {activeSpeaker && (
             <span style={{ fontSize: 11, color: 'var(--zoom-brand)', fontWeight: 500 }}>
               Speaking: {activeSpeaker}
             </span>
-          )}
-          {!isSignedIn && onSignIn && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ padding: '4px 10px', fontSize: 12 }}
-              onClick={onSignIn}
-              disabled={signInLoading}
-            >
-              {signInLoading ? 'Connecting…' : 'Sign in to save bookmarks'}
-            </button>
           )}
           <div className="status-indicator">
             <div className={`status-dot ${connected ? 'connected' : ''}`} />
@@ -210,9 +282,9 @@ export function StudentView({
             <button
               className="btn btn-secondary"
               style={{ padding: '2px 8px', fontSize: 11, marginLeft: 8, flexShrink: 0 }}
-              onClick={onDismissLateJoin}
+              onClick={() => { setActiveTab('timeline'); onDismissLateJoin(); }}
             >
-              Dismiss
+              View Topics
             </button>
           )}
         </div>
@@ -221,42 +293,91 @@ export function StudentView({
       <div className="card" style={{ padding: '8px 0 0' }}>
         <div className="tabs">
           <button
-            className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
-            onClick={() => setActiveTab('timeline')}
+            className={`tab ${activeTab === 'timeline' ? 'active' : ''} ${hasNewTimeline ? 'has-new' : ''}`}
+            onClick={() => { setActiveTab('timeline'); setHasNewTimeline(false); }}
           >
             Timeline
           </button>
           <button
-            className={`tab ${activeTab === 'glossary' ? 'active' : ''}`}
-            onClick={() => setActiveTab('glossary')}
+            className={`tab ${activeTab === 'glossary' ? 'active' : ''} ${hasNewGlossary ? 'has-new' : ''}`}
+            onClick={() => { setActiveTab('glossary'); setHasNewGlossary(false); }}
           >
             Glossary
+          </button>
+          <button
+            className={`tab ${activeTab === 'transcript' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transcript')}
+          >
+            Transcript
+          </button>
+          <button
+            className={`tab ${activeTab === 'bookmarks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bookmarks')}
+          >
+            Bookmarks{anchorBookmarks.length > 0 ? ` (${anchorBookmarks.length})` : ''}
+          </button>
+          <button
+            className={`tab ${activeTab === 'notes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('notes')}
+          >
+            Notes{smartNotesRest.wordCount > 0 ? ` (${smartNotesRest.wordCount}w)` : ''}
           </button>
         </div>
       </div>
 
       <div className="card" style={{ flex: 1 }}>
         <div className="tab-info-bar">
-          <FeatureInfo title={activeTab === 'timeline' ? 'Timeline' : 'Glossary'} description={TAB_INFO[activeTab]} />
+          <FeatureInfo
+            title={activeTab === 'timeline' ? 'Timeline' : activeTab === 'glossary' ? 'Glossary' : activeTab === 'transcript' ? 'Transcript' : activeTab === 'bookmarks' ? 'Bookmarks' : 'Notes'}
+            description={TAB_INFO[activeTab]}
+          />
         </div>
         {activeTab === 'timeline' && (
-          <div>
+          <>
+            {!anchorIsLive && anchorTopics.length > 0 && (
+              <div style={{ padding: '8px 14px', textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 11, background: 'var(--zoom-bg)', borderRadius: 8, margin: '0 0 8px' }}>
+                AI paused by professor
+              </div>
+            )}
             <Timeline
               topics={anchorTopics}
               currentTopicId={anchorCurrentTopicId}
-              onBookmark={handleBookmark ? () => handleBookmark() : undefined}
+              bookmarkedTopics={bookmarkedTopics}
+              onBookmark={handleBookmark}
+              onAddToNotes={handleAddTopicToNotes}
             />
-            <button
-              className="btn btn-secondary"
-              style={{ marginTop: 12, width: '100%' }}
-              onClick={handleBookmark}
-            >
-              I'm Confused
-            </button>
-          </div>
+          </>
         )}
         {activeTab === 'glossary' && (
-          <GlossaryTab glossary={anchorGlossary} />
+          <GlossaryTab glossary={anchorGlossary} lang={lang} meetingId={meetingId} onAddToNotes={handleAddGlossaryToNotes} />
+        )}
+        {activeTab === 'transcript' && (
+          <TranscriptTab meetingId={meetingId} lang={lang} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+        )}
+        {activeTab === 'bookmarks' && (
+          <div>
+            <BookmarkList bookmarks={anchorBookmarks} onRemove={onRemoveBookmark} onAddToNotes={handleAddBookmarkToNotes} />
+            {anchorBookmarks.length === 0 && (
+              <div style={{ padding: 16, textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
+                No bookmarks yet. Tap "Bookmark" on a topic to save it for review.
+              </div>
+            )}
+          </div>
+        )}
+        {activeTab === 'notes' && (
+          <SmartNotesPanel
+            meetingId={meetingId}
+            userName={userName}
+            notes={smartNotesRest.notes}
+            setNotes={smartNotesRest.setNotes}
+            clearNotes={smartNotesRest.clearNotes}
+            lastSaved={smartNotesRest.lastSaved}
+            wordCount={smartNotesRest.wordCount}
+            saveError={smartNotesRest.saveError}
+            topics={anchorTopics}
+            glossary={anchorGlossary}
+            bookmarks={anchorBookmarks}
+          />
         )}
       </div>
 
@@ -264,8 +385,12 @@ export function StudentView({
         <div className="bookmark-toast">{bookmarkToast}</div>
       )}
 
-      {pollResults && (
-        <div className="card">
+      {notesToast && (
+        <div className="bookmark-toast" style={{ background: 'var(--zoom-brand, #0E71EB)' }}>{notesToast}</div>
+      )}
+
+      {pollResults && !pollResultsDismissed && (
+        <div className="card poll-results-fade">
           <PollResults poll={pollResults} />
         </div>
       )}

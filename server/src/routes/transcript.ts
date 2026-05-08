@@ -1,8 +1,21 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db.js';
+import { resolveMeetingId } from '../services/meeting-resolver.js';
+import { getTranslatedSegments, getTranslatedGlossary, SUPPORTED_LANGS } from '../services/translator.js';
+import { getActiveRtmsMeetingId } from '../services/rtms-ingest.js';
 export const transcriptRouter = Router();
+
+async function resolveWithRtmsFallback(meetingId: string): Promise<string | null> {
+  const resolved = await resolveMeetingId(meetingId, { createIfMissing: false });
+  if (resolved) return resolved;
+
+  const rtmsId = getActiveRtmsMeetingId();
+  if (rtmsId && rtmsId !== meetingId) {
+    console.log(`[transcript] UUID fallback: SDK "${meetingId}" → RTMS "${rtmsId}"`);
+    return resolveMeetingId(rtmsId, { createIfMissing: false });
+  }
+  return null;
+}
 
 // POST /api/transcript/segment — Store a transcript chunk (from RTMS or mock)
 transcriptRouter.post('/segment', async (req, res) => {
@@ -14,9 +27,29 @@ transcriptRouter.post('/segment', async (req, res) => {
       return;
     }
 
-    const segment = await prisma.transcriptSegment.create({
-      data: {
-        meetingId,
+    const resolvedMeetingId = await resolveMeetingId(meetingId, {
+      createIfMissing: true,
+      defaultTitle: 'Lecture Session',
+    });
+    if (!resolvedMeetingId) {
+      res.status(400).json({ error: 'Failed to resolve meetingId' });
+      return;
+    }
+
+    const segment = await prisma.transcriptSegment.upsert({
+      where: {
+        meetingId_seqNo: {
+          meetingId: resolvedMeetingId,
+          seqNo: BigInt(seqNo ?? 0),
+        },
+      },
+      update: {
+        speaker: speaker ?? 'Unknown',
+        text,
+        timestamp: BigInt(timestamp ?? Date.now()),
+      },
+      create: {
+        meetingId: resolvedMeetingId,
         speaker: speaker ?? 'Unknown',
         text,
         timestamp: BigInt(timestamp ?? Date.now()),
@@ -24,14 +57,91 @@ transcriptRouter.post('/segment', async (req, res) => {
       },
     });
 
-    res.json({ id: segment.id });
+    res.json({
+      id: segment.id,
+      timestamp: Number(segment.timestamp),
+      seqNo: Number(segment.seqNo),
+    });
   } catch (err) {
     console.error('[transcript] segment error:', err);
     res.status(500).json({ error: 'Failed to store segment' });
   }
 });
 
-// GET /api/transcript/buffer?meetingId=xxx — Get rolling buffer (last ~300 words)
+// GET /api/transcript/segments?meetingId=xxx — Get recent segments with speaker info
+transcriptRouter.get('/segments', async (req, res) => {
+  try {
+    const meetingId = req.query.meetingId as string;
+    if (!meetingId) {
+      res.status(400).json({ error: 'meetingId is required' });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveWithRtmsFallback(meetingId);
+    if (!resolvedMeetingId) {
+      res.json({ segments: [] });
+      return;
+    }
+
+    const segments = await prisma.transcriptSegment.findMany({
+      where: { meetingId: resolvedMeetingId },
+      select: { speaker: true, text: true, timestamp: true, seqNo: true },
+      orderBy: { seqNo: 'desc' },
+      take: 50,
+    });
+
+    const lang = (req.query.lang as string || '').toLowerCase();
+    if (lang && lang !== 'en' && SUPPORTED_LANGS.has(lang)) {
+      const source = segments.reverse().map(s => ({
+        seqNo: Number(s.seqNo),
+        speaker: s.speaker,
+        text: s.text,
+        timestamp: s.timestamp,
+      }));
+      const translated = await getTranslatedSegments(resolvedMeetingId, lang, source);
+      res.json({ segments: translated });
+      return;
+    }
+
+    res.json({
+      segments: segments.reverse().map(s => ({
+        speaker: s.speaker,
+        text: s.text,
+        timestamp: Number(s.timestamp),
+      })),
+    });
+  } catch (err) {
+    console.error('[transcript] segments error:', err);
+    res.status(500).json({ error: 'Failed to get segments' });
+  }
+});
+
+// DELETE /api/transcript/segments?meetingId=xxx — Clear all segments for a meeting (reset)
+transcriptRouter.delete('/segments', async (req, res) => {
+  try {
+    const meetingId = req.query.meetingId as string;
+    if (!meetingId) {
+      res.status(400).json({ error: 'meetingId is required' });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ deleted: 0 });
+      return;
+    }
+
+    const result = await prisma.transcriptSegment.deleteMany({
+      where: { meetingId: resolvedMeetingId },
+    });
+
+    res.json({ deleted: result.count });
+  } catch (err) {
+    console.error('[transcript] delete segments error:', err);
+    res.status(500).json({ error: 'Failed to delete segments' });
+  }
+});
+
 transcriptRouter.get('/buffer', async (req, res) => {
   try {
     const meetingId = req.query.meetingId as string;
@@ -40,10 +150,17 @@ transcriptRouter.get('/buffer', async (req, res) => {
       return;
     }
 
+    const resolvedMeetingId = await resolveWithRtmsFallback(meetingId);
+    if (!resolvedMeetingId) {
+      res.json({ buffer: '', segmentCount: 0 });
+      return;
+    }
+
     const segments = await prisma.transcriptSegment.findMany({
-      where: { meetingId },
+      where: { meetingId: resolvedMeetingId },
+      select: { text: true },
       orderBy: { seqNo: 'desc' },
-      take: 50, // Get recent segments, trim to ~300 words
+      take: 50,
     });
 
     const buffer = segments
@@ -51,7 +168,6 @@ transcriptRouter.get('/buffer', async (req, res) => {
       .map((s) => s.text)
       .join(' ');
 
-    // Trim to approximately 300 words
     const words = buffer.split(/\s+/);
     const trimmed = words.slice(-300).join(' ');
 
@@ -59,5 +175,31 @@ transcriptRouter.get('/buffer', async (req, res) => {
   } catch (err) {
     console.error('[transcript] buffer error:', err);
     res.status(500).json({ error: 'Failed to get buffer' });
+  }
+});
+
+transcriptRouter.post('/translate-glossary', async (req, res) => {
+  try {
+    const { meetingId, lang, terms } = req.body;
+    if (!meetingId || !lang || !Array.isArray(terms)) {
+      res.status(400).json({ error: 'meetingId, lang, and terms[] are required' });
+      return;
+    }
+    if (lang === 'en' || !SUPPORTED_LANGS.has(lang)) {
+      res.json({ terms });
+      return;
+    }
+
+    const resolvedMeetingId = await resolveMeetingId(meetingId, { createIfMissing: false });
+    if (!resolvedMeetingId) {
+      res.json({ terms });
+      return;
+    }
+
+    const translated = await getTranslatedGlossary(resolvedMeetingId, lang, terms);
+    res.json({ terms: translated });
+  } catch (err) {
+    console.error('[transcript] translate-glossary error:', err);
+    res.status(500).json({ error: 'Failed to translate glossary' });
   }
 });
