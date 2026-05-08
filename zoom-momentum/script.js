@@ -52,6 +52,14 @@ if (document.readyState === "complete") {
   window.addEventListener("load", correctInitialHashScroll);
 }
 
+if (header) {
+  const updateScrolled = () => {
+    header.classList.toggle("is-scrolled", window.scrollY > 12);
+  };
+  updateScrolled();
+  window.addEventListener("scroll", updateScrolled, { passive: true });
+}
+
 if (prefersReducedMotion || !("IntersectionObserver" in window)) {
   revealElements.forEach((element) => element.classList.add("is-visible"));
 } else {
