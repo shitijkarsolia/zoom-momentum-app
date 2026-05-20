@@ -4,6 +4,8 @@ A Zoom Apps SDK in-meeting side panel app that transforms passive virtual classr
 
 Momentum gives professors real-time engagement tools and gives students a dynamic topic timeline, glossary, live transcript, and post-class review — all powered by AI.
 
+A write-up of the project lives in [`docs/blog/launch.md`](docs/blog/launch.md), and the full engineering breakdown is in [`docs/technical-deep-dive.md`](docs/technical-deep-dive.md).
+
 ---
 
 ## How It Works
@@ -82,47 +84,45 @@ Personalized post-class review based on moments the student bookmarked during th
 
 ## Architecture
 
+Momentum is one npm monorepo — a React client, an Express server, and a mock-transcript dev utility. The client renders either the Host Dashboard or the Student View from the same bundle. Everything else lives on a single Node process: the REST API, a WebSocket relay that keeps host and students in sync, the Zoom RTMS transcript pipeline, and a tiered AI client that fails over across providers so one outage can't take a class down.
+
+```mermaid
+flowchart LR
+    subgraph zoom["Zoom Client"]
+        host["Host Dashboard"]
+        student["Student View"]
+    end
+
+    subgraph server["Node server (EC2 behind ngrok)"]
+        api["REST API + static client"]
+        ws["WebSocket relay"]
+        rtms["RTMS ingest"]
+        ai["Tiered AI client"]
+        db[("Prisma DB")]
+    end
+
+    subgraph ext["External"]
+        zc["Zoom Cloud"]
+        createai["ASU CREATE AI"]
+        bedrock["AWS Bedrock"]
+    end
+
+    host <--> api
+    student <--> api
+    host <--> ws
+    student <--> ws
+    api --> db
+    ws --> db
+    rtms --> db
+    api --> ai
+    ai -->|primary| createai
+    ai -->|fallback| bedrock
+    zc -->|media + webhooks| rtms
 ```
-Zoom Desktop Client
-  +-- Side Panel (Embedded Browser)
-        +-- React App
-              +-- Host? -> HostDashboard
-              +-- Student? -> StudentView
 
-Both connect via WebSocket to:
-  Express Backend (localhost:3001, or EC2)
-    +-- /ws             -> WebSocket relay (rooms by meetingId)
-    +-- /api/auth       -> Zoom OAuth PKCE
-    +-- /api/ai         -> AI endpoints (poll, quiz, topic, recovery, cues)
-    +-- /api/transcript  -> Transcript storage + rolling buffer
-    +-- /api/bookmarks   -> Bookmark CRUD
-    +-- /api/rtms        -> RTMS webhook + stream client
+The host and students never talk directly — every message goes through the relay, keyed by meeting ID, with sequence-numbered envelopes so state converges over flaky connections. The AI client is the only thing that talks to model providers, so failover and caching live in one place.
 
-  AI Provider:
-    Primary: ASU CREATE AI (claude4_5_sonnet -> gpt5)
-    Fallback: AWS Bedrock (Llama 3 70B via Converse API)
-
-  Database: SQLite (dev) / PostgreSQL (prod) via Prisma ORM
-```
-
-### Message Protocol
-
-All real-time communication uses **WebSocket relay** through Express. The server manages rooms by meetingId and relays messages between connected clients.
-
-| Message | Sender | Receiver | Purpose |
-|---|---|---|---|
-| `POLL_START` | Host | Students | Launch a poll |
-| `POLL_RESPONSE` | Student | Host | Submit poll answer |
-| `POLL_RESULTS` | Host | Students | Broadcast results |
-| `ARENA_START` | Host | Students | Begin trivia |
-| `ARENA_QUESTION` | Host | Students | Send next question |
-| `ARENA_ANSWER` | Student | Host | Submit trivia answer |
-| `ARENA_LEADERBOARD` | Host | Students | Show scores |
-| `ARENA_END` | Host | Students | Final standings |
-| `TOPIC_UPDATE` | Host | Students | New/updated topic |
-| `GLOSSARY_UPDATE` | Host | Students | New terms |
-| `FULL_STATE` | Host | Students | Late-joiner sync |
-| `REQUEST_STATE` | Student | Host | Request full state |
+**For the full engineering story** — the sync model, the RTMS two-UUID bug, the AI failover chain, translation caching, and the EC2 deployment, all with diagrams — see [`docs/technical-deep-dive.md`](docs/technical-deep-dive.md).
 
 ---
 
