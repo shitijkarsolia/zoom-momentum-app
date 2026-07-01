@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Topic, GlossaryEntry } from '../../types/messages';
 
-interface TranscriptSegment {
+export interface TranscriptSegment {
   speaker: string;
   text: string;
   timestamp: number;
@@ -14,9 +14,10 @@ interface TranscriptTabProps {
   topics: Topic[];
   currentTopicId: string;
   showTitle?: boolean;
+  segments?: TranscriptSegment[];
 }
 
-export function TranscriptTab({ meetingId, lang = 'en', glossary, topics, currentTopicId, showTitle }: TranscriptTabProps) {
+export function TranscriptTab({ meetingId, lang = 'en', glossary, topics, currentTopicId, showTitle, segments: providedSegments }: TranscriptTabProps) {
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -25,6 +26,12 @@ export function TranscriptTab({ meetingId, lang = 'en', glossary, topics, curren
   const prevLangRef = useRef(lang);
 
   useEffect(() => {
+    if (providedSegments) {
+      setSegments(providedSegments);
+      setIsTranslating(false);
+      return;
+    }
+
     if (!meetingId) return;
 
     if (prevLangRef.current !== lang) {
@@ -51,7 +58,7 @@ export function TranscriptTab({ meetingId, lang = 'en', glossary, topics, curren
     fetchSegments();
     const interval = setInterval(fetchSegments, 5_000);
     return () => clearInterval(interval);
-  }, [meetingId, lang]);
+  }, [meetingId, lang, providedSegments]);
 
   // Auto-scroll only if user was already at the bottom
   useEffect(() => {
@@ -76,7 +83,7 @@ export function TranscriptTab({ meetingId, lang = 'en', glossary, topics, curren
     }
   }, []);
 
-  if (!meetingId) {
+  if (!meetingId && !providedSegments) {
     return (
       <div style={{ padding: 16, textAlign: 'center', color: 'var(--zoom-text-secondary)', fontSize: 13 }}>
         Live transcript will appear here during a meeting.
