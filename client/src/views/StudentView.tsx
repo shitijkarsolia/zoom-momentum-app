@@ -13,6 +13,7 @@ import { useSmartNotes } from '../hooks/useSmartNotes';
 import { SmartNotesPanel } from '../components/notes/SmartNotesPanel';
 
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
+import type { TranscriptSegment } from '../components/anchor/TranscriptTab';
 
 const TAB_INFO = {
   timeline: 'Topics and key takeaways appear here as your professor lectures.',
@@ -23,6 +24,13 @@ const TAB_INFO = {
 } as const;
 import type { LeaderboardEntry } from '../types/messages';
 import type { ArenaStudentPhase } from '../hooks/useArena';
+
+interface RecoveryItem {
+  topic: string;
+  explanation: string;
+  practice: string;
+  resource: string;
+}
 
 interface StudentViewProps {
   userName: string;
@@ -63,6 +71,9 @@ interface StudentViewProps {
   lateJoinInfo?: { topicCount: number; latestTopic: string } | null;
   onDismissLateJoin?: () => void;
   activeSpeaker?: string | null;
+  transcriptSegments?: TranscriptSegment[];
+  disableRemoteTranslations?: boolean;
+  recoveryItemsOverride?: RecoveryItem[];
 }
 
 const BOOKMARK_SAVED = 'Bookmarked — view in Bookmarks tab';
@@ -99,6 +110,9 @@ export function StudentView({
   lateJoinInfo,
   onDismissLateJoin,
   activeSpeaker,
+  transcriptSegments,
+  disableRemoteTranslations,
+  recoveryItemsOverride,
 }: StudentViewProps) {
   const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
   const [lang, setLang] = useState(() => localStorage.getItem('momentum.lang') || 'en');
@@ -174,11 +188,16 @@ export function StudentView({
   }, [pollResults]);
 
   // --- Recovery state for meeting end ---
-  const [recoveryItems, setRecoveryItems] = useState<{ topic: string; explanation: string; practice: string; resource: string }[]>([]);
+  const [recoveryItems, setRecoveryItems] = useState<RecoveryItem[]>([]);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
     if (!meetingEnded || !meetingId) return;
+    if (recoveryItemsOverride) {
+      setRecoveryItems(recoveryItemsOverride);
+      setRecoveryLoading(false);
+      return;
+    }
     let cancelled = false;
     setRecoveryLoading(true);
     const bookmarks = anchorBookmarks.map((bookmark) => ({
@@ -207,7 +226,7 @@ export function StudentView({
       .catch(() => { if (!cancelled) setRecoveryItems([]); })
       .finally(() => { if (!cancelled) setRecoveryLoading(false); });
     return () => { cancelled = true; };
-  }, [meetingEnded, meetingId, anchorBookmarks, anchorTopics]);
+  }, [meetingEnded, meetingId, anchorBookmarks, anchorTopics, recoveryItemsOverride]);
 
   const showArena = arenaPhase === 'question' || arenaPhase === 'answered' || arenaPhase === 'leaderboard' || arenaPhase === 'finished';
 
@@ -349,10 +368,10 @@ export function StudentView({
           </>
         )}
         {activeTab === 'glossary' && (
-          <GlossaryTab glossary={anchorGlossary} lang={lang} meetingId={meetingId} onAddToNotes={handleAddGlossaryToNotes} />
+          <GlossaryTab glossary={anchorGlossary} lang={lang} meetingId={meetingId} onAddToNotes={handleAddGlossaryToNotes} disableRemoteTranslations={disableRemoteTranslations} />
         )}
         {activeTab === 'transcript' && (
-          <TranscriptTab meetingId={meetingId} lang={lang} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} />
+          <TranscriptTab meetingId={meetingId} lang={lang} glossary={anchorGlossary} topics={anchorTopics} currentTopicId={anchorCurrentTopicId} segments={transcriptSegments} />
         )}
         {activeTab === 'bookmarks' && (
           <div>

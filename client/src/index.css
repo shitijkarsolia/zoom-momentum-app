@@ -1716,3 +1716,200 @@ input:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* === Public Vercel Demo === */
+
+.public-demo-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background:
+    linear-gradient(180deg, rgba(14, 113, 235, 0.08), rgba(14, 113, 235, 0) 220px),
+    #eef2f7;
+}
+
+.public-demo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #d9e1ec;
+  border-radius: 8px;
+}
+
+.public-demo-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.public-demo-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--zoom-blue);
+}
+
+.public-demo-title h1 {
+  font-size: 20px;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--zoom-text);
+}
+
+.public-demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.public-demo-actions .btn {
+  padding: 7px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.public-demo-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.public-demo-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #d9e1ec;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(32, 46, 70, 0.08);
+}
+
+.public-demo-panel-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--zoom-border);
+  background: #f8fafc;
+  font-size: 12px;
+}
+
+.public-demo-panel-label span {
+  color: var(--zoom-text-secondary);
+  font-weight: 600;
+}
+
+.public-demo-panel-label strong {
+  color: var(--zoom-text);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-demo-panel .app-container {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.public-demo-panel .status-bar {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.public-demo-panel .tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.public-demo-panel .tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.public-demo-panel .tab {
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.public-demo-panel .card {
+  min-height: 0;
+}
+
+.public-demo-panel .app-container > .card[style*="flex: 1"] {
+  overflow: auto;
+}
+
+.public-demo-panel .timeline-list,
+.public-demo-panel .glossary-list {
+  max-height: 320px;
+}
+
+.public-demo-panel--student .poll-card-overlay,
+.public-demo-panel--student .arena-student-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.public-demo-panel--student .poll-card,
+.public-demo-panel--student .arena-student-card {
+  max-width: min(360px, calc(100% - 24px));
+}
+
+.public-demo-panel .bookmark-toast,
+.public-demo-panel .auto-bookmark-toast {
+  position: absolute;
+  bottom: 16px;
+}
+
+@media (max-width: 1100px) {
+  .public-demo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-demo-panel {
+    min-height: 720px;
+  }
+}
+
+@media (max-width: 720px) {
+  .public-demo-shell {
+    padding: 8px;
+  }
+
+  .public-demo-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .public-demo-actions {
+    justify-content: flex-start;
+  }
+
+  .public-demo-actions .btn {
+    flex: 1 1 120px;
+  }
+
+  .public-demo-panel {
+    min-height: 680px;
+  }
+
+  .public-demo-title h1 {
+    font-size: 18px;
+  }
+}
