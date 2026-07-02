@@ -18,6 +18,7 @@ npm run db:studio        # Open Prisma Studio GUI
 npm run dev -w client    # Client dev server only
 npm run dev -w server    # Server dev server only (tsx watch mode)
 npm run build -w server  # Compile server TypeScript to dist/
+npm run build:site       # Public site: website at /, interactive demo at /demo (Vercel build)
 ```
 
 Testing: Vitest (`npm test`). Linting: ESLint (`npm run lint`).
@@ -94,9 +95,14 @@ systemctl --user restart zoom-momentum.service
 - Fetches real CS50 Lecture 0 SRT from Harvard CDN, parses into ~700 chunks, POSTs to `/api/transcript/segment` every 3 seconds
 - Falls back to hardcoded chunks if CDN fetch fails
 
-### Product Page (`product-page/`)
-- Static landing page (`index.html`), no build step
-- Serve locally: `cd product-page && python3 -m http.server 8080`
+### Website (`website/`)
+- Static public site (`index.html` + `styles.css` + `script.js`), no build step
+- Serve locally: `cd website && python3 -m http.server 8080`
+- Deployed together with the interactive demo: `npm run build:site` builds the
+  client with `VITE_BASE=/demo/` and assembles `dist/` with the website at `/`
+  and the demo at `/demo` (see `scripts/build-site.mjs`). Vercel uses this via
+  `vercel.json`. The Express-served build for Zoom (`npm run build -w client`)
+  keeps base `/` and is unaffected.
 
 ### Message Protocol
 All host↔student communication uses WebSocket relay through Express (`/ws` endpoint). The server manages rooms by meetingId and relays messages between all connected clients. Message envelope contains `type`, `payload`, `seq` (sequence number), `timestamp`, `senderId`, and `senderRole`.

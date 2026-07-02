@@ -41,3 +41,6 @@ product-page/assets/*.mp4
 # here.now state
 .herenow/
 product-page/assets/.herenow/
+
+# Assembled public site (website + demo), built by scripts/build-site.mjs
+/dist/
