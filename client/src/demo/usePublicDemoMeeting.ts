@@ -67,19 +67,28 @@ export function usePublicDemoMeeting() {
     if (state.arena.phase !== 'question') return;
     const interval = setInterval(() => dispatch({ type: 'TICK_ARENA' }), 1_000);
     const answerTimer = setTimeout(() => dispatch({ type: 'ADD_ARENA_ANSWERS' }), 1_200);
-    const revealTimer = setTimeout(() => dispatch({ type: 'SHOW_ARENA_LEADERBOARD' }), 5_800);
     return () => {
       clearInterval(interval);
       clearTimeout(answerTimer);
-      clearTimeout(revealTimer);
     };
   }, [state.arena.phase, state.arena.currentIndex]);
 
+  // Reveal the leaderboard shortly after the demo student locks in an answer,
+  // or when the question timer runs out — whichever comes first.
   useEffect(() => {
-    if (state.arena.phase !== 'leaderboard') return;
-    const timer = setTimeout(() => dispatch({ type: 'NEXT_ARENA_QUESTION' }), 4_000);
+    if (state.arena.phase !== 'question' || state.arena.selectedOption === null) return;
+    const timer = setTimeout(() => dispatch({ type: 'SHOW_ARENA_LEADERBOARD' }), 2_200);
     return () => clearTimeout(timer);
-  }, [state.arena.phase, state.arena.currentIndex]);
+  }, [state.arena.phase, state.arena.selectedOption]);
+
+  useEffect(() => {
+    if (state.arena.phase !== 'question' || state.arena.countdown > 0) return;
+    const timer = setTimeout(() => {
+      dispatch({ type: 'ADD_ARENA_ANSWERS' });
+      dispatch({ type: 'SHOW_ARENA_LEADERBOARD' });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [state.arena.phase, state.arena.countdown]);
 
   const transcriptSegments = useMemo(() => getCurrentTranscriptSegments(state), [state]);
 

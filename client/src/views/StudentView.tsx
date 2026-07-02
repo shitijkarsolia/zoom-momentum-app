@@ -74,11 +74,13 @@ interface StudentViewProps {
   transcriptSegments?: TranscriptSegment[];
   disableRemoteTranslations?: boolean;
   recoveryItemsOverride?: RecoveryItem[];
+  activeTabOverride?: StudentTab;
+  onActiveTabChange?: (tab: StudentTab) => void;
 }
 
 const BOOKMARK_SAVED = 'Bookmarked — view in Bookmarks tab';
 
-type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks' | 'notes';
+export type StudentTab = 'timeline' | 'glossary' | 'transcript' | 'bookmarks' | 'notes';
 
 export function StudentView({
   userName,
@@ -113,8 +115,15 @@ export function StudentView({
   transcriptSegments,
   disableRemoteTranslations,
   recoveryItemsOverride,
+  activeTabOverride,
+  onActiveTabChange,
 }: StudentViewProps) {
-  const [activeTab, setActiveTab] = useState<StudentTab>('timeline');
+  const [internalActiveTab, setInternalActiveTab] = useState<StudentTab>('timeline');
+  const activeTab = activeTabOverride ?? internalActiveTab;
+  const setActiveTab = (tab: StudentTab) => {
+    setInternalActiveTab(tab);
+    onActiveTabChange?.(tab);
+  };
   const [lang, setLang] = useState(() => localStorage.getItem('momentum.lang') || 'en');
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
   const [notesToast, setNotesToast] = useState<string | null>(null);
