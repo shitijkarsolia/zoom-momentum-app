@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zoom Momentum</title>
+  <meta
+    name="description"
+    content="Zoom Momentum is a Zoom App that turns live college lectures into active classrooms. Professors run quick AI comprehension checks mid-lecture, students follow a live topic timeline and glossary built from the transcript, and everyone leaves with a recovery pack for whatever didn't land."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Baloo+2:wght@700&family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#top">Skip to content</a>
+  <div class="site-bg" aria-hidden="true">
+    <div class="grid"></div>
+    <div class="glow glow-left"></div>
+    <div class="glow glow-right"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Zoom Momentum home">
+      <span class="brand-copy">
+        <span class="brand-lockup">
+          <svg class="brand-zoom" viewBox="0 0 1000 225" aria-hidden="true">
+            <g id="zm-wordmark">
+            <mask id="zm-brand-cut">
+              <rect width="1000" height="225" fill="#fff"/>
+              <rect x="366" y="92" width="150" height="41" rx="20.5" fill="#000"/>
+            </mask>
+            <path d="m 814.1856,67.388717 c 3.82247,6.59494 5.07303,14.0983 5.48595,22.53368 l 0.5427,11.243253 v 78.62013 l 0.55449,11.25504 c 1.10899,18.38088 14.66459,31.97188 33.18704,33.12806 l 11.19606,0.55449 V 101.16565 l 0.55449,-11.243253 c 0.46011,-8.341 1.69888,-15.98593 5.58033,-22.62806 a 44.902197,44.902197 0 0 1 77.74711,0.14157 c 3.82246,6.59494 5.01403,14.23987 5.47415,22.48649 l 0.55449,11.207863 v 78.65552 l 0.55449,11.25504 c 1.15618,18.47526 14.60561,32.06626 33.18705,33.12806 L 1000,224.72337 V 89.922397 A 89.898775,89.898775 0 0 0 910.13662,0.02362708 89.662821,89.662821 0 0 0 842.71254,30.473587 89.780798,89.780798 0 0 0 775.28845,0.01182708 c -18.66402,0 -35.9831,5.66292002 -50.32915,15.44323992 C 716.20538,5.6865371 696.62113,0.01182708 685.37788,0.01182708 V 224.72337 l 11.24325,-0.55449 c 18.80559,-1.23877 32.39659,-14.46403 33.12805,-33.12806 l 0.60168,-11.25504 v -78.62013 l 0.5545,-11.243253 c 0.47191,-8.48257 1.65168,-15.93874 5.48595,-22.58087 a 45.020174,45.020174 0 0 1 38.89714,-22.39211 44.949388,44.949388 0 0 1 38.89715,22.4393 z M 44.93759,224.18067 l 11.243246,0.5427 H 224.71155 l -0.5545,-11.20785 c -1.52191,-18.47526 -14.6056,-31.97188 -33.13985,-33.17525 l -11.24324,-0.55449 H 78.667327 L 213.4683,44.937617 212.91381,33.741567 C 212.04077,15.077537 198.40259,1.5927271 179.77396,0.56631708 l -11.24325,-0.5073 L 0,0.01182708 0.55449376,11.255077 C 2.0292112,29.553367 15.301668,43.333127 33.682546,44.394927 l 11.255044,0.55449 H 146.04422 L 11.243246,179.79758 11.79774,191.04082 c 1.108987,18.52245 14.475826,31.93648 33.13985,33.12806 z M 641.26613,32.903927 a 112.34987,112.34987 0 0 1 0,158.903753 112.43246,112.43246 0 0 1 -158.93914,0 c -43.8758,-43.8758 -43.8758,-115.027963 0,-158.903753 A 112.29089,112.29089 0 0 1 561.72577,2.7082708e-5 112.37347,112.37347 0 0 1 641.26613,32.915727 Z m -31.7949,31.8185 a 67.447677,67.447677 0 0 1 0,95.349333 67.447677,67.447677 0 0 1 -95.34934,0 67.447677,67.447677 0 0 1 0,-95.349333 67.447677,67.447677 0 0 1 95.34934,0 z M 325.91256,2.7082708e-5 A 112.29089,112.29089 0 0 1 405.31134,32.915727 c 43.88759,43.86399 43.88759,115.027953 0,158.891953 a 112.43246,112.43246 0 0 1 -158.93914,0 c -43.8758,-43.8758 -43.8758,-115.027963 0,-158.903753 A 112.29089,112.29089 0 0 1 325.77098,2.7082708e-5 Z M 373.51643,64.698837 a 67.447677,67.447677 0 0 1 0,95.361123 67.447677,67.447677 0 0 1 -95.34933,0 67.447677,67.447677 0 0 1 0,-95.349333 67.447677,67.447677 0 0 1 95.34933,0 z" fill="#2D8CFF" fill-rule="evenodd" mask="url(#zm-brand-cut)"/>
+            <g fill="#2D8CFF">
+              <rect x="374" y="101.5" width="126" height="22" rx="11"/>
+              <rect x="514" y="101.5" width="14" height="22" rx="7"/>
+              <circle cx="566" cy="112.5" r="27"/>
+            </g>
+            </g>
+          </svg>
+          <span class="brand-word">Momentum</span>
+        </span>
+        <small>Zoom Fellowship project</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#demo">Demo</a>
+      <a href="#features">Features</a>
+      <a href="#fellowship">Fellowship</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-stage reveal">
+        <div class="hero-wordmark-wrap">
+          <p class="eyebrow hero-eyebrow">A Zoom App for live college lectures</p>
+          <h1 class="hero-title">
+            <span class="word-zoom">Zoom</span>
+            <span class="word-momentum-row">
+              <span class="hero-flower" aria-hidden="true">
+                <svg viewBox="0 0 24 60" preserveAspectRatio="xMidYMax">
+                  <rect x="10" y="24" width="4" height="36" fill="#2BC2FF"/>
+                  <rect x="6" y="44" width="4" height="4" fill="#158CCF"/>
+                  <rect x="2" y="40" width="4" height="4" fill="#158CCF"/>
+                  <rect x="14" y="36" width="4" height="4" fill="#158CCF"/>
+                  <rect x="18" y="32" width="4" height="4" fill="#158CCF"/>
+                  <rect x="8" y="8" width="8" height="8" fill="#1F365E"/>
+                  <rect x="8" y="0" width="8" height="8" fill="#F6CF52"/>
+                  <rect x="8" y="16" width="8" height="8" fill="#F6CF52"/>
+                  <rect x="0" y="8" width="8" height="8" fill="#F6CF52"/>
+                  <rect x="16" y="8" width="8" height="8" fill="#F6CF52"/>
+                  <rect x="4" y="4" width="4" height="4" fill="#F6CF52" opacity="0.82"/>
+                  <rect x="16" y="4" width="4" height="4" fill="#F6CF52" opacity="0.82"/>
+                  <rect x="4" y="16" width="4" height="4" fill="#F6CF52" opacity="0.82"/>
+                  <rect x="16" y="16" width="4" height="4" fill="#F6CF52" opacity="0.82"/>
+                </svg>
+              </span>
+              <span class="word-momentum">Momentum</span>
+            </span>
+          </h1>
+          <div class="hero-copy">
+            <p class="hero-text">
+              Momentum runs inside the Zoom meeting and keeps a lecture honest
+              in both directions: professors see in real time whether the room
+              is following, and students get a live topic timeline, a glossary
+              that writes itself, and one-tap bookmarks for anything that
+              flies by.
+            </p>
+            <div class="hero-actions">
+              <a
+                class="button button-primary"
+                href="/demo"
+                aria-label="Open the interactive demo"
+                >Try the interactive demo</a
+              >
+              <a class="button button-secondary" href="#demo" aria-label="Jump to demo section">Watch the demo</a>
+              <a class="button button-secondary" href="#features">See features</a>
+            </div>
+          </div>
+        </div>
+
+        <article class="app-window app-window-host hero-window-host" aria-hidden="true">
+          <div class="window-bar">
+            <span></span><span></span><span></span>
+            <p>Host Dashboard</p>
+          </div>
+          <div class="window-body">
+            <div class="chip-row">
+              <span class="chip active">Pulse</span>
+              <span class="chip">Arena</span>
+              <span class="chip">Anchor</span>
+            </div>
+            <div class="feature-shell">
+              <div class="feature-shell-header">
+                <p>Professor's Pulse</p>
+                <span>AI-generated check-in</span>
+              </div>
+              <div class="poll-card">
+                <div class="poll-question">How confident are you with the concept we just covered?</div>
+                <div class="poll-options">
+                  <span>Very confident</span>
+                  <span>Need one more example</span>
+                  <span>Lost the thread</span>
+                </div>
+              </div>
+              <div class="stats-band">
+                <div><strong>31</strong><span>responses</span></div>
+                <div><strong>09s</strong><span>remaining</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="app-window app-window-student hero-window-student" aria-hidden="true">
+          <div class="window-bar">
+            <span></span><span></span><span></span>
+            <p>Student View</p>
+          </div>
+          <div class="window-body">
+            <div class="topic-rail">
+              <div class="topic-node current"></div>
+              <div class="topic-copy">
+                <strong>Current topic</strong>
+                <p>Elasticity, incentives, and how price changes alter behavior.</p>
+              </div>
+            </div>
+            <div class="note-stack">
+              <article>
+                <span>Timeline</span>
+                <p>Auto-updating lecture segments with key takeaways.</p>
+              </article>
+              <article>
+                <span>Glossary</span>
+                <p>Definitions and formulas extracted from the live transcript.</p>
+              </article>
+              <article>
+                <span>Recovery</span>
+                <p>Bookmark confusion points and revisit them after class.</p>
+              </article>
+            </div>
+          </div>
+        </article>
+      </div>
+
+    </section>
+
+    <section id="demo" class="section demo-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Demo</p>
+        <h2>See it run inside a real Zoom meeting.</h2>
+        <p>
+          Take it for a spin in a simulated Zoom classroom, or watch a short
+          recording of a real session: the host launches a check-in while a
+          student follows along, bookmarks a moment, and opens their recovery
+          pack after class.
+        </p>
+      </div>
+      <div class="demo-launch reveal">
+        <div class="demo-launch-copy">
+          <h3>Take the guided walkthrough</h3>
+          <p>
+            A full Zoom meeting mock-up that runs right in your browser. Sit
+            in the professor's seat and launch a poll, then switch seats and
+            answer it as a student. No install, no sign-in, and every feature
+            is live.
+          </p>
+        </div>
+        <a class="button button-primary" href="/demo">Launch interactive demo</a>
+      </div>
+      <figure class="demo-frame reveal">
+        <div class="demo-video">
+          <iframe
+            src="https://www.youtube.com/embed/Wg_QyddOvQ8"
+            title="Zoom Momentum demo video"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </figure>
+    </section>
+
+    <section id="features" class="section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">What it does</p>
+        <h2>A live classroom loop inside Zoom.</h2>
+        <p>
+          Four tools built on the same engine: the live lecture transcript.
+          Professors get to check understanding while there's still time to
+          do something about it, and students keep their bearings during
+          class, then repair the gaps after.
+        </p>
+      </div>
+      <div class="features-grid">
+        <article class="feature-card reveal">
+          <div class="feature-topline">
+            <span class="feature-index">01</span>
+            <p>Professor's Pulse</p>
+            <span class="status-pill status-pill-built">Live in the demo</span>
+          </div>
+          <h3>AI-generated comprehension checks, mid-lecture.</h3>
+          <p>
+            One click drafts a poll from the last few minutes of lecture. The
+            professor edits it, launches it, and watches the answers tally
+            live. It reads the whole room in under a minute, and nobody has
+            to grade a thing.
+          </p>
+        </article>
+
+        <article class="feature-card reveal">
+          <div class="feature-topline">
+            <span class="feature-index">02</span>
+            <p>Warm-Up Arena</p>
+            <span class="status-pill status-pill-built">Live in the demo</span>
+          </div>
+          <h3>A timed trivia game that wakes the room up.</h3>
+          <p>
+            AI writes review questions from the lecture, students race a
+            countdown, and faster correct answers score higher on a live
+            leaderboard. Closer to a game show than an LMS quiz.
+          </p>
+        </article>
+
+        <article class="feature-card reveal">
+          <div class="feature-topline">
+            <span class="feature-index">03</span>
+            <p>Live Anchor</p>
+            <span class="status-pill status-pill-built">Live in the demo</span>
+          </div>
+          <h3>A topic timeline and glossary that write themselves.</h3>
+          <p>
+            Momentum listens to the live transcript, marks every topic change,
+            and defines new terms the moment they're said, in any of six
+            languages. Look up from your notes, join late, or lose the thread
+            entirely, and you still know exactly where the class is.
+          </p>
+        </article>
+
+        <article class="feature-card reveal">
+          <div class="feature-topline">
+            <span class="feature-index">04</span>
+            <p>Recovery Agent</p>
+            <span class="status-pill status-pill-built">Live in the demo</span>
+          </div>
+          <h3>Confusion captured in class, repaired after.</h3>
+          <p>
+            Students bookmark hard moments privately, and when the professor
+            says "this will be on the exam," Momentum bookmarks it for them.
+            After class, every bookmark turns into a recovery pack with
+            plain-language explanations, practice prompts, and notes to
+            download.
+          </p>
+        </article>
+      </div>
+      <div class="product-loop reveal" aria-label="Host and student flow">
+        <div><span>Professor</span><strong>Launch a check-in or game in seconds</strong></div>
+        <div><span>Student</span><strong>Follow topics and terms live, bookmark anything</strong></div>
+        <div><span>After class</span><strong>Every confusion point becomes recovery material</strong></div>
+      </div>
+    </section>
+
+    <section id="fellowship" class="section fellowship-credit-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Fellowship project</p>
+        <h2>Made through the Zoom Fellowship at ASU Next Lab.</h2>
+      </div>
+      <div class="credit-grid">
+        <article class="credit-card credit-card-main reveal">
+          <p class="credit-kicker">Built by Shitij Mathur</p>
+          <h3>Built after one too many lectures where half the room had quietly fallen behind.</h3>
+          <p>
+            Momentum started as a Zoom Fellowship project and grew into a
+            working app: live comprehension checks for professors, a running
+            map of the lecture for students, and recovery material for
+            everything that didn't land. All of it lives inside the meeting,
+            because that's where the class actually happens.
+          </p>
+        </article>
+        <aside class="credit-card credit-card-links reveal">
+          <div class="profile-row">
+            <span>Program</span>
+            <strong>Zoom Fellowship · ASU Next Lab</strong>
+          </div>
+          <div class="profile-row">
+            <span>Find Shitij</span>
+            <div class="link-stack">
+              <a href="https://shitijmathur.dev/" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's portfolio, opens in a new tab">Portfolio</a>
+              <a href="https://github.com/shitijkarsolia" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's GitHub profile, opens in a new tab">GitHub</a>
+              <a href="https://linkedin.com/in/shitijmathur" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's LinkedIn profile, opens in a new tab">LinkedIn</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="brand-lockup" aria-label="Zoom Momentum">
+          <svg class="brand-zoom" viewBox="0 0 1000 225" aria-hidden="true">
+            <use href="#zm-wordmark"/>
+          </svg>
+          <span class="brand-word">Momentum</span>
+        </span>
+        <p>
+          Made by Shitij Mathur during the Zoom Student Fellowship at ASU
+          Next Lab. If you teach on Zoom and want to try it in a real class,
+          reach out.
+        </p>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/demo">Try the demo</a>
+        <a href="https://github.com/shitijkarsolia/zoom-momentum-app" target="_blank" rel="noopener noreferrer" aria-label="Open the Zoom Momentum source code on GitHub, opens in a new tab">Source code</a>
+        <a href="https://shitijmathur.dev/" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's portfolio, opens in a new tab">Portfolio</a>
+        <a href="https://linkedin.com/in/shitijmathur" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's LinkedIn profile, opens in a new tab">LinkedIn</a>
+      </nav>
+    </div>
+    <p class="footer-note">
+      Zoom Momentum is a student project built on the Zoom Apps SDK. It is
+      not an official Zoom product.
+    </p>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>
