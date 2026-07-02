@@ -146,20 +146,3 @@ export function BoltIcon({ size = 16 }: IconProps) {
     </svg>
   );
 }
-
-/** The Zoom app icon: blue rounded square with the white camera glyph. */
-export function ZoomLogoIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden>
-      <rect width="48" height="48" rx="10.8" fill="#0B5CFF" />
-      <path
-        d="M9 18.2C9 16.43 10.43 15 12.2 15h13.3c3.59 0 6.5 2.91 6.5 6.5v8.3c0 1.77-1.43 3.2-3.2 3.2H15.5A6.5 6.5 0 0 1 9 26.5v-8.3Z"
-        fill="#fff"
-      />
-      <path
-        d="m34.2 21.6 4.1-3.07c1.05-.79 2.55-.04 2.55 1.28v8.38c0 1.32-1.5 2.07-2.55 1.28l-4.1-3.07v-4.8Z"
-        fill="#fff"
-      />
-    </svg>
-  );
-}

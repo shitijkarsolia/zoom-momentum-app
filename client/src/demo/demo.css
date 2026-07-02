@@ -59,21 +59,21 @@
   font-size: 13.5px;
 }
 
-.demo-bar-logo {
+.zml {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   flex: none;
 }
 
-.demo-bar-logo svg {
+.zml svg {
   display: block;
-  border-radius: 6px;
 }
 
-.demo-bar-brand strong {
+.zml-word {
+  font-family: 'Baloo 2', 'Space Grotesk', 'Segoe UI', sans-serif;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  line-height: 0.9;
+  letter-spacing: -0.015em;
   white-space: nowrap;
 }
 
@@ -836,13 +836,7 @@
 
 .tour-logo {
   display: block;
-  margin-bottom: 14px;
-}
-
-.tour-logo svg {
-  display: block;
-  border-radius: 9px;
-  box-shadow: 0 6px 18px rgba(11, 92, 255, 0.35);
+  margin-bottom: 16px;
 }
 
 .tour-chip {

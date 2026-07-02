@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ZoomLogoIcon } from '../zoom/icons';
+import { ZoomMomentumLogo } from '../zoom/ZoomMomentumLogo';
 import type { TourStep } from './tourSteps';
 
 interface TourOverlayProps {
@@ -154,7 +154,7 @@ export function TourOverlay({ step, stepIndex, totalSteps, onNext, onBack, onSki
       >
         {centered && (
           <span className="tour-logo">
-            <ZoomLogoIcon size={34} />
+            <ZoomMomentumLogo height={26} wordColor="#10203F" />
           </span>
         )}
         {step.chip && <span className={`tour-chip tour-chip--${step.pov}`}>{step.chip}</span>}

@@ -8,7 +8,7 @@ import { MeetingStage } from './demo/zoom/MeetingStage';
 import type { StageParticipant } from './demo/zoom/MeetingStage';
 import { MeetingToolbar } from './demo/zoom/MeetingToolbar';
 import { AppsPanel } from './demo/zoom/AppsPanel';
-import { ZoomLogoIcon } from './demo/zoom/icons';
+import { ZoomMomentumLogo } from './demo/zoom/ZoomMomentumLogo';
 import { TourOverlay } from './demo/tour/TourOverlay';
 import { tourSteps } from './demo/tour/tourSteps';
 import type { TourLayout, TourPov, TourStep } from './demo/tour/tourSteps';
@@ -29,7 +29,7 @@ export default function PublicDemoApp() {
     const link = document.createElement('link');
     link.id = 'demo-tour-font';
     link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Baloo+2:wght@600;700&display=swap';
     document.head.appendChild(link);
   }, []);
 
@@ -227,8 +227,7 @@ export default function PublicDemoApp() {
     <div className="demo-root">
       <header className="demo-bar">
         <div className="demo-bar-brand">
-          <span className="demo-bar-logo"><ZoomLogoIcon size={22} /></span>
-          <strong>Zoom Momentum</strong>
+          <ZoomMomentumLogo height={19} wordColor="#f3f5f9" />
           <span className="demo-bar-note">Interactive demo · simulated Zoom meeting</span>
         </div>
         <div className="demo-bar-actions">
