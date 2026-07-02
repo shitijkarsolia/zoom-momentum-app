@@ -34,8 +34,8 @@ export const tourSteps: TourStep[] = [
     body:
       'You are looking at a simulated Zoom meeting — a college lecture already in progress. ' +
       'Momentum is a Zoom App that runs inside the meeting itself, so this walkthrough recreates ' +
-      'the real thing: same side panel, same features, everything live and clickable. ' +
-      'The tour takes about two minutes.',
+      'the real thing: the same app, docked exactly where it runs in Zoom, everything live and ' +
+      'clickable. The tour takes about two minutes.',
     pov: 'host',
     panelOpen: false,
     placement: 'center',
