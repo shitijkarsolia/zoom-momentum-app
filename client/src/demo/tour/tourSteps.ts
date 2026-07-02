@@ -30,7 +30,7 @@ export interface TourStep {
 export const tourSteps: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to the Momentum demo',
+    title: 'Welcome to the Zoom Momentum demo',
     body:
       'You are looking at a simulated Zoom meeting — a college lecture already in progress. ' +
       'Momentum is a Zoom App that runs inside the meeting itself, so this walkthrough recreates ' +
@@ -121,7 +121,7 @@ export const tourSteps: TourStep[] = [
     chip: 'Student seat',
     title: 'Now you’re a student',
     body:
-      'You switched seats — you are Maya Chen now, and the poll just landed on every student’s ' +
+      'You switched seats — you are Shitij Mathur now, and the poll just landed on every student’s ' +
       'panel. Pick an answer and submit it. Your classmates are answering too: watch the ' +
       'checkmarks pop in the gallery.',
     pov: 'student',
@@ -162,7 +162,7 @@ export const tourSteps: TourStep[] = [
     chip: 'Student seat',
     title: 'Race the class',
     body:
-      'You’re Maya again. Answer before the countdown hits zero — faster correct answers score ' +
+      'You’re Shitij again. Answer before the countdown hits zero — faster correct answers score ' +
       'more points, and your classmates are already tapping.',
     pov: 'student',
     target: '[data-tour="panel"]',

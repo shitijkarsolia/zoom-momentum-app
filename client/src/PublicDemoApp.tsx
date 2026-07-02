@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { HostDashboard } from './views/HostDashboard';
 import type { HostTab } from './views/HostDashboard';
 import { StudentView } from './views/StudentView';
@@ -8,7 +8,7 @@ import { MeetingStage } from './demo/zoom/MeetingStage';
 import type { StageParticipant } from './demo/zoom/MeetingStage';
 import { MeetingToolbar } from './demo/zoom/MeetingToolbar';
 import { AppsPanel } from './demo/zoom/AppsPanel';
-import { BoltIcon } from './demo/zoom/icons';
+import { ZoomLogoIcon } from './demo/zoom/icons';
 import { TourOverlay } from './demo/tour/TourOverlay';
 import { tourSteps } from './demo/tour/tourSteps';
 import type { TourLayout, TourPov, TourStep } from './demo/tour/tourSteps';
@@ -21,6 +21,17 @@ const STUDENT_ID = 'demo-student';
 
 export default function PublicDemoApp() {
   const { state, transcriptSegments, dispatch, actions } = usePublicDemoMeeting();
+
+  // Tour/demo chrome typeface. Loaded at runtime so the font request only
+  // happens in the public demo, never inside Zoom (where CSP is strict).
+  useEffect(() => {
+    if (document.getElementById('demo-tour-font')) return;
+    const link = document.createElement('link');
+    link.id = 'demo-tour-font';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap';
+    document.head.appendChild(link);
+  }, []);
 
   const [pov, setPov] = useState<TourPov>('host');
   const [layout, setLayout] = useState<TourLayout>('meeting');
@@ -216,7 +227,7 @@ export default function PublicDemoApp() {
     <div className="demo-root">
       <header className="demo-bar">
         <div className="demo-bar-brand">
-          <span className="demo-bar-logo"><BoltIcon size={13} /></span>
+          <span className="demo-bar-logo"><ZoomLogoIcon size={22} /></span>
           <strong>Zoom Momentum</strong>
           <span className="demo-bar-note">Interactive demo · simulated Zoom meeting</span>
         </div>

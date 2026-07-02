@@ -59,7 +59,7 @@ export const demoScenario: DemoScenario = {
   meetingId: 'public-demo-ai-lecture',
   title: 'Intro to AI Systems',
   hostName: 'Professor Rivera',
-  studentName: 'Maya Chen',
+  studentName: 'Shitij Mathur',
   baseTimestamp,
   transcriptBeats: [
     {

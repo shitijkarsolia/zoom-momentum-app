@@ -24,6 +24,21 @@
 
 /* --- Demo control bar (above the simulated Zoom window) ------------------ */
 
+.demo-root,
+.tour-card {
+  font-family: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* The embedded app panel keeps the product's own typeface. */
+.zmw-panel-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.demo-root button,
+.tour-card button {
+  font-family: inherit;
+}
+
 .demo-bar {
   display: flex;
   align-items: center;
@@ -48,12 +63,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #0e72ed, #0b5cff);
-  color: #fff;
   flex: none;
+}
+
+.demo-bar-logo svg {
+  display: block;
+  border-radius: 6px;
 }
 
 .demo-bar-brand strong {
@@ -817,6 +832,17 @@
 @keyframes tour-card-in-center {
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.tour-logo {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.tour-logo svg {
+  display: block;
+  border-radius: 9px;
+  box-shadow: 0 6px 18px rgba(11, 92, 255, 0.35);
 }
 
 .tour-chip {
