@@ -6,9 +6,10 @@ interface GlossaryTabProps {
   lang?: string;
   meetingId?: string;
   onAddToNotes?: (entry: GlossaryEntry) => void;
+  disableRemoteTranslations?: boolean;
 }
 
-export function GlossaryTab({ glossary, lang = 'en', meetingId, onAddToNotes }: GlossaryTabProps) {
+export function GlossaryTab({ glossary, lang = 'en', meetingId, onAddToNotes, disableRemoteTranslations }: GlossaryTabProps) {
   const [filter, setFilter] = useState('');
   const [translatedTerms, setTranslatedTerms] = useState<Array<{ term: string; definition: string }> | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -16,7 +17,7 @@ export function GlossaryTab({ glossary, lang = 'en', meetingId, onAddToNotes }: 
   const prevCountRef = useRef(glossary.length);
 
   useEffect(() => {
-    if (lang === 'en' || !meetingId || glossary.length === 0) {
+    if (disableRemoteTranslations || lang === 'en' || !meetingId || glossary.length === 0) {
       setTranslatedTerms(null);
       setIsTranslating(false);
       return;
@@ -53,7 +54,7 @@ export function GlossaryTab({ glossary, lang = 'en', meetingId, onAddToNotes }: 
       });
 
     return () => controller.abort();
-  }, [lang, meetingId, glossary.length]);
+  }, [disableRemoteTranslations, lang, meetingId, glossary.length]);
 
   const displayGlossary = translatedTerms
     ? glossary.map((g, i) => ({
