@@ -4,6 +4,7 @@ import { PollResults } from '../components/pulse/PollResults';
 import { ArenaHost } from '../components/arena/ArenaHost';
 import { Timeline } from '../components/anchor/Timeline';
 import { TranscriptTab } from '../components/anchor/TranscriptTab';
+import type { TranscriptSegment } from '../components/anchor/TranscriptTab';
 import { FeatureInfo } from '../components/shared/FeatureInfo';
 import type { PollDraft, PulsePhase } from '../hooks/usePulse';
 import type { ArenaHostPhase } from '../hooks/useArena';
@@ -66,9 +67,12 @@ interface HostDashboardProps {
   onAnchorStopPolling: () => void;
   onEndClass?: () => void;
   onResetMeeting?: () => void;
+  transcriptSegments?: TranscriptSegment[];
+  activeTabOverride?: HostTab;
+  onActiveTabChange?: (tab: HostTab) => void;
 }
 
-type HostTab = 'pulse' | 'arena' | 'anchor' | 'transcript';
+export type HostTab = 'pulse' | 'arena' | 'anchor' | 'transcript';
 
 export function HostDashboard({
   userName,
@@ -117,12 +121,20 @@ export function HostDashboard({
   onAnchorStopPolling,
   onEndClass,
   onResetMeeting,
+  transcriptSegments,
+  activeTabOverride,
+  onActiveTabChange,
 }: HostDashboardProps) {
-  const [activeTab, setActiveTab] = useState<HostTab>('pulse');
+  const [internalActiveTab, setInternalActiveTab] = useState<HostTab>('pulse');
   const [showSettings, setShowSettings] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [hostToast, setHostToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeTab = activeTabOverride ?? internalActiveTab;
+  const setActiveTab = (tab: HostTab) => {
+    setInternalActiveTab(tab);
+    onActiveTabChange?.(tab);
+  };
 
   const showToast = (msg: string) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -300,6 +312,7 @@ export function HostDashboard({
             glossary={anchorGlossary}
             topics={anchorTopics}
             currentTopicId={anchorCurrentTopicId}
+            segments={transcriptSegments}
           />
         )}
       </div>

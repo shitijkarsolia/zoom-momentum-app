@@ -11,6 +11,7 @@
     "dev": "concurrently -n client,server -c blue,green \"npm run dev -w client\" \"npm run dev -w server\"",
     "dev:mock": "concurrently -n client,server,mock -c blue,green,yellow \"npm run dev -w client\" \"npm run dev -w server\" \"npm run dev -w mock-transcript\"",
     "build": "npm run build -w client && npm run build -w server",
+    "build:site": "VITE_BASE=/demo/ npm run build -w client && node scripts/build-site.mjs",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint 'client/src/**/*.{ts,tsx}' 'server/src/**/*.ts' 'mock-transcript/src/**/*.ts'",
     "test": "vitest run",
     "db:migrate": "npm run db:migrate -w server",

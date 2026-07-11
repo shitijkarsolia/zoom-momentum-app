@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  // '/' for the Express-served build inside Zoom; the public site build sets
+  // VITE_BASE=/demo/ so the demo can live on a route of the website.
+  base: process.env.VITE_BASE || '/',
   plugins: [react()],
   resolve: {
     alias: {
