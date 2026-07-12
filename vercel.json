@@ -11,5 +11,23 @@
       "source": "/demo/:path*",
       "destination": "/demo/index.html"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "zoom-momentum-website.vercel.app" }
+      ],
+      "destination": "https://zoom-momentum.vercel.app/:path*",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(og-image.png|favicon.svg|favicon-32.png|apple-touch-icon.png|site.webmanifest)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=604800" }
+      ]
+    }
   ]
 }

@@ -3,11 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zoom Momentum</title>
+  <title>Zoom Momentum — AI-powered engagement for live lectures</title>
   <meta
     name="description"
-    content="A Zoom App for live college lectures. Professors run quick comprehension checks; students get a live topic timeline, glossary, and a recovery pack after class."
+    content="Momentum listens to the lecture and uses AI to generate polls, a live topic outline, a glossary, and a post-class recap — so professors see who's keeping up and students catch anything they missed."
   />
+  <meta name="author" content="Shitij Mathur" />
+  <link rel="canonical" href="https://zoom-momentum.vercel.app/" />
+  <meta name="theme-color" content="#0b5cff" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Zoom Momentum" />
+  <meta property="og:title" content="Zoom Momentum — AI-powered engagement for live lectures" />
+  <meta property="og:description" content="Momentum listens to the lecture and uses AI to generate polls, a live topic outline, a glossary, and a post-class recap — so professors see who's keeping up and students catch anything they missed." />
+  <meta property="og:url" content="https://zoom-momentum.vercel.app/" />
+  <meta property="og:image" content="https://zoom-momentum.vercel.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Zoom Momentum — AI-powered engagement for live lectures" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Zoom Momentum — AI-powered engagement for live lectures" />
+  <meta name="twitter:description" content="Momentum listens to the lecture and uses AI to generate polls, a live topic outline, a glossary, and a post-class recap — so professors see who's keeping up and students catch anything they missed." />
+  <meta name="twitter:image" content="https://zoom-momentum.vercel.app/og-image.png" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -15,6 +36,42 @@
     rel="stylesheet"
   />
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="./favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Zoom Momentum",
+        "url": "https://zoom-momentum.vercel.app/",
+        "description": "Momentum listens to the lecture and uses AI to generate polls, a live topic outline, a glossary, and a post-class recap — so professors see who's keeping up and students catch anything they missed.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web, Zoom Apps",
+        "image": "https://zoom-momentum.vercel.app/og-image.png",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@id": "https://shitijmathur.dev/#person" },
+        "creator": { "@id": "https://shitijmathur.dev/#person" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://shitijmathur.dev/#person",
+        "name": "Shitij Mathur",
+        "alternateName": "Shitij Karsolia Mathur",
+        "url": "https://shitijmathur.dev/",
+        "sameAs": [
+          "https://shitijmathur.dev/",
+          "https://github.com/shitijkarsolia",
+          "https://linkedin.com/in/shitijmathur"
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -334,7 +391,7 @@
       </nav>
     </div>
     <p class="footer-note">
-      Built by Shitij Mathur
+      Built by <a href="https://shitijmathur.dev/" rel="author" aria-label="Shitij Mathur's portfolio">Shitij Mathur</a>
     </p>
   </footer>
 
