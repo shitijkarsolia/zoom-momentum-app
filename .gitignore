@@ -44,3 +44,6 @@ product-page/assets/.herenow/
 
 # Assembled public site (website + demo), built by scripts/build-site.mjs
 /dist/
+
+# Vercel CLI local state
+.vercel/
