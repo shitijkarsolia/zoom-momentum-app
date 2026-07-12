@@ -1,0 +1,14 @@
+{
+  "name": "Zoom Momentum",
+  "short_name": "Momentum",
+  "description": "Active learning inside Zoom lectures: comprehension checks, a live topic timeline, and a recovery pack after class.",
+  "start_url": "/",
+  "display": "browser",
+  "theme_color": "#0b5cff",
+  "background_color": "#0a46cf",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/favicon-32.png", "type": "image/png", "sizes": "32x32" },
+    { "src": "/apple-touch-icon.png", "type": "image/png", "sizes": "180x180" }
+  ]
+}
