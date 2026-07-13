@@ -88,11 +88,10 @@
         <p class="eyebrow">Under the hood</p>
         <h2>How Momentum is built.</h2>
         <p>
-          This page walks through the whole system in plain words: where the
-          code came from, how live lecture audio turns into a timeline and
-          glossary, how the AI keeps answering even when a provider goes down,
-          and the cloud server that runs it all. No jargon without an
-          explanation.
+          A tour of how the system fits together: where the code came from,
+          how live lecture audio turns into a timeline and glossary, how the
+          AI keeps answering when a provider goes down, and the cloud server
+          that runs it all.
         </p>
       </div>
       <div class="product-loop reveal" aria-label="The three big ideas">
@@ -105,7 +104,7 @@
     <section id="big-picture" class="section arch-section">
       <div class="section-heading reveal">
         <p class="eyebrow">The big picture</p>
-        <h2>Three worlds, one conversation.</h2>
+        <h2>The pieces and how they connect.</h2>
         <p>
           Everything in Momentum lives in one of three places: the Zoom meeting
           itself, our server, or an outside service we call for help. The
@@ -177,13 +176,12 @@
         <p class="eyebrow">The starting point</p>
         <h2>It began with Zoom's Arlo app.</h2>
         <p>
-          A Zoom App is a strange environment: your code runs inside a small
-          browser embedded in the Zoom client, with its own rules for
-          security, sign-in, and talking to the meeting. Rather than
-          discovering those rules the hard way, Momentum started from
+          A Zoom App runs in an unusual place: a small browser embedded
+          inside the Zoom client, with its own rules for security, sign-in,
+          and talking to the meeting. Momentum started from
           <a class="arch-inline-link" href="https://github.com/zoom/arlo" target="_blank" rel="noopener noreferrer">Arlo</a>,
-          Zoom's open-source reference app, to get the basics working, then
-          rebuilt everything around the classroom features it actually needed.
+          Zoom's open-source reference app, to get those basics working, then
+          rebuilt around the classroom features it needed.
         </p>
       </div>
       <div class="arch-split reveal">
@@ -213,9 +211,8 @@
         <p class="eyebrow">Real-time sync</p>
         <h2>How a poll reaches every student.</h2>
         <p>
-          The server runs a simple relay: every meeting gets a "room," and
-          anything one person sends is passed along to everyone else in that
-          room. Here's the journey of a single poll, start to finish.
+          The server runs a simple relay. Every meeting gets a room, and
+          anything one person sends goes to everyone else in that room.
         </p>
       </div>
       <div class="arch-diagram reveal">
@@ -267,7 +264,7 @@
     <section id="transcript" class="section arch-section">
       <div class="section-heading reveal">
         <p class="eyebrow">The transcript pipeline</p>
-        <h2>From spoken words to study material.</h2>
+        <h2>How lecture audio becomes study material.</h2>
         <p>
           Momentum doesn't do its own speech recognition. It uses Zoom's
           Real-Time Media Streams (RTMS), a service where Zoom transcribes
@@ -305,14 +302,15 @@
         </div>
       </div>
       <div class="arch-callout arch-callout-bug reveal">
-        <p class="arch-callout-title">The bug that ate a day: one meeting, two IDs</p>
+        <p class="arch-callout-title">One meeting with two different IDs</p>
         <p>
           Zoom refers to the same meeting by two different ID strings: one
           given to the app inside the meeting, another used by the
           transcription service. So transcripts were being saved under one
           name while the app kept asking for them under the other, and got
-          back nothing. No error, no clue. The fix: right before transcription
-          starts, the app tells the server "here's my ID," and when the
+          back nothing, with no error to point at the cause. The fix: right
+          before transcription starts, the app tells the server "here's my
+          ID," and when the
           transcription service announces itself moments later, the server
           links the two IDs together. If a lookup still misses, the server
           checks active transcription sessions as a safety net. The app never
@@ -320,7 +318,7 @@
         </p>
       </div>
       <div class="arch-callout reveal">
-        <p class="arch-callout-title">The 10-second loop that doesn't waste money</p>
+        <p class="arch-callout-title">Only calling the AI when something new is said</p>
         <p>
           The live timeline runs on a simple loop: every 10 seconds, check
           whether anything new was said. If not, do nothing: no AI call, no
@@ -336,13 +334,13 @@
     <section id="ai" class="section arch-section">
       <div class="section-heading reveal">
         <p class="eyebrow">The AI engine</p>
-        <h2>Three models, one promise: never go dark.</h2>
+        <h2>Three AI models with automatic fallback.</h2>
         <p>
-          A classroom tool can't stop working because one AI provider has a
-          bad afternoon. Every AI request in Momentum, whether polls,
-          quizzes, topics, glossary, translations, or recovery packs, goes
-          through a single doorway that tries three models in order and
-          returns the first answer it gets.
+          If one AI provider goes down or slows to a crawl, the class
+          shouldn't stall. Every AI request in Momentum goes through one
+          function that tries three models in order and returns the first
+          response it gets. That covers polls, quizzes, topic updates, the
+          glossary, translations, and recovery packs.
         </p>
       </div>
       <div class="arch-diagram reveal">
@@ -368,7 +366,7 @@
       </div>
       <div class="arch-trio reveal">
         <article class="feature-card arch-trio-card">
-          <h3>Timeouts, not spinners</h3>
+          <h3>Hard time limits on every call</h3>
           <p>
             Each attempt gets a hard time limit (30 seconds for the gateway,
             15 for Bedrock). A hung provider fails fast and the chain moves
@@ -376,7 +374,7 @@
           </p>
         </article>
         <article class="feature-card arch-trio-card">
-          <h3>Making AI behave like an API</h3>
+          <h3>Getting clean structured data back</h3>
           <p>
             The app needs structured answers (a poll is a question plus four
             options), but models love wrapping answers in chatty prose. A
@@ -386,7 +384,7 @@
           </p>
         </article>
         <article class="feature-card arch-trio-card">
-          <h3>Translate once, share with everyone</h3>
+          <h3>Translating each line once</h3>
           <p>
             Six languages, but each transcript line is translated exactly
             once and cached in the database. If thirty students switch to
@@ -442,7 +440,7 @@
         </div>
       </div>
       <div class="arch-callout reveal">
-        <p class="arch-callout-title">A neat trick: the test lab lives on the server too</p>
+        <p class="arch-callout-title">The test setup runs on the same server</p>
         <p>
           The same server runs a full remote desktop with a real Zoom client
           installed. That means an actual Zoom meeting can be hosted
@@ -457,7 +455,7 @@
     <section id="security" class="section arch-section">
       <div class="section-heading reveal">
         <p class="eyebrow">Security &amp; the Zoom rules</p>
-        <h2>Living inside Zoom's walls.</h2>
+        <h2>Extra rules for running inside Zoom.</h2>
         <p>
           Running inside the Zoom client comes with stricter rules than a
           normal website. Three of them shaped the whole design.
@@ -475,7 +473,7 @@
           </p>
         </article>
         <article class="feature-card arch-trio-card">
-          <h3>Four headers or a blank screen</h3>
+          <h3>Four required security headers</h3>
           <p>
             Zoom refuses to display the app unless the server sends four
             specific security headers with every page. Miss one and you get a
@@ -496,7 +494,7 @@
     <section class="section arch-cta-section">
       <div class="demo-launch reveal">
         <div class="demo-launch-copy">
-          <h3>Want the full engineering story?</h3>
+          <h3>The full technical write-up</h3>
           <p>
             The complete technical deep-dive, with sequence diagrams, the
             message protocol, and every design decision, lives in the open
