@@ -7,6 +7,19 @@ export type ArenaStudentPhase = 'waiting' | 'question' | 'answered' | 'leaderboa
 const QUESTION_TIME_SEC = 5;
 const LEADERBOARD_DISPLAY_SEC = 5;
 
+// Standard competition ranking: ties share the rank of the first tied entry.
+function rankLeaderboard(scores: Map<string, { name: string; score: number }>): LeaderboardEntry[] {
+  const sorted = Array.from(scores.entries())
+    .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
+    .sort((a, b) => b.score - a.score);
+  const ranked: LeaderboardEntry[] = [];
+  for (const [index, entry] of sorted.entries()) {
+    const prev = ranked[index - 1];
+    ranked.push({ ...entry, rank: prev && prev.score === entry.score ? prev.rank : index + 1 });
+  }
+  return ranked;
+}
+
 // --- Host Hook ---
 
 interface ArenaHostState {
@@ -191,10 +204,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
     setState(prev => {
       if (prev.phase !== 'question') return prev;
       const question = prev.questions[prev.currentIndex];
-      const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
-        .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
-        .sort((a, b) => b.score - a.score)
-        .map((entry, i, arr) => ({ ...entry, rank: i === 0 || arr[i - 1]!.score !== entry.score ? i + 1 : arr[i - 1]!.rank }));
+      const entries: LeaderboardEntry[] = rankLeaderboard(prev.scores);
 
       // Compute accuracy for this question
       const correctIndex = question?.correctIndex ?? 0;
@@ -272,10 +282,7 @@ export function useArenaHost({ broadcast }: UseArenaHostOptions) {
   const endGame = useCallback(() => {
     clearTimer();
     setState(prev => {
-      const entries: LeaderboardEntry[] = Array.from(prev.scores.entries())
-        .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
-        .sort((a, b) => b.score - a.score)
-        .map((entry, i, arr) => ({ ...entry, rank: i === 0 || arr[i - 1]!.score !== entry.score ? i + 1 : arr[i - 1]!.rank }));
+      const entries: LeaderboardEntry[] = rankLeaderboard(prev.scores);
       broadcast('ARENA_END', { leaderboard: entries.slice(0, 10) });
       return { ...prev, phase: 'finished', leaderboard: entries };
     });
