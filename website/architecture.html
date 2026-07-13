@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How Zoom Momentum is built — architecture in plain words</title>
+  <title>How Zoom Momentum is built: architecture in plain words</title>
   <meta
     name="description"
-    content="A plain-language tour of Zoom Momentum's architecture: how it grew out of Zoom's Arlo reference app, how live lecture audio becomes study material, how the AI engine fails over across three models, and how it all runs on one EC2 server."
+    content="A plain-language tour of Zoom Momentum's architecture: how it grew out of Zoom's Arlo reference app, how live lecture audio becomes study material, how the AI engine fails over across three models, and how the backend runs from a single cloud server."
   />
   <meta name="author" content="Shitij Mathur" />
   <link rel="canonical" href="https://zoom-momentum.vercel.app/architecture" />
@@ -15,18 +15,18 @@
   <!-- Open Graph -->
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="Zoom Momentum" />
-  <meta property="og:title" content="How Zoom Momentum is built — architecture in plain words" />
-  <meta property="og:description" content="From Zoom's Arlo reference app to a live transcript pipeline, a three-model AI engine, and one EC2 server that runs it all — explained simply, with diagrams." />
+  <meta property="og:title" content="How Zoom Momentum is built: architecture in plain words" />
+  <meta property="og:description" content="From Zoom's Arlo reference app to a live transcript pipeline, a three-model AI engine, and the cloud server that runs it all, explained simply with diagrams." />
   <meta property="og:url" content="https://zoom-momentum.vercel.app/architecture" />
   <meta property="og:image" content="https://zoom-momentum.vercel.app/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Zoom Momentum — AI-powered engagement for live lectures" />
+  <meta property="og:image:alt" content="Zoom Momentum, AI-powered engagement for live lectures" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="How Zoom Momentum is built — architecture in plain words" />
-  <meta name="twitter:description" content="From Zoom's Arlo reference app to a live transcript pipeline, a three-model AI engine, and one EC2 server that runs it all — explained simply, with diagrams." />
+  <meta name="twitter:title" content="How Zoom Momentum is built: architecture in plain words" />
+  <meta name="twitter:description" content="From Zoom's Arlo reference app to a live transcript pipeline, a three-model AI engine, and the cloud server that runs it all, explained simply with diagrams." />
   <meta name="twitter:image" content="https://zoom-momentum.vercel.app/og-image.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -91,13 +91,13 @@
           This page walks through the whole system in plain words: where the
           code came from, how live lecture audio turns into a timeline and
           glossary, how the AI keeps answering even when a provider goes down,
-          and the single cloud server that runs it all. No jargon without an
+          and the cloud server that runs it all. No jargon without an
           explanation.
         </p>
       </div>
       <div class="product-loop reveal" aria-label="The three big ideas">
         <div><span>One web page</span><strong>The whole app is a web page that Zoom shows inside the meeting</strong></div>
-        <div><span>One server</span><strong>A single machine on AWS handles messages, transcripts, and AI</strong></div>
+        <div><span>One backend</span><strong>A single server handles messages, transcripts, and AI</strong></div>
         <div><span>Three AI models</span><strong>If one model fails, the next one automatically takes over</strong></div>
       </div>
     </section>
@@ -109,7 +109,7 @@
         <p>
           Everything in Momentum lives in one of three places: the Zoom meeting
           itself, our server, or an outside service we call for help. The
-          professor and the students never talk to each other directly — every
+          professor and the students never talk to each other directly. Every
           message makes a quick round trip through the server, which keeps
           everyone's screen in sync.
         </p>
@@ -126,11 +126,11 @@
               <strong>Student View</strong>
               <span>What each student sees: timeline, glossary, transcript, bookmarks</span>
             </div>
-            <p class="arch-col-note">Same app, same web address — it checks your Zoom role and shows the right screen.</p>
+            <p class="arch-col-note">Same app, same web address. It checks your Zoom role and shows the right screen.</p>
           </div>
           <div class="arch-flow-arrow" aria-hidden="true"><span>⇄</span></div>
           <div class="arch-col arch-col-server">
-            <p class="arch-col-title">Our server (one machine on AWS)</p>
+            <p class="arch-col-title">Our server (one machine in the cloud)</p>
             <div class="arch-node">
               <strong>Web page files</strong>
               <span>Serves the app itself to Zoom</span>
@@ -182,7 +182,7 @@
           security, sign-in, and talking to the meeting. Rather than
           discovering those rules the hard way, Momentum started from
           <a class="arch-inline-link" href="https://github.com/zoom/arlo" target="_blank" rel="noopener noreferrer">Arlo</a>,
-          Zoom's open-source reference app, to get the basics working — then
+          Zoom's open-source reference app, to get the basics working, then
           rebuilt everything around the classroom features it actually needed.
         </p>
       </div>
@@ -190,9 +190,9 @@
         <article class="credit-card arch-split-card">
           <p class="credit-kicker">Borrowed from Arlo</p>
           <ul class="arch-check-list">
-            <li><strong>The SDK loading trick.</strong> Use the global <code>window.zoomSdk</code> from Zoom's own script tag — the npm package alone can't talk to the Zoom client and silently times out.</li>
+            <li><strong>The SDK loading trick.</strong> Use the global <code>window.zoomSdk</code> from Zoom's own script tag. The npm package alone can't talk to the Zoom client and silently times out.</li>
             <li><strong>One meeting ID for everyone.</strong> Ask Zoom for the meeting's UUID the way Arlo does, so the host and every student agree on which room they're in.</li>
-            <li><strong>Starting live transcription.</strong> Call the transcription API with options the way Arlo does — the shortcut method accepts no settings at all.</li>
+            <li><strong>Starting live transcription.</strong> Call the transcription API with options the way Arlo does, because the shortcut method accepts no settings at all.</li>
             <li><strong>Messaging over WebSockets.</strong> Arlo relays real-time messages through its own server rather than Zoom's built-in app messaging. Momentum followed suit after the built-in route proved unreliable.</li>
           </ul>
         </article>
@@ -238,7 +238,7 @@
             <span class="arch-step-num">3</span>
             <span class="arch-step-tag arch-tag-student">Students</span>
             <strong>Answer on their screens</strong>
-            <p>Each answer travels back through the same relay — never directly to the host.</p>
+            <p>Each answer travels back through the same relay, never directly to the host.</p>
           </li>
           <li class="arch-step-arrow" aria-hidden="true"><span>→</span></li>
           <li class="arch-step">
@@ -252,7 +252,7 @@
       <div class="arch-callout reveal">
         <p class="arch-callout-title">Why the sequence numbers matter</p>
         <p>
-          Classroom wifi is messy — messages can arrive late, twice, or out of
+          Classroom wifi is messy. Messages can arrive late, twice, or out of
           order. Every message carries a counter, and each screen simply
           ignores anything older than what it has already shown. That one rule
           keeps everyone's view settling to the same state instead of
@@ -270,7 +270,7 @@
         <h2>From spoken words to study material.</h2>
         <p>
           Momentum doesn't do its own speech recognition. It uses Zoom's
-          Real-Time Media Streams (RTMS) — a service where Zoom transcribes
+          Real-Time Media Streams (RTMS), a service where Zoom transcribes
           the lecture as it happens and streams the text to our server. From
           there, AI turns raw transcript into topics, definitions, and
           bookmarks.
@@ -300,14 +300,14 @@
           <div class="arch-pipe-arrow" aria-hidden="true"><span>→</span></div>
           <div class="arch-pipe-node">
             <strong>Students see it live</strong>
-            <span>Timeline cards, glossary entries, transcript — in 6 languages</span>
+            <span>Timeline cards, glossary entries, and transcript, in 6 languages</span>
           </div>
         </div>
       </div>
       <div class="arch-callout arch-callout-bug reveal">
         <p class="arch-callout-title">The bug that ate a day: one meeting, two IDs</p>
         <p>
-          Zoom refers to the same meeting by two different ID strings — one
+          Zoom refers to the same meeting by two different ID strings: one
           given to the app inside the meeting, another used by the
           transcription service. So transcripts were being saved under one
           name while the app kept asking for them under the other, and got
@@ -323,11 +323,11 @@
         <p class="arch-callout-title">The 10-second loop that doesn't waste money</p>
         <p>
           The live timeline runs on a simple loop: every 10 seconds, check
-          whether anything new was said. If not, do nothing — no AI call, no
+          whether anything new was said. If not, do nothing: no AI call, no
           cost. If yes, send just the fresh transcript to the AI and ask one
           question: "did the topic change?" Greetings, audio checks, and
           administrative chatter are deliberately filtered out, because the
-          worst failure isn't a missed topic — it's a glossary full of "the
+          worst failure isn't a missed topic. It's a glossary full of "the
           professor said good morning."
         </p>
       </div>
@@ -339,10 +339,10 @@
         <h2>Three models, one promise: never go dark.</h2>
         <p>
           A classroom tool can't stop working because one AI provider has a
-          bad afternoon. Every AI request in Momentum — polls, quizzes,
-          topics, glossary, translations, recovery packs — goes through a
-          single doorway that tries three models in order and returns the
-          first answer it gets.
+          bad afternoon. Every AI request in Momentum, whether polls,
+          quizzes, topics, glossary, translations, or recovery packs, goes
+          through a single doorway that tries three models in order and
+          returns the first answer it gets.
         </p>
       </div>
       <div class="arch-diagram reveal">
@@ -362,7 +362,7 @@
           <div class="arch-chain-node">
             <span class="arch-chain-badge">Last resort</span>
             <strong>Llama 3 70B</strong>
-            <span>On AWS Bedrock. Needs no API key — the server's own AWS identity is the credential, so this floor works even if every token expires.</span>
+            <span>On AWS Bedrock. Needs no API key, because the server's own cloud identity is the credential, so this floor works even if every token expires.</span>
           </div>
         </div>
       </div>
@@ -378,8 +378,8 @@
         <article class="feature-card arch-trio-card">
           <h3>Making AI behave like an API</h3>
           <p>
-            The app needs structured answers — a poll is a question plus four
-            options — but models love wrapping answers in chatty prose. A
+            The app needs structured answers (a poll is a question plus four
+            options), but models love wrapping answers in chatty prose. A
             small repair step gives every response four chances to yield
             clean data, and lecture text is scrubbed before it enters a
             prompt so nothing can break the instructions.
@@ -392,7 +392,7 @@
             once and cached in the database. If thirty students switch to
             Spanish in the same second, one AI call does the work and
             twenty-nine requests wait for its result. If translation fails,
-            students see the English original — never a blank.
+            students see the English original, never a blank.
           </p>
         </article>
       </div>
@@ -401,13 +401,13 @@
     <section id="deployment" class="section arch-section">
       <div class="section-heading reveal">
         <p class="eyebrow">Where it runs</p>
-        <h2>One EC2 server does everything.</h2>
+        <h2>The whole backend is one program.</h2>
         <p>
           Zoom needs a public, secure web address it can load the app from and
-          send transcripts to. The entire backend — web pages, message relay,
-          transcript listener, AI engine, and database — runs as a single
-          program on one Amazon EC2 machine (a t3.large: 2 CPUs, 8&nbsp;GB of
-          memory) in AWS.
+          send transcripts to. The entire backend (web pages, message relay,
+          transcript listener, AI engine, and database) runs as a single
+          program on one cloud server, with a tunnel in front of it that gives
+          it a stable public address.
         </p>
       </div>
       <div class="arch-diagram reveal">
@@ -418,24 +418,24 @@
           </div>
           <div class="arch-pipe-arrow" aria-hidden="true"><span>⇄</span></div>
           <div class="arch-deploy-node">
-            <strong>ngrok tunnel</strong>
-            <span>Gives the server a stable public HTTPS address — like a street address for a machine that doesn't have one</span>
+            <strong>Public tunnel</strong>
+            <span>Gives the server a stable public HTTPS address, like a street address for a machine that doesn't have one</span>
           </div>
           <div class="arch-pipe-arrow" aria-hidden="true"><span>⇄</span></div>
           <div class="arch-deploy-box">
-            <p class="arch-deploy-box-title">AWS EC2 — t3.large, Ubuntu</p>
+            <p class="arch-deploy-box-title">The cloud server</p>
             <div class="arch-deploy-inner">
               <div class="arch-node">
-                <strong>Node server, port 3001</strong>
-                <span>API + relay + transcripts + web pages, one process</span>
+                <strong>Node server, one process</strong>
+                <span>API, relay, transcripts, and web pages, all in one</span>
               </div>
               <div class="arch-node">
-                <strong>systemd services</strong>
-                <span>Auto-restart on failure, survive reboots</span>
+                <strong>Auto-restart</strong>
+                <span>Comes back on failure and survives reboots</span>
               </div>
               <div class="arch-node">
-                <strong>IAM role → Bedrock</strong>
-                <span>The machine's identity <em>is</em> the AI credential</span>
+                <strong>Cloud identity for AI</strong>
+                <span>The machine's identity <em>is</em> the credential, so no AI keys are stored on it</span>
               </div>
             </div>
           </div>
@@ -444,10 +444,10 @@
       <div class="arch-callout reveal">
         <p class="arch-callout-title">A neat trick: the test lab lives on the server too</p>
         <p>
-          The same EC2 machine runs a full remote desktop with a real Zoom
-          client installed. That means an actual Zoom meeting can be hosted
+          The same server runs a full remote desktop with a real Zoom client
+          installed. That means an actual Zoom meeting can be hosted
           <em>on the server itself</em> to test the app end-to-end in the
-          real Zoom environment — no guessing whether it will behave
+          real Zoom environment. No guessing whether it will behave
           differently inside Zoom's embedded browser, because the test
           <em>is</em> Zoom's embedded browser.
         </p>
@@ -467,7 +467,7 @@
         <article class="feature-card arch-trio-card">
           <h3>Sign-in without exposed secrets</h3>
           <p>
-            Sign-in uses OAuth with PKCE — a handshake where the server
+            Sign-in uses OAuth with PKCE, a handshake where the server
             creates a one-time cryptographic challenge for each login, and
             the app's secret key never leaves the server. Zoom's transcript
             messages are verified with a signed stamp too, so nobody can fake
@@ -479,7 +479,7 @@
           <p>
             Zoom refuses to display the app unless the server sends four
             specific security headers with every page. Miss one and you get a
-            blank panel — not an error message. All four are always on.
+            blank panel, not an error message. All four are always on.
           </p>
         </article>
         <article class="feature-card arch-trio-card">
@@ -498,8 +498,8 @@
         <div class="demo-launch-copy">
           <h3>Want the full engineering story?</h3>
           <p>
-            The complete technical deep-dive — with sequence diagrams, the
-            message protocol, and every design decision — lives in the open
+            The complete technical deep-dive, with sequence diagrams, the
+            message protocol, and every design decision, lives in the open
             source repository.
           </p>
         </div>
