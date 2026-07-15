@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/architecture",
+      "destination": "/architecture.html"
+    },
+    {
       "source": "/demo",
       "destination": "/demo/index.html"
     },

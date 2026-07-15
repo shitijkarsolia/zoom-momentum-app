@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Zoom Momentum is built: architecture in plain words</title>
+  <meta
+    name="description"
+    content="A plain-language tour of Zoom Momentum's architecture: how it grew out of Zoom's Arlo reference app, how live lecture audio becomes study material, how the AI engine fails over across three models, and how the backend runs from a single cloud server."
+  />
+  <meta name="author" content="Shitij Mathur" />
+  <link rel="canonical" href="https://zoom-momentum.vercel.app/architecture" />
+  <meta name="theme-color" content="#0b5cff" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Zoom Momentum" />
+  <meta property="og:title" content="How Zoom Momentum is built: architecture in plain words" />
+  <meta property="og:description" content="From Zoom's Arlo reference app to a live transcript pipeline, a three-model AI engine, and the cloud server that runs it all, explained simply with diagrams." />
+  <meta property="og:url" content="https://zoom-momentum.vercel.app/architecture" />
+  <meta property="og:image" content="https://zoom-momentum.vercel.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Zoom Momentum, AI-powered engagement for live lectures" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How Zoom Momentum is built: architecture in plain words" />
+  <meta name="twitter:description" content="From Zoom's Arlo reference app to a live transcript pipeline, a three-model AI engine, and the cloud server that runs it all, explained simply with diagrams." />
+  <meta name="twitter:image" content="https://zoom-momentum.vercel.app/og-image.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Baloo+2:wght@700&family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="icon" href="./favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="./favicon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#top">Skip to content</a>
+  <div class="site-bg" aria-hidden="true">
+    <div class="grid"></div>
+    <div class="glow glow-left"></div>
+    <div class="glow glow-right"></div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Zoom Momentum home">
+      <span class="brand-copy">
+        <span class="brand-lockup">
+          <svg class="brand-zoom" viewBox="0 0 1000 225" aria-hidden="true">
+            <g id="zm-wordmark">
+            <mask id="zm-brand-cut">
+              <rect width="1000" height="225" fill="#fff"/>
+              <rect x="366" y="92" width="150" height="41" rx="20.5" fill="#000"/>
+            </mask>
+            <path d="m 814.1856,67.388717 c 3.82247,6.59494 5.07303,14.0983 5.48595,22.53368 l 0.5427,11.243253 v 78.62013 l 0.55449,11.25504 c 1.10899,18.38088 14.66459,31.97188 33.18704,33.12806 l 11.19606,0.55449 V 101.16565 l 0.55449,-11.243253 c 0.46011,-8.341 1.69888,-15.98593 5.58033,-22.62806 a 44.902197,44.902197 0 0 1 77.74711,0.14157 c 3.82246,6.59494 5.01403,14.23987 5.47415,22.48649 l 0.55449,11.207863 v 78.65552 l 0.55449,11.25504 c 1.15618,18.47526 14.60561,32.06626 33.18705,33.12806 L 1000,224.72337 V 89.922397 A 89.898775,89.898775 0 0 0 910.13662,0.02362708 89.662821,89.662821 0 0 0 842.71254,30.473587 89.780798,89.780798 0 0 0 775.28845,0.01182708 c -18.66402,0 -35.9831,5.66292002 -50.32915,15.44323992 C 716.20538,5.6865371 696.62113,0.01182708 685.37788,0.01182708 V 224.72337 l 11.24325,-0.55449 c 18.80559,-1.23877 32.39659,-14.46403 33.12805,-33.12806 l 0.60168,-11.25504 v -78.62013 l 0.5545,-11.243253 c 0.47191,-8.48257 1.65168,-15.93874 5.48595,-22.58087 a 45.020174,45.020174 0 0 1 38.89714,-22.39211 44.949388,44.949388 0 0 1 38.89715,22.4393 z M 44.93759,224.18067 l 11.243246,0.5427 H 224.71155 l -0.5545,-11.20785 c -1.52191,-18.47526 -14.6056,-31.97188 -33.13985,-33.17525 l -11.24324,-0.55449 H 78.667327 L 213.4683,44.937617 212.91381,33.741567 C 212.04077,15.077537 198.40259,1.5927271 179.77396,0.56631708 l -11.24325,-0.5073 L 0,0.01182708 0.55449376,11.255077 C 2.0292112,29.553367 15.301668,43.333127 33.682546,44.394927 l 11.255044,0.55449 H 146.04422 L 11.243246,179.79758 11.79774,191.04082 c 1.108987,18.52245 14.475826,31.93648 33.13985,33.12806 z M 641.26613,32.903927 a 112.34987,112.34987 0 0 1 0,158.903753 112.43246,112.43246 0 0 1 -158.93914,0 c -43.8758,-43.8758 -43.8758,-115.027963 0,-158.903753 A 112.29089,112.29089 0 0 1 561.72577,2.7082708e-5 112.37347,112.37347 0 0 1 641.26613,32.915727 Z m -31.7949,31.8185 a 67.447677,67.447677 0 0 1 0,95.349333 67.447677,67.447677 0 0 1 -95.34934,0 67.447677,67.447677 0 0 1 0,-95.349333 67.447677,67.447677 0 0 1 95.34934,0 z M 325.91256,2.7082708e-5 A 112.29089,112.29089 0 0 1 405.31134,32.915727 c 43.88759,43.86399 43.88759,115.027953 0,158.891953 a 112.43246,112.43246 0 0 1 -158.93914,0 c -43.8758,-43.8758 -43.8758,-115.027963 0,-158.903753 A 112.29089,112.29089 0 0 1 325.77098,2.7082708e-5 Z M 373.51643,64.698837 a 67.447677,67.447677 0 0 1 0,95.361123 67.447677,67.447677 0 0 1 -95.34933,0 67.447677,67.447677 0 0 1 0,-95.349333 67.447677,67.447677 0 0 1 95.34933,0 z" fill="#2D8CFF" fill-rule="evenodd" mask="url(#zm-brand-cut)"/>
+            <g fill="#2D8CFF">
+              <rect x="374" y="101.5" width="126" height="22" rx="11"/>
+              <rect x="514" y="101.5" width="14" height="22" rx="7"/>
+              <circle cx="566" cy="112.5" r="27"/>
+            </g>
+            </g>
+          </svg>
+          <span class="brand-word">Momentum</span>
+        </span>
+        <small>Zoom Fellowship project</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="./">Home</a>
+      <a href="./#demo">Demo</a>
+      <a href="./#features">Features</a>
+      <a href="./architecture.html" aria-current="page">How it's built</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="arch-hero">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Under the hood</p>
+        <h2>How Momentum is built.</h2>
+        <p>
+          A tour of how the system fits together: where the code came from,
+          how live lecture audio turns into a timeline and glossary, how the
+          AI keeps answering when a provider goes down, and the cloud server
+          that runs it all.
+        </p>
+      </div>
+      <div class="product-loop reveal" aria-label="The three big ideas">
+        <div><span>One web page</span><strong>The whole app is a web page that Zoom shows inside the meeting</strong></div>
+        <div><span>One backend</span><strong>A single server handles messages, transcripts, and AI</strong></div>
+        <div><span>Three AI models</span><strong>If one model fails, the next one automatically takes over</strong></div>
+      </div>
+    </section>
+
+    <section id="big-picture" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">The big picture</p>
+        <h2>The pieces and how they connect.</h2>
+        <p>
+          Everything in Momentum lives in one of three places: the Zoom meeting
+          itself, our server, or an outside service we call for help. The
+          professor and the students never talk to each other directly. Every
+          message makes a quick round trip through the server, which keeps
+          everyone's screen in sync.
+        </p>
+      </div>
+      <div class="arch-diagram reveal">
+        <div class="arch-system">
+          <div class="arch-col">
+            <p class="arch-col-title">Inside the Zoom meeting</p>
+            <div class="arch-node">
+              <strong>Host Dashboard</strong>
+              <span>What the professor sees: launch polls, start games, watch the live analysis</span>
+            </div>
+            <div class="arch-node">
+              <strong>Student View</strong>
+              <span>What each student sees: timeline, glossary, transcript, bookmarks</span>
+            </div>
+            <p class="arch-col-note">Same app, same web address. It checks your Zoom role and shows the right screen.</p>
+          </div>
+          <div class="arch-flow-arrow" aria-hidden="true"><span>⇄</span></div>
+          <div class="arch-col arch-col-server">
+            <p class="arch-col-title">Our server (one machine in the cloud)</p>
+            <div class="arch-node">
+              <strong>Web page files</strong>
+              <span>Serves the app itself to Zoom</span>
+            </div>
+            <div class="arch-node">
+              <strong>Message relay</strong>
+              <span>Passes polls, answers, and scores between host and students</span>
+            </div>
+            <div class="arch-node">
+              <strong>Transcript listener</strong>
+              <span>Receives the live lecture transcript from Zoom, line by line</span>
+            </div>
+            <div class="arch-node">
+              <strong>AI engine</strong>
+              <span>Turns transcript into polls, topics, glossary terms, and recaps</span>
+            </div>
+            <div class="arch-node">
+              <strong>Database</strong>
+              <span>Remembers transcripts, bookmarks, quizzes, and translations</span>
+            </div>
+          </div>
+          <div class="arch-flow-arrow" aria-hidden="true"><span>⇄</span></div>
+          <div class="arch-col">
+            <p class="arch-col-title">Outside services</p>
+            <div class="arch-node">
+              <strong>Zoom Cloud</strong>
+              <span>Sign-in, live transcription, and meeting events</span>
+            </div>
+            <div class="arch-node">
+              <strong>ASU CREATE AI</strong>
+              <span>Gateway to Claude 4.5 Sonnet and GPT-5</span>
+            </div>
+            <div class="arch-node">
+              <strong>AWS Bedrock</strong>
+              <span>Backup AI (Llama 3 70B) that needs no API key</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="arlo" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">The starting point</p>
+        <h2>It began with Zoom's Arlo app.</h2>
+        <p>
+          A Zoom App runs in an unusual place: a small browser embedded
+          inside the Zoom client, with its own rules for security, sign-in,
+          and talking to the meeting. Momentum started from
+          <a class="arch-inline-link" href="https://github.com/zoom/arlo" target="_blank" rel="noopener noreferrer">Arlo</a>,
+          Zoom's open-source reference app, to get those basics working, then
+          rebuilt around the classroom features it needed.
+        </p>
+      </div>
+      <div class="arch-split reveal">
+        <article class="credit-card arch-split-card">
+          <p class="credit-kicker">Borrowed from Arlo</p>
+          <ul class="arch-check-list">
+            <li><strong>The SDK loading trick.</strong> Use the global <code>window.zoomSdk</code> from Zoom's own script tag. The npm package alone can't talk to the Zoom client and silently times out.</li>
+            <li><strong>One meeting ID for everyone.</strong> Ask Zoom for the meeting's UUID the way Arlo does, so the host and every student agree on which room they're in.</li>
+            <li><strong>Starting live transcription.</strong> Call the transcription API with options the way Arlo does, because the shortcut method accepts no settings at all.</li>
+            <li><strong>Messaging over WebSockets.</strong> Arlo relays real-time messages through its own server rather than Zoom's built-in app messaging. Momentum followed suit after the built-in route proved unreliable.</li>
+          </ul>
+        </article>
+        <article class="credit-card arch-split-card">
+          <p class="credit-kicker">Built new for Momentum</p>
+          <ul class="arch-check-list">
+            <li><strong>The classroom features.</strong> Polls, the trivia arena, the live topic timeline, the glossary, bookmarks, and post-class recovery packs.</li>
+            <li><strong>The transcript pipeline.</strong> Storing every line of lecture with an order number, surviving reconnects, and handling Zoom's two-IDs-for-one-meeting quirk.</li>
+            <li><strong>The tiered AI engine.</strong> Three models in a failover chain, with prompt guards, JSON repair, and per-task tuning.</li>
+            <li><strong>Translation with a shared cache.</strong> Six languages, translated once per class instead of once per student.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="sync" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Real-time sync</p>
+        <h2>How a poll reaches every student.</h2>
+        <p>
+          The server runs a simple relay. Every meeting gets a room, and
+          anything one person sends goes to everyone else in that room.
+        </p>
+      </div>
+      <div class="arch-diagram reveal">
+        <ol class="arch-steps">
+          <li class="arch-step">
+            <span class="arch-step-num">1</span>
+            <span class="arch-step-tag arch-tag-host">Professor</span>
+            <strong>Launches a poll</strong>
+            <p>One click sends the question to the server with a sequence number attached.</p>
+          </li>
+          <li class="arch-step-arrow" aria-hidden="true"><span>→</span></li>
+          <li class="arch-step">
+            <span class="arch-step-num">2</span>
+            <span class="arch-step-tag arch-tag-server">Server</span>
+            <strong>Relays it to the room</strong>
+            <p>Every student connected to that meeting's room gets the poll instantly.</p>
+          </li>
+          <li class="arch-step-arrow" aria-hidden="true"><span>→</span></li>
+          <li class="arch-step">
+            <span class="arch-step-num">3</span>
+            <span class="arch-step-tag arch-tag-student">Students</span>
+            <strong>Answer on their screens</strong>
+            <p>Each answer travels back through the same relay, never directly to the host.</p>
+          </li>
+          <li class="arch-step-arrow" aria-hidden="true"><span>→</span></li>
+          <li class="arch-step">
+            <span class="arch-step-num">4</span>
+            <span class="arch-step-tag arch-tag-host">Professor</span>
+            <strong>Watches results live</strong>
+            <p>Answers roll into a bar chart in real time, and the professor adjusts the class.</p>
+          </li>
+        </ol>
+      </div>
+      <div class="arch-callout reveal">
+        <p class="arch-callout-title">Why the sequence numbers matter</p>
+        <p>
+          Classroom wifi is messy. Messages can arrive late, twice, or out of
+          order. Every message carries a counter, and each screen simply
+          ignores anything older than what it has already shown. That one rule
+          keeps everyone's view settling to the same state instead of
+          flickering. The relay also protects itself: it drops connections
+          that don't name a meeting, caps message sizes, rate-limits chatty
+          clients, and pings every connection every 30 seconds to sweep out
+          "ghost" students whose laptops fell asleep.
+        </p>
+      </div>
+    </section>
+
+    <section id="transcript" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">The transcript pipeline</p>
+        <h2>How lecture audio becomes study material.</h2>
+        <p>
+          Momentum doesn't do its own speech recognition. It uses Zoom's
+          Real-Time Media Streams (RTMS), a service where Zoom transcribes
+          the lecture as it happens and streams the text to our server. From
+          there, AI turns raw transcript into topics, definitions, and
+          bookmarks.
+        </p>
+      </div>
+      <div class="arch-diagram reveal">
+        <div class="arch-pipeline">
+          <div class="arch-pipe-node">
+            <strong>Professor speaks</strong>
+            <span>Just teaches the class, nothing special</span>
+          </div>
+          <div class="arch-pipe-arrow" aria-hidden="true"><span>→</span></div>
+          <div class="arch-pipe-node">
+            <strong>Zoom transcribes live</strong>
+            <span>RTMS turns speech into text as it happens</span>
+          </div>
+          <div class="arch-pipe-arrow" aria-hidden="true"><span>→</span></div>
+          <div class="arch-pipe-node">
+            <strong>Server saves each line</strong>
+            <span>Numbered in order, with the speaker's name</span>
+          </div>
+          <div class="arch-pipe-arrow" aria-hidden="true"><span>→</span></div>
+          <div class="arch-pipe-node">
+            <strong>AI reads the last few minutes</strong>
+            <span>Spots topic changes and new technical terms</span>
+          </div>
+          <div class="arch-pipe-arrow" aria-hidden="true"><span>→</span></div>
+          <div class="arch-pipe-node">
+            <strong>Students see it live</strong>
+            <span>Timeline cards, glossary entries, and transcript, in 6 languages</span>
+          </div>
+        </div>
+      </div>
+      <div class="arch-callout arch-callout-bug reveal">
+        <p class="arch-callout-title">One meeting with two different IDs</p>
+        <p>
+          Zoom refers to the same meeting by two different ID strings: one
+          given to the app inside the meeting, another used by the
+          transcription service. So transcripts were being saved under one
+          name while the app kept asking for them under the other, and got
+          back nothing, with no error to point at the cause. The fix: right
+          before transcription starts, the app tells the server "here's my
+          ID," and when the
+          transcription service announces itself moments later, the server
+          links the two IDs together. If a lookup still misses, the server
+          checks active transcription sessions as a safety net. The app never
+          has to know two IDs ever existed.
+        </p>
+      </div>
+      <div class="arch-callout reveal">
+        <p class="arch-callout-title">Only calling the AI when something new is said</p>
+        <p>
+          The live timeline runs on a simple loop: every 10 seconds, check
+          whether anything new was said. If not, do nothing: no AI call, no
+          cost. If yes, send just the fresh transcript to the AI and ask one
+          question: "did the topic change?" Greetings, audio checks, and
+          administrative chatter are deliberately filtered out, because the
+          worst failure isn't a missed topic. It's a glossary full of "the
+          professor said good morning."
+        </p>
+      </div>
+    </section>
+
+    <section id="ai" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">The AI engine</p>
+        <h2>Three AI models with automatic fallback.</h2>
+        <p>
+          If one AI provider goes down or slows to a crawl, the class
+          shouldn't stall. Every AI request in Momentum goes through one
+          function that tries three models in order and returns the first
+          response it gets. That covers polls, quizzes, topic updates, the
+          glossary, translations, and recovery packs.
+        </p>
+      </div>
+      <div class="arch-diagram reveal">
+        <div class="arch-chain">
+          <div class="arch-chain-node arch-chain-primary">
+            <span class="arch-chain-badge">First choice</span>
+            <strong>Claude 4.5 Sonnet</strong>
+            <span>Via ASU's CREATE AI gateway. Handles almost everything.</span>
+          </div>
+          <div class="arch-chain-arrow" aria-hidden="true"><span>if it fails</span></div>
+          <div class="arch-chain-node">
+            <span class="arch-chain-badge">Backup</span>
+            <strong>GPT-5</strong>
+            <span>Same gateway, different model. Steps in automatically.</span>
+          </div>
+          <div class="arch-chain-arrow" aria-hidden="true"><span>if it fails</span></div>
+          <div class="arch-chain-node">
+            <span class="arch-chain-badge">Last resort</span>
+            <strong>Llama 3 70B</strong>
+            <span>On AWS Bedrock. Needs no API key, because the server's own cloud identity is the credential, so this floor works even if every token expires.</span>
+          </div>
+        </div>
+      </div>
+      <div class="arch-trio reveal">
+        <article class="feature-card arch-trio-card">
+          <h3>Hard time limits on every call</h3>
+          <p>
+            Each attempt gets a hard time limit (30 seconds for the gateway,
+            15 for Bedrock). A hung provider fails fast and the chain moves
+            on, instead of leaving a professor staring at a loading wheel.
+          </p>
+        </article>
+        <article class="feature-card arch-trio-card">
+          <h3>Getting clean structured data back</h3>
+          <p>
+            The app needs structured answers (a poll is a question plus four
+            options), but models love wrapping answers in chatty prose. A
+            small repair step gives every response four chances to yield
+            clean data, and lecture text is scrubbed before it enters a
+            prompt so nothing can break the instructions.
+          </p>
+        </article>
+        <article class="feature-card arch-trio-card">
+          <h3>Translating each line once</h3>
+          <p>
+            Six languages, but each transcript line is translated exactly
+            once and cached in the database. If thirty students switch to
+            Spanish in the same second, one AI call does the work and
+            twenty-nine requests wait for its result. If translation fails,
+            students see the English original, never a blank.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="deployment" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Where it runs</p>
+        <h2>The whole backend is one program.</h2>
+        <p>
+          Zoom needs a public, secure web address it can load the app from and
+          send transcripts to. The entire backend (web pages, message relay,
+          transcript listener, AI engine, and database) runs as a single
+          program on one cloud server, with a tunnel in front of it that gives
+          it a stable public address.
+        </p>
+      </div>
+      <div class="arch-diagram reveal">
+        <div class="arch-deploy">
+          <div class="arch-deploy-node">
+            <strong>Zoom</strong>
+            <span>The Zoom client loads the app; Zoom Cloud streams transcripts and events</span>
+          </div>
+          <div class="arch-pipe-arrow" aria-hidden="true"><span>⇄</span></div>
+          <div class="arch-deploy-node">
+            <strong>Public tunnel</strong>
+            <span>Gives the server a stable public HTTPS address, like a street address for a machine that doesn't have one</span>
+          </div>
+          <div class="arch-pipe-arrow" aria-hidden="true"><span>⇄</span></div>
+          <div class="arch-deploy-box">
+            <p class="arch-deploy-box-title">The cloud server</p>
+            <div class="arch-deploy-inner">
+              <div class="arch-node">
+                <strong>Node server, one process</strong>
+                <span>API, relay, transcripts, and web pages, all in one</span>
+              </div>
+              <div class="arch-node">
+                <strong>Auto-restart</strong>
+                <span>Comes back on failure and survives reboots</span>
+              </div>
+              <div class="arch-node">
+                <strong>Cloud identity for AI</strong>
+                <span>The machine's identity <em>is</em> the credential, so no AI keys are stored on it</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arch-callout reveal">
+        <p class="arch-callout-title">The test setup runs on the same server</p>
+        <p>
+          The same server runs a full remote desktop with a real Zoom client
+          installed. That means an actual Zoom meeting can be hosted
+          <em>on the server itself</em> to test the app end-to-end in the
+          real Zoom environment. No guessing whether it will behave
+          differently inside Zoom's embedded browser, because the test
+          <em>is</em> Zoom's embedded browser.
+        </p>
+      </div>
+    </section>
+
+    <section id="security" class="section arch-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Security &amp; the Zoom rules</p>
+        <h2>Extra rules for running inside Zoom.</h2>
+        <p>
+          Running inside the Zoom client comes with stricter rules than a
+          normal website. Three of them shaped the whole design.
+        </p>
+      </div>
+      <div class="arch-trio reveal">
+        <article class="feature-card arch-trio-card">
+          <h3>Sign-in without exposed secrets</h3>
+          <p>
+            Sign-in uses OAuth with PKCE, a handshake where the server
+            creates a one-time cryptographic challenge for each login, and
+            the app's secret key never leaves the server. Zoom's transcript
+            messages are verified with a signed stamp too, so nobody can fake
+            a lecture.
+          </p>
+        </article>
+        <article class="feature-card arch-trio-card">
+          <h3>Four required security headers</h3>
+          <p>
+            Zoom refuses to display the app unless the server sends four
+            specific security headers with every page. Miss one and you get a
+            blank panel, not an error message. All four are always on.
+          </p>
+        </article>
+        <article class="feature-card arch-trio-card">
+          <h3>One origin for everything</h3>
+          <p>
+            The same server that answers API calls also serves the app's web
+            pages. Everything comes from one address, so the browser's
+            cross-origin defenses never get in the way inside the meeting.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section arch-cta-section">
+      <div class="demo-launch reveal">
+        <div class="demo-launch-copy">
+          <h3>The full technical write-up</h3>
+          <p>
+            The complete technical deep-dive, with sequence diagrams, the
+            message protocol, and every design decision, lives in the open
+            source repository.
+          </p>
+        </div>
+        <div class="arch-cta-actions">
+          <a class="button button-primary" href="https://github.com/shitijkarsolia/zoom-momentum-app/blob/main/docs/technical-deep-dive.md" target="_blank" rel="noopener noreferrer">Read the deep-dive</a>
+          <a class="button button-secondary" href="/demo">Try the demo</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="brand-lockup" aria-label="Zoom Momentum">
+          <svg class="brand-zoom" viewBox="0 0 1000 225" aria-hidden="true">
+            <use href="#zm-wordmark"/>
+          </svg>
+          <span class="brand-word">Momentum</span>
+        </span>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/demo">Try the demo</a>
+        <a href="./architecture.html">How it's built</a>
+        <a href="https://github.com/shitijkarsolia/zoom-momentum-app" target="_blank" rel="noopener noreferrer" aria-label="Open the Zoom Momentum source code on GitHub, opens in a new tab">Source code</a>
+        <a href="https://nextlab-zoom-fellows.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Open the Zoom Fellows at ASU site, opens in a new tab">The fellowship</a>
+        <a href="https://shitijmathur.dev/" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's portfolio, opens in a new tab">Portfolio</a>
+        <a href="https://linkedin.com/in/shitijmathur" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's LinkedIn profile, opens in a new tab">LinkedIn</a>
+      </nav>
+    </div>
+    <p class="footer-note">
+      Built by <a href="https://shitijmathur.dev/" rel="author" aria-label="Shitij Mathur's portfolio">Shitij Mathur</a>
+    </p>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>
