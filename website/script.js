@@ -14,6 +14,14 @@ const getAnchorOffset = () => {
 const scrollToAnchor = (hash, behavior = "smooth") => {
   if (!hash || hash === "#") return;
 
+  // "Home" / skip-link point at #top, which is <main> wrapping every section.
+  // Looking up a .section-heading inside it would land on the first section
+  // (the demo), so send these straight to the very top (the hero).
+  if (hash === "#top") {
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : behavior });
+    return;
+  }
+
   const target = document.querySelector(hash);
   if (!target) return;
 

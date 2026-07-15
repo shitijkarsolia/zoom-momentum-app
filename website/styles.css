@@ -34,6 +34,17 @@ body {
   overflow-x: hidden;
 }
 
+/* The body gradient darkens over the page's full height, so a taller page
+   reads lighter at any given scroll position. This page is ~36% taller than
+   the home page, so match the home page's gradient scale: darken over the
+   same ~5340px distance and hold the deep blue past it. Keeps the same
+   scroll-follows gradient the rest of the site has. */
+body.page-arch {
+  background:
+    radial-gradient(circle at top center, rgba(43, 194, 255, 0.1), transparent 1500px),
+    linear-gradient(180deg, var(--bg) 0, var(--bg-deep) 5340px);
+}
+
 a {
   color: inherit;
 }
@@ -614,6 +625,7 @@ h3 {
 
 .demo-section .section-heading h2,
 #features .section-heading h2,
+.screenshots-section .section-heading h2,
 .fellowship-credit-section .section-heading h2 {
   max-width: 15ch;
 }
@@ -944,6 +956,96 @@ h3 {
 
 .site-footer .footer-note a:hover {
   color: #fff;
+}
+
+.screenshots-section .section-heading p:last-child {
+  max-width: 62ch;
+}
+
+.shot-wide {
+  margin: 0 0 26px;
+  padding: clamp(12px, 1.8vw, 20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 78% 14%, rgba(43, 194, 255, 0.12), transparent 40%),
+    var(--panel);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+.shot-wide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+}
+
+.shot-wide figcaption {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.shot-strip {
+  display: flex;
+  gap: 20px;
+  padding: 8px 4px 20px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.shot-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(295px, 74vw);
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.shot-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(2, 8, 32, 0.28);
+}
+
+.shot-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0b1c44;
+  box-shadow: 0 4px 14px rgba(2, 8, 32, 0.35);
+}
+
+.shot-tag--host {
+  background: var(--zoom-cyan);
+}
+
+.shot-tag--student {
+  background: #59d99d;
+}
+
+.shot-card figcaption {
+  margin-top: 12px;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 /* ── Architecture page ─────────────────────────────────────────── */
