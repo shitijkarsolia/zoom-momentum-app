@@ -6,9 +6,9 @@ Momentum gives professors real-time engagement tools and gives students a dynami
 
 A write-up of the project lives in [`docs/blog/launch.md`](docs/blog/launch.md), and the full engineering breakdown is in [`docs/technical-deep-dive.md`](docs/technical-deep-dive.md).
 
-![Momentum running in a simulated Zoom meeting: the professor's Live Anchor panel on the left, the class gallery in the middle, and a student's topic timeline on the right](website/assets/screenshots/demo-both-views.png)
+![Momentum running in a Zoom meeting: the professor's Live Anchor panel on the left, the class gallery in the middle, and a student's topic timeline on the right](website/assets/screenshots/demo-both-views.png)
 
-*Professor on the left, the class in the middle, a student on the right — captured from the [interactive demo](https://zoom-momentum.vercel.app/demo), which recreates the app exactly as it runs docked inside Zoom.*
+*In a real meeting the panel docks on the right for everyone — shown side by side here, the professor's panel on the left and a student's on the right, so you can see both at once. [Try it live →](https://zoom-momentum.vercel.app/demo)*
 
 ---
 
