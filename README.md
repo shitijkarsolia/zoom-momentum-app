@@ -6,6 +6,10 @@ Momentum gives professors real-time engagement tools and gives students a dynami
 
 A write-up of the project lives in [`docs/blog/launch.md`](docs/blog/launch.md), and the full engineering breakdown is in [`docs/technical-deep-dive.md`](docs/technical-deep-dive.md).
 
+![Momentum running in a Zoom meeting: the professor's Live Anchor panel on the left, the class gallery in the middle, and a student's topic timeline on the right](website/assets/screenshots/demo-both-views.png)
+
+*In a real meeting the panel docks on the right for everyone — shown side by side here, the professor's panel on the left and a student's on the right, so you can see both at once. [Try it live →](https://zoom-momentum.vercel.app/demo)*
+
 ---
 
 ## How It Works
@@ -31,6 +35,14 @@ Check-in polls that let the professor gauge student understanding at any point d
 - Students see a modal overlay, select an answer, and submit
 - Professor ends the poll and results are shown as a bar chart
 
+<p align="center">
+  <img src="website/assets/screenshots/host-pulse-draft.png" alt="Professor: AI-drafted poll with editable question and options" width="32%" />
+  <img src="website/assets/screenshots/student-poll.png" alt="Student: live poll overlay with answer options and submit button" width="32%" />
+  <img src="website/assets/screenshots/host-pulse-results.png" alt="Professor: tallied poll results as percentage bars" width="32%" />
+</p>
+
+*AI drafts the poll (professor) → it lands on every student's panel → results tally the moment it closes.*
+
 ### Arena (Host launches, students participate)
 
 A timed trivia game for reviewing material.
@@ -41,6 +53,14 @@ A timed trivia game for reviewing material.
 - Leaderboard updates after each question
 - Professor can end the quiz at any time
 - Student overlay stays visible between questions
+
+<p align="center">
+  <img src="website/assets/screenshots/host-arena-review.png" alt="Professor: review AI-written quiz questions with highlighted correct answers before starting" width="32%" />
+  <img src="website/assets/screenshots/student-arena-question.png" alt="Student: quiz question with a live countdown and four options" width="32%" />
+  <img src="website/assets/screenshots/host-arena-leaderboard.png" alt="Professor: live leaderboard with per-question accuracy" width="32%" />
+</p>
+
+*Review the AI-written questions (professor) → students race the countdown → live leaderboard with per-question accuracy.*
 
 ### Live Anchor (Automatic for all participants)
 
@@ -53,6 +73,15 @@ AI-powered real-time topic timeline, glossary, and live transcript built from RT
 - Both host and students see the live transcript with glossary term highlighting
 - Inside Zoom: toggle between Live (RTMS) and Mock transcript sources
 
+<p align="center">
+  <img src="website/assets/screenshots/host-anchor.png" alt="Professor: Live Anchor topic timeline with the current topic highlighted" width="24%" />
+  <img src="website/assets/screenshots/host-transcript.png" alt="Professor: live transcript with timestamps and highlighted key terms" width="24%" />
+  <img src="website/assets/screenshots/student-timeline.png" alt="Student: topic timeline with bookmark and note buttons" width="24%" />
+  <img src="website/assets/screenshots/student-glossary.png" alt="Student: searchable glossary of terms defined from the lecture" width="24%" />
+</p>
+
+*The topic timeline and live transcript (professor) — and the same timeline plus a self-writing glossary on the student side, translatable into six languages.*
+
 ### Recovery Pack (Post-class, student-facing)
 
 Personalized post-class review based on moments the student bookmarked during the lecture.
@@ -63,6 +92,26 @@ Personalized post-class review based on moments the student bookmarked during th
   - Plain-language explanation of each confusing topic
   - A practice problem
   - A suggested external resource
+
+<p align="center">
+  <img src="website/assets/screenshots/student-bookmarks.png" alt="Student: bookmarks tab with a manually saved topic and an auto-captured cue" width="32%" />
+  <img src="website/assets/screenshots/student-recovery.png" alt="Student: Class Complete summary with topics covered, terms learned, and bookmark counts" width="32%" />
+  <img src="website/assets/screenshots/student-recovery-pack.png" alt="Student: recovery pack with explanation, practice prompt, and resource for each bookmark" width="32%" />
+</p>
+
+*Bookmarks captured during class → an instant end-of-class summary → a recovery pack built from every bookmarked moment.*
+
+### Smart Notes (Student)
+
+A notes panel that assembles itself from the class.
+
+- Type free-form notes during the lecture (autosaved locally)
+- Tap "+ Note" on any topic card, glossary term, or bookmark to capture it as Markdown
+- Download the full set — notes, topics, terms, and bookmarks — as a `.md` file
+
+<p align="center">
+  <img src="website/assets/screenshots/student-notes.png" alt="Student: My Notes panel with markdown captured from topics and glossary terms, plus Copy and Download buttons" width="40%" />
+</p>
 
 ---
 
@@ -129,6 +178,8 @@ The host and students never talk directly — every message goes through the rel
 ## Demo Mode
 
 When accessed outside of Zoom (in a regular browser), the app auto-detects **demo mode**:
+
+![Demo mode: the host dashboard docked beside a simulated Zoom meeting gallery](website/assets/screenshots/demo-hero.png)
 
 - Full real app UI (not a separate simulation)
 - Role switcher in the blue banner (Host / Student)
