@@ -31,8 +31,18 @@ body {
   background:
     radial-gradient(circle at top center, rgba(43, 194, 255, 0.1), transparent 28%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
-  background-attachment: fixed;
   overflow-x: hidden;
+}
+
+/* The body gradient darkens over the page's full height, so a taller page
+   reads lighter at any given scroll position. This page is ~36% taller than
+   the home page, so match the home page's gradient scale: darken over the
+   same ~5340px distance and hold the deep blue past it. Keeps the same
+   scroll-follows gradient the rest of the site has. */
+body.page-arch {
+  background:
+    radial-gradient(circle at top center, rgba(43, 194, 255, 0.1), transparent 1500px),
+    linear-gradient(180deg, var(--bg) 0, var(--bg-deep) 5340px);
 }
 
 a {
