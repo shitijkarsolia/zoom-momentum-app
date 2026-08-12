@@ -194,7 +194,6 @@ When accessed outside of Zoom (in a regular browser), the app auto-detects **dem
 
 The app runs on an **EC2 instance** with a static ngrok tunnel for development.
 
-For the separate static Vercel websites (`nextlab-zoom-fellows` and `zoom-momentum`), see [`docs/static-websites-progress.md`](docs/static-websites-progress.md).
 
 ### Zoom Marketplace Configuration
 
@@ -336,9 +335,6 @@ zoom-momentum/
       schema.prisma                # Database schema
 
   mock-transcript/                 # Dev-only mock RTMS service (CS50 lecture data)
-  product-page/                    # Static landing page
-  nextlab-zoom-fellows/            # Static Vercel site: fellows hub
-  zoom-momentum/                   # Static Vercel site: product page
 ```
 
 ## Tech Stack

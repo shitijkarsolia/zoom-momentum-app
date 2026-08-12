@@ -1,6 +1,27 @@
 {
   "name": "zoom-momentum",
   "version": "0.1.0",
+  "description": "A Zoom App for live college lectures: AI-generated comprehension polls, a live topic timeline and glossary, and post-class recovery packs, all inside the meeting.",
+  "keywords": [
+    "zoom",
+    "zoom-apps",
+    "education",
+    "edtech",
+    "live-transcription",
+    "rtms",
+    "ai",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://zoom-momentum.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shitijkarsolia/zoom-momentum-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shitijkarsolia/zoom-momentum-app/issues"
+  },
+  "author": "Shitij Mathur",
   "license": "MIT",
   "private": true,
   "workspaces": [

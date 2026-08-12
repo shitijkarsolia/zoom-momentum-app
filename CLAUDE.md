@@ -132,7 +132,6 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
 - CREATE AI requires `request_source: "override_params"` with `model_name` + `model_provider` to override project defaults (service tokens use project defaults otherwise)
 - Env vars: `CREATE_AI_API_URL`, `CREATE_AI_TOKEN`, `CREATE_AI_PRIMARY_MODEL`, `CREATE_AI_PRIMARY_PROVIDER`, `CREATE_AI_BACKUP_MODEL`, `CREATE_AI_BACKUP_PROVIDER`
 - Available models list: https://api-main.aiml.asu.edu docs (requires admin token) or CREATE AI documentation portal
-- Benchmark scripts in `poc/` (benchmark.mjs, benchmark-quality.mjs)
 
 ## Zoom SDK Integration (CRITICAL)
 
@@ -192,5 +191,4 @@ Key files: `server/src/services/translator.ts`, `client/src/views/StudentView.ts
 
 ## Git Config
 - user.name: `shitijkarsolia`
-- user.email: `shitijkarsolia@gmail.com`
 - Do NOT add `Co-Authored-By` lines to commits
