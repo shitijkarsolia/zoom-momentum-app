@@ -13,6 +13,7 @@ npm run dev              # Run client (port 5173) + server (port 3001) concurren
 npm run dev:mock         # Same as above + mock-transcript service (CS50 lecture chunks)
 npm run build            # Build both client and server
 npm run db:migrate       # Run Prisma migrations (server workspace)
+npm run db:generate      # Regenerate the Prisma client (also runs on npm install)
 npm run db:studio        # Open Prisma Studio GUI
 
 npm run dev -w client    # Client dev server only
@@ -124,14 +125,13 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
   - Model 2: `gpt5` via `openai` (backup)
 - **Fallback:** AWS Bedrock, region `us-east-1`
   - Model: `meta.llama3-70b-instruct-v1:0` (Llama 3 70B via Converse API)
-  - IAM role: `zoom-momentum-ec2-role`
+  - Auth: EC2 instance role (no static keys)
 - Failover chain: claude4_5_sonnet → gpt5 → Bedrock (automatic, per-request)
 - Tiered logic lives in `server/src/ai-client.ts`
 - CREATE AI config is optional — if env vars are missing, falls back to Bedrock
 - CREATE AI requires `request_source: "override_params"` with `model_name` + `model_provider` to override project defaults (service tokens use project defaults otherwise)
 - Env vars: `CREATE_AI_API_URL`, `CREATE_AI_TOKEN`, `CREATE_AI_PRIMARY_MODEL`, `CREATE_AI_PRIMARY_PROVIDER`, `CREATE_AI_BACKUP_MODEL`, `CREATE_AI_BACKUP_PROVIDER`
 - Available models list: https://api-main.aiml.asu.edu docs (requires admin token) or CREATE AI documentation portal
-- Benchmark scripts in `poc/` (benchmark.mjs, benchmark-quality.mjs)
 
 ## Zoom SDK Integration (CRITICAL)
 
@@ -191,5 +191,4 @@ Key files: `server/src/services/translator.ts`, `client/src/views/StudentView.ts
 
 ## Git Config
 - user.name: `shitijkarsolia`
-- user.email: `shitijkarsolia@gmail.com`
 - Do NOT add `Co-Authored-By` lines to commits

@@ -59,7 +59,7 @@ export const demoScenario: DemoScenario = {
   meetingId: 'public-demo-ai-lecture',
   title: 'Intro to AI Systems',
   hostName: 'Professor Rivera',
-  studentName: 'Shitij Mathur',
+  studentName: 'Lip Gallagher',
   baseTimestamp,
   transcriptBeats: [
     {
@@ -199,7 +199,10 @@ export const demoScenario: DemoScenario = {
     },
   ],
   students: [
-    { participantId: 'student-advikaa', name: 'Advikaa Kapil', pollAnswerIndex: 1, arenaAnswers: [0, 1], arenaAnswerMs: [1_200, 1_600] },
+    // Arena scoring is 1000 + floor((1 - timeMs / 5000) * 500) per correct answer.
+    // Shitij answers both correctly and fastest, so he finishes first on the
+    // leaderboard no matter how the person taking the tour plays.
+    { participantId: 'student-shitij', name: 'Shitij Mathur', pollAnswerIndex: 1, arenaAnswers: [0, 1], arenaAnswerMs: [900, 1_100] },
     { participantId: 'student-liam', name: 'Liam Wirth', pollAnswerIndex: 2, arenaAnswers: [0, 1], arenaAnswerMs: [1_700, 1_300] },
     { participantId: 'student-neha', name: 'Neha Kashyap', pollAnswerIndex: 0, arenaAnswers: [1, 1], arenaAnswerMs: [2_400, 2_000] },
     { participantId: 'student-yash', name: 'Yash Sawant', pollAnswerIndex: 1, arenaAnswers: [0, 2], arenaAnswerMs: [2_100, 2_600] },

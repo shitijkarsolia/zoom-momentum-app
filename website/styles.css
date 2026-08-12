@@ -34,6 +34,17 @@ body {
   overflow-x: hidden;
 }
 
+/* The body gradient darkens over the page's full height, so a taller page
+   reads lighter at any given scroll position. This page is ~36% taller than
+   the home page, so match the home page's gradient scale: darken over the
+   same ~5340px distance and hold the deep blue past it. Keeps the same
+   scroll-follows gradient the rest of the site has. */
+body.page-arch {
+  background:
+    radial-gradient(circle at top center, rgba(43, 194, 255, 0.1), transparent 1500px),
+    linear-gradient(180deg, var(--bg) 0, var(--bg-deep) 5340px);
+}
+
 a {
   color: inherit;
 }
@@ -614,6 +625,7 @@ h3 {
 
 .demo-section .section-heading h2,
 #features .section-heading h2,
+.screenshots-section .section-heading h2,
 .fellowship-credit-section .section-heading h2 {
   max-width: 15ch;
 }
@@ -944,6 +956,580 @@ h3 {
 
 .site-footer .footer-note a:hover {
   color: #fff;
+}
+
+.screenshots-section .section-heading p:last-child {
+  max-width: 62ch;
+}
+
+.shot-wide {
+  margin: 0 0 26px;
+  padding: clamp(12px, 1.8vw, 20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 78% 14%, rgba(43, 194, 255, 0.12), transparent 40%),
+    var(--panel);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+.shot-wide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+}
+
+.shot-wide figcaption {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.shot-strip {
+  display: flex;
+  gap: 20px;
+  padding: 8px 4px 20px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.shot-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(295px, 74vw);
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.shot-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(2, 8, 32, 0.28);
+}
+
+.shot-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0b1c44;
+  box-shadow: 0 4px 14px rgba(2, 8, 32, 0.35);
+}
+
+.shot-tag--host {
+  background: var(--zoom-cyan);
+}
+
+.shot-tag--student {
+  background: #59d99d;
+}
+
+.shot-card figcaption {
+  margin-top: 12px;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* ── Architecture page ─────────────────────────────────────────── */
+
+.arch-hero {
+  padding-top: 54px;
+  padding-bottom: 30px;
+}
+
+.arch-hero .section-heading h2 {
+  max-width: 16ch;
+}
+
+.arch-hero .section-heading p:last-child {
+  max-width: 68ch;
+}
+
+.arch-section {
+  padding-top: 62px;
+  padding-bottom: 62px;
+}
+
+.arch-section .section-heading h2 {
+  max-width: 18ch;
+}
+
+.arch-section .section-heading p:last-child {
+  max-width: 68ch;
+}
+
+.arch-inline-link {
+  color: var(--yellow);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.arch-inline-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.arch-diagram {
+  padding: clamp(18px, 2.4vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+.arch-node {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.arch-node strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+.arch-node span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.arch-col-title,
+.arch-deploy-box-title {
+  margin: 0 0 4px;
+  color: var(--yellow);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arch-col-note {
+  margin: 2px 0 0;
+  color: rgba(246, 247, 251, 0.62);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* System map */
+.arch-system {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.14fr) auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.arch-col {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.arch-col-server {
+  padding: 14px;
+  border: 1px solid rgba(246, 207, 82, 0.3);
+  border-radius: 22px;
+  background: rgba(246, 207, 82, 0.05);
+}
+
+.arch-flow-arrow,
+.arch-pipe-arrow,
+.arch-step-arrow,
+.arch-chain-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  color: var(--yellow);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.arch-flow-arrow span {
+  font-size: 1.3rem;
+}
+
+/* Poll journey steps */
+.arch-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arch-step {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 18px 16px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.arch-step-num {
+  position: absolute;
+  top: -12px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(246, 207, 82, 0.4);
+  background: #0d3aa5;
+  color: var(--yellow);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.arch-step-tag {
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arch-tag-host {
+  background: rgba(246, 207, 82, 0.16);
+  border: 1px solid rgba(246, 207, 82, 0.36);
+  color: var(--yellow);
+}
+
+.arch-tag-server {
+  background: rgba(43, 194, 255, 0.14);
+  border: 1px solid rgba(43, 194, 255, 0.36);
+  color: var(--zoom-cyan);
+}
+
+.arch-tag-student {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(246, 247, 251, 0.9);
+}
+
+.arch-step strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+.arch-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+/* Transcript pipeline + deployment rows */
+.arch-pipeline,
+.arch-deploy {
+  display: grid;
+  grid-template-columns: repeat(9, auto);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.arch-pipeline {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.arch-pipe-node,
+.arch-deploy-node {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.arch-pipe-node strong,
+.arch-deploy-node strong {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.arch-pipe-node span,
+.arch-deploy-node span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+/* Callouts */
+.arch-callout {
+  margin-top: 22px;
+  padding: clamp(18px, 2.2vw, 26px);
+  border: 1px solid rgba(43, 194, 255, 0.26);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(43, 194, 255, 0.1), transparent 44%),
+    rgba(7, 21, 64, 0.5);
+}
+
+.arch-callout-bug {
+  border-color: rgba(246, 207, 82, 0.32);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(246, 207, 82, 0.1), transparent 44%),
+    rgba(7, 21, 64, 0.5);
+}
+
+.arch-callout-title {
+  margin: 0 0 10px;
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+}
+
+.arch-callout p:last-child {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.62;
+  font-size: 0.97rem;
+}
+
+/* Arlo split */
+.arch-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.arch-split-card {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.arch-check-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.arch-check-list li {
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.58;
+}
+
+.arch-check-list strong {
+  color: var(--text);
+}
+
+.arch-check-list code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.84em;
+}
+
+/* AI failover chain */
+.arch-chain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.15fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.arch-chain-node {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.arch-chain-primary {
+  border-color: rgba(246, 207, 82, 0.38);
+  background: rgba(246, 207, 82, 0.07);
+}
+
+.arch-chain-badge {
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(246, 247, 251, 0.85);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arch-chain-primary .arch-chain-badge {
+  border-color: rgba(246, 207, 82, 0.4);
+  color: var(--yellow);
+}
+
+.arch-chain-node strong {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.arch-chain-node > span:last-child {
+  color: var(--muted);
+  font-size: 0.87rem;
+  line-height: 1.52;
+}
+
+.arch-chain-arrow span,
+.arch-step-arrow span,
+.arch-pipe-arrow span {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.arch-chain-arrow span::after {
+  content: " →";
+}
+
+.arch-pipe-arrow span {
+  font-size: 1.1rem;
+}
+
+/* Feature trios */
+.arch-trio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 22px;
+}
+
+.arch-trio-card {
+  transform: none !important;
+  border-radius: var(--radius-xl) !important;
+}
+
+.arch-trio-card h3 {
+  font-size: 1.2rem;
+}
+
+/* Deployment */
+.arch-deploy {
+  grid-template-columns: minmax(0, 0.9fr) auto minmax(0, 1fr) auto minmax(0, 1.5fr);
+  align-items: center;
+}
+
+.arch-deploy-box {
+  padding: 16px;
+  border: 1px solid rgba(246, 207, 82, 0.3);
+  border-radius: 22px;
+  background: rgba(246, 207, 82, 0.05);
+}
+
+.arch-deploy-inner {
+  display: grid;
+  gap: 10px;
+}
+
+/* CTA */
+.arch-cta-section {
+  padding-top: 20px;
+  padding-bottom: 90px;
+}
+
+.arch-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: none;
+}
+
+@media (max-width: 1120px) {
+  .arch-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .arch-steps .arch-step-arrow {
+    display: none;
+  }
+
+  .arch-pipeline {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-pipeline .arch-pipe-arrow span {
+    transform: rotate(90deg);
+  }
+
+  .arch-trio {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .arch-system,
+  .arch-chain,
+  .arch-deploy {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-flow-arrow span {
+    transform: rotate(90deg);
+  }
+
+  .arch-chain-arrow {
+    padding: 2px 0;
+  }
+
+  .arch-chain-arrow span::after {
+    content: " ↓";
+  }
+
+  .arch-split {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-deploy .arch-pipe-arrow span {
+    transform: rotate(90deg);
+  }
+}
+
+@media (max-width: 620px) {
+  .arch-steps {
+    grid-template-columns: 1fr;
+  }
 }
 
 .reveal {

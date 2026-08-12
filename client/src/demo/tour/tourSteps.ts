@@ -32,10 +32,11 @@ export const tourSteps: TourStep[] = [
     id: 'welcome',
     title: 'Welcome to the Zoom Momentum demo',
     body:
-      'You are looking at a simulated Zoom meeting — a college lecture already in progress. ' +
+      'You are looking at a simulated Zoom meeting, a college lecture already in progress.\n\n' +
       'Momentum is a Zoom App that runs inside the meeting itself, so this walkthrough recreates ' +
       'the real thing: the same app, docked exactly where it runs in Zoom, everything live and ' +
-      'clickable. The tour takes about two minutes.',
+      'clickable.\n\n' +
+      'The tour takes about two minutes.',
     pov: 'host',
     panelOpen: false,
     placement: 'center',
@@ -121,7 +122,7 @@ export const tourSteps: TourStep[] = [
     chip: 'Student seat',
     title: 'Now you’re a student',
     body:
-      'You switched seats — you are Shitij Mathur now, and the poll just landed on every student’s ' +
+      'You switched seats. You are Lip Gallagher now, and the poll just landed on every student’s ' +
       'panel. Pick an answer and submit it. Your classmates are answering too: watch the ' +
       'checkmarks pop in the gallery.',
     pov: 'student',
@@ -162,7 +163,7 @@ export const tourSteps: TourStep[] = [
     chip: 'Student seat',
     title: 'Race the class',
     body:
-      'You’re Shitij again. Answer before the countdown hits zero — faster correct answers score ' +
+      'You’re Lip again. Answer before the countdown hits zero. Faster correct answers score ' +
       'more points, and your classmates are already tapping.',
     pov: 'student',
     target: '[data-tour="panel"]',

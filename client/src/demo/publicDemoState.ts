@@ -90,7 +90,7 @@ export type PublicDemoEvent =
   | { type: 'RESET_DEMO' };
 
 const DEMO_STUDENT_ID = 'demo-student';
-const DEMO_STUDENT_NAME = 'Shitij Mathur';
+const DEMO_STUDENT_NAME = 'Lip Gallagher';
 const QUESTION_TIME_SEC = 15;
 
 export function createPublicDemoState(scenario: DemoScenario): PublicDemoState {
@@ -515,13 +515,15 @@ function addArenaScore(
 }
 
 function buildLeaderboard(scores: Map<string, { name: string; score: number }>): LeaderboardEntry[] {
-  return Array.from(scores.entries())
+  const sorted = Array.from(scores.entries())
     .map(([participantId, { name, score }]) => ({ participantId, name, score, rank: 0 }))
-    .sort((a, b) => b.score - a.score)
-    .map((entry, index, entries) => ({
-      ...entry,
-      rank: index === 0 || entries[index - 1]!.score !== entry.score ? index + 1 : entries[index - 1]!.rank,
-    }));
+    .sort((a, b) => b.score - a.score);
+  const ranked: LeaderboardEntry[] = [];
+  for (const [index, entry] of sorted.entries()) {
+    const prev = ranked[index - 1];
+    ranked.push({ ...entry, rank: prev && prev.score === entry.score ? prev.rank : index + 1 });
+  }
+  return ranked;
 }
 
 function addBookmark(

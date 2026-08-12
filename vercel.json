@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/architecture",
+      "destination": "/architecture.html"
+    },
+    {
       "source": "/demo",
       "destination": "/demo/index.html"
     },
@@ -13,6 +17,11 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/architecture.html",
+      "destination": "/architecture",
+      "permanent": true
+    },
     {
       "source": "/:path*",
       "has": [
