@@ -47,3 +47,7 @@ product-page/assets/.herenow/
 
 # Vercel CLI local state
 .vercel/
+
+# Local scratch: logo exploration and scraper cache
+client/public/logo-options/
+.firecrawl/

@@ -4,7 +4,7 @@ A Zoom Apps SDK in-meeting side panel app that transforms passive virtual classr
 
 Momentum gives professors real-time engagement tools and gives students a dynamic topic timeline, glossary, live transcript, and post-class review — all powered by AI.
 
-A write-up of the project lives in [`docs/blog/launch.md`](docs/blog/launch.md), and the full engineering breakdown is in [`docs/technical-deep-dive.md`](docs/technical-deep-dive.md).
+The full engineering breakdown is in [`docs/technical-deep-dive.md`](docs/technical-deep-dive.md).
 
 ![Momentum running in a Zoom meeting: the professor's Live Anchor panel on the left, the class gallery in the middle, and a student's topic timeline on the right](website/assets/screenshots/demo-both-views.png)
 
@@ -358,7 +358,6 @@ zoom-momentum/
 
 ## Status
 
-For detailed progress, bugs, and next steps, see [STATUS.md](STATUS.md).
 
 ### Done
 

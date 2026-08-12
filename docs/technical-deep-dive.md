@@ -2,7 +2,7 @@
 
 The engineering story behind Momentum: how the system is laid out, how live lecture audio turns into study material, how the AI layer stays cheap without going dark, and how the whole thing runs inside a Zoom client on one EC2 box.
 
-For the product overview and screenshots, see the [README](../README.md). For the narrative version, see [`blog/launch.md`](blog/launch.md).
+For the product overview and screenshots, see the [README](../README.md).
 
 ## The shape of the system
 

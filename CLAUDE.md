@@ -13,6 +13,7 @@ npm run dev              # Run client (port 5173) + server (port 3001) concurren
 npm run dev:mock         # Same as above + mock-transcript service (CS50 lecture chunks)
 npm run build            # Build both client and server
 npm run db:migrate       # Run Prisma migrations (server workspace)
+npm run db:generate      # Regenerate the Prisma client (also runs on npm install)
 npm run db:studio        # Open Prisma Studio GUI
 
 npm run dev -w client    # Client dev server only
@@ -124,7 +125,7 @@ All host↔student communication uses WebSocket relay through Express (`/ws` end
   - Model 2: `gpt5` via `openai` (backup)
 - **Fallback:** AWS Bedrock, region `us-east-1`
   - Model: `meta.llama3-70b-instruct-v1:0` (Llama 3 70B via Converse API)
-  - IAM role: `zoom-momentum-ec2-role`
+  - Auth: EC2 instance role (no static keys)
 - Failover chain: claude4_5_sonnet → gpt5 → Bedrock (automatic, per-request)
 - Tiered logic lives in `server/src/ai-client.ts`
 - CREATE AI config is optional — if env vars are missing, falls back to Bedrock
