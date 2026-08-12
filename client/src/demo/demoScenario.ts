@@ -199,14 +199,17 @@ export const demoScenario: DemoScenario = {
     },
   ],
   students: [
-    { participantId: 'student-advikaa', name: 'Advikaa Kapil', pollAnswerIndex: 1, arenaAnswers: [0, 1], arenaAnswerMs: [1_200, 1_600] },
-    { participantId: 'student-liam', name: 'Liam Wirth', pollAnswerIndex: 2, arenaAnswers: [0, 1], arenaAnswerMs: [1_700, 1_300] },
+    // Arena scoring is 1000 + floor((1 - timeMs / 5000) * 500) per correct answer.
+    // Mock students top out around 2,300 so the person taking the tour can finish
+    // first on the leaderboard by answering both questions correctly.
+    { participantId: 'student-liam', name: 'Liam Wirth', pollAnswerIndex: 2, arenaAnswers: [0, 1], arenaAnswerMs: [2_600, 2_400] },
+    { participantId: 'student-sofia', name: 'Sofia Rodriguez', pollAnswerIndex: 1, arenaAnswers: [0, 1], arenaAnswerMs: [2_700, 2_800] },
+    { participantId: 'student-amanda', name: 'Amanda Federico', pollAnswerIndex: 3, arenaAnswers: [0, 1], arenaAnswerMs: [2_900, 2_900] },
     { participantId: 'student-neha', name: 'Neha Kashyap', pollAnswerIndex: 0, arenaAnswers: [1, 1], arenaAnswerMs: [2_400, 2_000] },
-    { participantId: 'student-yash', name: 'Yash Sawant', pollAnswerIndex: 1, arenaAnswers: [0, 2], arenaAnswerMs: [2_100, 2_600] },
-    { participantId: 'student-amanda', name: 'Amanda Federico', pollAnswerIndex: 3, arenaAnswers: [0, 1], arenaAnswerMs: [1_900, 1_900] },
-    { participantId: 'student-jesus', name: 'Jesus Franco Yescas', pollAnswerIndex: 2, arenaAnswers: [2, 1], arenaAnswerMs: [2_800, 1_700] },
-    { participantId: 'student-sofia', name: 'Sofia Rodriguez', pollAnswerIndex: 1, arenaAnswers: [0, 1], arenaAnswerMs: [1_500, 2_300] },
     { participantId: 'student-priya', name: 'Priya Mehta', pollAnswerIndex: 0, arenaAnswers: [3, 1], arenaAnswerMs: [2_900, 1_400] },
+    { participantId: 'student-advikaa', name: 'Advikaa Kapil', pollAnswerIndex: 1, arenaAnswers: [0, 2], arenaAnswerMs: [2_800, 3_100] },
+    { participantId: 'student-yash', name: 'Yash Sawant', pollAnswerIndex: 1, arenaAnswers: [0, 2], arenaAnswerMs: [2_100, 2_600] },
+    { participantId: 'student-jesus', name: 'Jesus Franco Yescas', pollAnswerIndex: 2, arenaAnswers: [2, 1], arenaAnswerMs: [2_800, 1_700] },
   ],
   recoveryItems: [
     {

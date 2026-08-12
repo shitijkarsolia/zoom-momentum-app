@@ -32,10 +32,11 @@ export const tourSteps: TourStep[] = [
     id: 'welcome',
     title: 'Welcome to the Zoom Momentum demo',
     body:
-      'You are looking at a simulated Zoom meeting — a college lecture already in progress. ' +
+      'You are looking at a simulated Zoom meeting, a college lecture already in progress.\n\n' +
       'Momentum is a Zoom App that runs inside the meeting itself, so this walkthrough recreates ' +
       'the real thing: the same app, docked exactly where it runs in Zoom, everything live and ' +
-      'clickable. The tour takes about two minutes.',
+      'clickable.\n\n' +
+      'The tour takes about two minutes.',
     pov: 'host',
     panelOpen: false,
     placement: 'center',

@@ -159,7 +159,11 @@ export function TourOverlay({ step, stepIndex, totalSteps, onNext, onBack, onSki
         )}
         {step.chip && <span className={`tour-chip tour-chip--${step.pov}`}>{step.chip}</span>}
         <h3 className="tour-title">{step.title}</h3>
-        <p className="tour-body">{step.body}</p>
+        {step.body.split('\n\n').map((para, i) => (
+          <p className="tour-body" key={i}>
+            {para}
+          </p>
+        ))}
         {step.interactive && <span className="tour-try">✦ Try it — the panel is live</span>}
         <div className="tour-footer">
           <div className="tour-progress">
