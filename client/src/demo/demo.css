@@ -878,6 +878,11 @@
   color: #4a5164;
 }
 
+/* Steps whose body is split into several paragraphs need air between them. */
+.tour-body + .tour-body {
+  margin-top: 10px;
+}
+
 .tour-try {
   display: inline-block;
   margin-top: 10px;
