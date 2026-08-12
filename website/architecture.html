@@ -40,6 +40,35 @@
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./site.webmanifest" />
 
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        "headline": "How Zoom Momentum is built: architecture in plain words",
+        "url": "https://zoom-momentum.vercel.app/architecture",
+        "description": "A plain-language tour of Zoom Momentum's architecture: how it grew out of Zoom's Arlo reference app, how live lecture audio becomes study material, and how the AI engine fails over across three models.",
+        "image": "https://zoom-momentum.vercel.app/og-image.png",
+        "author": { "@id": "https://shitijmathur.dev/#person" },
+        "about": { "@type": "SoftwareApplication", "name": "Zoom Momentum", "url": "https://zoom-momentum.vercel.app/" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://shitijmathur.dev/#person",
+        "name": "Shitij Mathur",
+        "alternateName": "Shitij Karsolia Mathur",
+        "url": "https://shitijmathur.dev/",
+        "sameAs": [
+          "https://shitijmathur.dev/",
+          "https://github.com/shitijkarsolia",
+          "https://linkedin.com/in/shitijmathur"
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -79,7 +108,7 @@
       <a href="./#demo">Demo</a>
       <a href="./#features">Features</a>
       <a href="./#fellowship">Fellowship</a>
-      <a href="./architecture.html" aria-current="page">How it's built</a>
+      <a href="/architecture" aria-current="page">How it's built</a>
     </nav>
   </header>
 
@@ -89,10 +118,15 @@
         <p class="eyebrow">Under the hood</p>
         <h2>How Momentum is built.</h2>
         <p>
-          A tour of how the system fits together: where the code came from,
-          how live lecture audio turns into a timeline and glossary, how the
-          AI keeps answering when a provider goes down, and the cloud server
-          that runs it all.
+          How the system fits together: where the code came from, how live
+          lecture audio turns into a timeline and glossary, and how the AI
+          keeps answering when a provider goes down.
+        </p>
+        <p class="arch-hero-cta">
+          If you want the engineering detail rather than the tour, the
+          <a class="arch-inline-link" href="https://github.com/shitijkarsolia/zoom-momentum-app/blob/main/docs/technical-deep-dive.md" target="_blank" rel="noopener noreferrer">technical deep-dive</a>
+          has the sequence diagrams, the message protocol, and the reasoning
+          behind each decision.
         </p>
       </div>
       <div class="product-loop reveal" aria-label="The three big ideas">
@@ -325,9 +359,9 @@
           whether anything new was said. If not, do nothing: no AI call, no
           cost. If yes, send just the fresh transcript to the AI and ask one
           question: "did the topic change?" Greetings, audio checks, and
-          administrative chatter are deliberately filtered out, because the
-          worst failure isn't a missed topic. It's a glossary full of "the
-          professor said good morning."
+          administrative chatter get filtered out first. Missing a topic is a
+          small problem. A glossary full of "the professor said good morning"
+          is a much bigger one.
         </p>
       </div>
     </section>
@@ -361,7 +395,7 @@
           <div class="arch-chain-node">
             <span class="arch-chain-badge">Last resort</span>
             <strong>Llama 3 70B</strong>
-            <span>On AWS Bedrock. Needs no API key, because the server's own cloud identity is the credential, so this floor works even if every token expires.</span>
+            <span>On AWS Bedrock. Needs no API key: the server's own cloud identity is the credential, so it still answers when every token has expired.</span>
           </div>
         </div>
       </div>
@@ -400,13 +434,11 @@
     <section id="deployment" class="section arch-section">
       <div class="section-heading reveal">
         <p class="eyebrow">Where it runs</p>
-        <h2>The whole backend is one program.</h2>
+        <h2>The server setup.</h2>
         <p>
           Zoom needs a public, secure web address it can load the app from and
-          send transcripts to. The entire backend (web pages, message relay,
-          transcript listener, AI engine, and database) runs as a single
-          program on one cloud server, with a tunnel in front of it that gives
-          it a stable public address.
+          send transcripts to. Momentum runs on one cloud server, with a tunnel
+          in front of it supplying that address.
         </p>
       </div>
       <div class="arch-diagram reveal">
@@ -418,7 +450,7 @@
           <div class="arch-pipe-arrow" aria-hidden="true"><span>⇄</span></div>
           <div class="arch-deploy-node">
             <strong>Public tunnel</strong>
-            <span>Gives the server a stable public HTTPS address, like a street address for a machine that doesn't have one</span>
+            <span>Gives the server a stable public HTTPS address</span>
           </div>
           <div class="arch-pipe-arrow" aria-hidden="true"><span>⇄</span></div>
           <div class="arch-deploy-box">
@@ -439,56 +471,6 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="arch-callout reveal">
-        <p class="arch-callout-title">The test setup runs on the same server</p>
-        <p>
-          The same server runs a full remote desktop with a real Zoom client
-          installed. That means an actual Zoom meeting can be hosted
-          <em>on the server itself</em> to test the app end-to-end in the
-          real Zoom environment. No guessing whether it will behave
-          differently inside Zoom's embedded browser, because the test
-          <em>is</em> Zoom's embedded browser.
-        </p>
-      </div>
-    </section>
-
-    <section id="security" class="section arch-section">
-      <div class="section-heading reveal">
-        <p class="eyebrow">Security &amp; the Zoom rules</p>
-        <h2>Extra rules for running inside Zoom.</h2>
-        <p>
-          Running inside the Zoom client comes with stricter rules than a
-          normal website. Three of them shaped the whole design.
-        </p>
-      </div>
-      <div class="arch-trio reveal">
-        <article class="feature-card arch-trio-card">
-          <h3>Sign-in without exposed secrets</h3>
-          <p>
-            Sign-in uses OAuth with PKCE, a handshake where the server
-            creates a one-time cryptographic challenge for each login, and
-            the app's secret key never leaves the server. Zoom's transcript
-            messages are verified with a signed stamp too, so nobody can fake
-            a lecture.
-          </p>
-        </article>
-        <article class="feature-card arch-trio-card">
-          <h3>Four required security headers</h3>
-          <p>
-            Zoom refuses to display the app unless the server sends four
-            specific security headers with every page. Miss one and you get a
-            blank panel, not an error message. All four are always on.
-          </p>
-        </article>
-        <article class="feature-card arch-trio-card">
-          <h3>One origin for everything</h3>
-          <p>
-            The same server that answers API calls also serves the app's web
-            pages. Everything comes from one address, so the browser's
-            cross-origin defenses never get in the way inside the meeting.
-          </p>
-        </article>
       </div>
     </section>
 
@@ -522,7 +504,7 @@
       </div>
       <nav class="footer-links" aria-label="Footer">
         <a href="/demo">Try the demo</a>
-        <a href="./architecture.html">How it's built</a>
+        <a href="/architecture">How it's built</a>
         <a href="https://github.com/shitijkarsolia/zoom-momentum-app" target="_blank" rel="noopener noreferrer" aria-label="Open the Zoom Momentum source code on GitHub, opens in a new tab">Source code</a>
         <a href="https://nextlab-zoom-fellows.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Open the Zoom Fellows at ASU site, opens in a new tab">The fellowship</a>
         <a href="https://shitijmathur.dev/" target="_blank" rel="noopener noreferrer" aria-label="Open Shitij's portfolio, opens in a new tab">Portfolio</a>
