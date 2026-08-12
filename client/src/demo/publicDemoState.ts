@@ -90,7 +90,7 @@ export type PublicDemoEvent =
   | { type: 'RESET_DEMO' };
 
 const DEMO_STUDENT_ID = 'demo-student';
-const DEMO_STUDENT_NAME = 'Advikaa Kapil';
+const DEMO_STUDENT_NAME = 'Lip Gallagher';
 const QUESTION_TIME_SEC = 15;
 
 export function createPublicDemoState(scenario: DemoScenario): PublicDemoState {

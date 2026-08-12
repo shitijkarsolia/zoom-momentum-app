@@ -122,7 +122,7 @@ export const tourSteps: TourStep[] = [
     chip: 'Student seat',
     title: 'Now you’re a student',
     body:
-      'You switched seats. You are Advikaa Kapil now, and the poll just landed on every student’s ' +
+      'You switched seats. You are Lip Gallagher now, and the poll just landed on every student’s ' +
       'panel. Pick an answer and submit it. Your classmates are answering too: watch the ' +
       'checkmarks pop in the gallery.',
     pov: 'student',
@@ -163,7 +163,7 @@ export const tourSteps: TourStep[] = [
     chip: 'Student seat',
     title: 'Race the class',
     body:
-      'You’re Advikaa again. Answer before the countdown hits zero. Faster correct answers score ' +
+      'You’re Lip again. Answer before the countdown hits zero. Faster correct answers score ' +
       'more points, and your classmates are already tapping.',
     pov: 'student',
     target: '[data-tour="panel"]',
