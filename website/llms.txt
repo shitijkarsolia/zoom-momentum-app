@@ -1,0 +1,37 @@
+# Zoom Momentum
+
+> A Zoom App for live college lectures, built by Shitij Mathur during the Zoom Fellowship at ASU's Next Lab. It listens to the lecture through Zoom's real-time transcription and uses AI to run comprehension polls, keep a live topic timeline and glossary, and build a post-class recovery pack from whatever a student bookmarked.
+
+Momentum runs as a side panel inside the Zoom meeting, so professors and students never leave the class to use it. The professor sees whether the room is keeping up while the lecture is still happening. Students get a running map of the lecture and study material afterwards.
+
+## Features
+
+- **Pulse**: AI-drafted comprehension polls the professor edits and launches mid-lecture. Results tally the moment the poll closes.
+- **Arena**: a timed trivia game for review, with a live leaderboard and per-question accuracy.
+- **Live Anchor**: a topic timeline, an automatic glossary, and the live transcript, all built from the lecture as it happens. Translatable into six languages.
+- **Recovery Pack**: a post-class review built from the moments a student bookmarked, with an explanation, a practice problem, and a suggested resource for each.
+- **Smart Notes**: a notes panel that assembles itself from topics, glossary terms, and bookmarks, downloadable as Markdown.
+
+## How it is built
+
+- The app is a web page Zoom loads inside the meeting, using the Zoom Apps SDK.
+- One Node server handles the web pages, the host-to-student message relay, transcript ingestion, and AI calls.
+- Live transcription comes from Zoom's Real-Time Media Streams, not from any speech recognition of our own.
+- AI requests try three models in order and take the first answer: Claude 4.5 Sonnet, then GPT-5 (both through ASU's CREATE AI gateway), then Llama 3 70B on AWS Bedrock.
+- Translation is cached per line, so one AI call serves every student who switches to that language.
+
+## Links
+
+- [Home](https://zoom-momentum.vercel.app/): what the product does, with screenshots of both the professor and student views.
+- [Interactive demo](https://zoom-momentum.vercel.app/demo): the real interface running in a browser, no Zoom or sign-in needed.
+- [How it is built](https://zoom-momentum.vercel.app/architecture): the architecture explained in plain language, with diagrams.
+- [Source code](https://github.com/shitijkarsolia/zoom-momentum-app): the repository.
+- [The fellowship](https://nextlab-zoom-fellows.vercel.app/): the Zoom Fellowship at ASU's Next Lab, where this was built.
+
+## Author
+
+Shitij Mathur built Momentum during the inaugural Zoom Fellowship at Next Lab, ASU's emerging-technology studio.
+
+- Portfolio: https://shitijmathur.dev/
+- GitHub: https://github.com/shitijkarsolia
+- LinkedIn: https://linkedin.com/in/shitijmathur
