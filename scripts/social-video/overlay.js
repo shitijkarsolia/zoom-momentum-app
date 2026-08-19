@@ -85,52 +85,19 @@ const installOverlay = () => {
       45%      { transform: scale(.72); }
     }
 
-    /* ---- full-bleed cards ---- */
+    /* ---- full-bleed card: the project's own og-image ---- */
     #vid-card {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; text-align: center;
-      background:
-        radial-gradient(1100px 620px at 50% 42%, rgba(11,92,255,.20), transparent 68%),
-        radial-gradient(700px 420px at 78% 88%, rgba(92,155,255,.10), transparent 70%),
-        #060911;
-      opacity: 0; transition: opacity .5s ease;
+      position: absolute; inset: 0;
+      /* Sampled from the image's own top and bottom edges, so the letterbox
+         either side of its 1.905:1 crop blends into it. */
+      background: linear-gradient(180deg, #0a45be 0%, #0b3083 100%);
+      opacity: 0; transition: opacity .45s ease;
     }
     #vid-card.on { opacity: 1; }
-    #vid-card .wordmark {
-      font-size: 62px; font-weight: 700; letter-spacing: -.028em; color: #fff;
-      line-height: 1;
+    #vid-card img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: contain;
     }
-    #vid-card .wordmark em {
-      font-style: normal;
-      background: linear-gradient(92deg, ${BLUE_LIGHT}, #9ec2ff);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    #vid-card .kicker {
-      font-size: 13px; font-weight: 700; letter-spacing: .22em;
-      text-transform: uppercase; color: ${BLUE_LIGHT}; margin-bottom: 22px;
-    }
-    #vid-card .tagline {
-      margin-top: 22px; font-size: 27px; line-height: 1.34; font-weight: 500;
-      color: rgba(236,241,250,.92); max-width: 760px;
-    }
-    #vid-card .url {
-      margin-top: 34px; font-size: 21px; font-weight: 700; color: #fff;
-      padding: 12px 26px; border: 1.5px solid rgba(120,165,255,.42);
-      border-radius: 999px; background: rgba(11,92,255,.13);
-    }
-    #vid-card .foot {
-      margin-top: 26px; font-size: 14.5px; color: rgba(206,218,238,.62);
-      letter-spacing: .01em;
-    }
-    #vid-card .rise { opacity: 0; transform: translateY(18px); }
-    #vid-card.on .rise {
-      animation: vid-rise .68s cubic-bezier(.16,1,.3,1) forwards;
-    }
-    #vid-card.on .d1 { animation-delay: .10s; }
-    #vid-card.on .d2 { animation-delay: .24s; }
-    #vid-card.on .d3 { animation-delay: .38s; }
-    #vid-card.on .d4 { animation-delay: .52s; }
-    @keyframes vid-rise { to { opacity: 1; transform: translateY(0); } }
 
     /* ---- progress bar ---- */
     #vid-prog {
@@ -225,20 +192,11 @@ const installOverlay = () => {
       spot.classList.add('on');
     },
 
-    // --- full-bleed cards ---
-    titleCard(kicker, wordHtml, tagline) {
-      card.innerHTML = `
-        <div class="kicker rise d1">${kicker}</div>
-        <div class="wordmark rise d2">${wordHtml}</div>
-        <div class="tagline rise d3">${tagline}</div>`;
-      card.classList.add('on');
-    },
-    endCard(wordHtml, tagline, url, foot) {
-      card.innerHTML = `
-        <div class="wordmark rise d1">${wordHtml}</div>
-        <div class="tagline rise d2">${tagline}</div>
-        <div class="url rise d3">${url}</div>
-        <div class="foot rise d4">${foot}</div>`;
+    // --- full-bleed card ---
+    /** Shows a full-frame image card. src is a data: URI. */
+    imageCard(src) {
+      card.innerHTML = `<img alt="">`;
+      card.querySelector('img').src = src;
       card.classList.add('on');
     },
     hideCard() { card.classList.remove('on'); },

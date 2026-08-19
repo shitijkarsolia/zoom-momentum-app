@@ -1,8 +1,10 @@
 // Records the Zoom Momentum social demo cut.
 //
 // Drives the public demo (client build served statically) through a scripted
-// run, with captions, a synthetic cursor and title cards drawn in-page by
-// overlay.js. Produces a raw .webm; post.sh turns that into the delivered MP4s.
+// run, with captions and a synthetic cursor drawn in-page by overlay.js. The
+// piece opens and closes on the project's existing og-image rather than any
+// artwork invented here, and every caption is the site's own wording.
+// Produces a raw .webm; post.sh turns that into the delivered MP4.
 //
 //   node scripts/social-video/shoot.mjs
 //
@@ -38,6 +40,11 @@ const FRAME = { width: 1920, height: 1080 };
 const ZOOM = FRAME.width / DESIGN.width;
 
 const OVERLAY = readFileSync(path.join(HERE, 'overlay.js'), 'utf8');
+
+// The site's own share card, used as the opening and closing frame. Inlined as
+// a data URI so the demo can stay a plain static build with nothing added to it.
+const OG_IMAGE_PATH = process.env.OG_IMAGE || path.join(ROOT, 'website/og-image.png');
+const OG_IMAGE = `data:image/png;base64,${readFileSync(OG_IMAGE_PATH).toString('base64')}`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -140,22 +147,18 @@ async function main() {
   // ---- the cut ------------------------------------------------------------
   // Absolute marks on one timeline so the total length is deterministic
   // regardless of how long any individual click takes to settle.
-  const TITLE_OUT = 3200;
-  const B1 = 9200;    // Live Anchor
-  const B2 = 17200;   // Pulse: draft + launch
-  const B3 = 24200;   // Student seat: answer
-  const B4 = 30700;   // Results
-  const B5 = 38200;   // End class -> recovery pack
-  const END = 42700;  // End card out
+  const CARD_OUT = 2600;   // opening og-image card
+  const B1 = 8200;         // Live Anchor
+  const B2 = 14800;        // Pulse: draft + launch
+  const B3 = 20800;        // student answers
+  const B4 = 26200;        // results
+  const B5 = 31500;        // end class -> recovery pack
+  const END = 34500;       // closing og-image card out
   const TOTAL = END;
 
-  // Bring the title card fully up behind the black hold first — fading both at
-  // once lets the app show through the gap between them.
-  await vid(() => window.__vid.titleCard(
-    'A Zoom App for live lectures',
-    'Zoom <em>Momentum</em>',
-    'Your students are on the call.<br/>Are they actually following?',
-  ));
+  // Bring the card fully up behind the black hold first — fading both at once
+  // lets the app show through the gap between them.
+  await vid((src) => window.__vid.imageCard(src), OG_IMAGE);
   await sleep(800);
 
   await vid((total) => {
@@ -165,62 +168,48 @@ async function main() {
 
   T0.t = Date.now();
 
-  // --- Title card ---
-  await until(TITLE_OUT - 500);
+  // --- Opening card ---
+  await until(CARD_OUT - 450);
   await vid(() => window.__vid.hideCard());
-  await until(TITLE_OUT);
+  await until(CARD_OUT);
 
   // --- Beat 1: Live Anchor ---
-  await caption(
-    'Live Anchor',
-    'It listens to the lecture and builds the outline as you teach.',
-    "Topics, key points and a glossary — from Zoom's real-time transcript.",
-  );
+  await caption('Live Anchor', 'A live topic timeline and glossary from the transcript.');
   await until(B1);
 
   // --- Beat 2: Pulse ---
-  await caption('Pulse', 'One click drafts a comprehension check.', 'Written from the last few minutes of the lecture.');
+  await caption("Professor's Pulse", 'One click drafts a poll from the last few minutes of lecture.');
   await uiClick(panelTab('Pulse'));
-  await sleep(300);
   await uiClick(panelBtn(/^Generate Check-In$/), { spotlight: true });
-  await sleep(1500);
+  await sleep(1200);
   await uiClick(panelBtn(/^Launch Poll$/), { spotlight: true });
   await until(B2);
 
   // --- Beat 3: the student's seat ---
-  await caption('The student’s seat', 'It lands in every student’s panel.', 'Same meeting, no new app, nothing to install.');
+  await caption('Student', 'The poll lands on every student\u2019s panel the moment it launches.');
   await uiClick(panelBtn(/^Switch to student$/));
-  await sleep(700);
   await uiClick(page.locator('.zmw-panel button').filter({ hasText: /What the loss function measures/ }).first());
-  await sleep(250);
   await uiClick(panelBtn(/^Submit Answer$/), { spotlight: true });
   await until(B3);
 
   // --- Beat 4: the professor sees the gap ---
   await uiClick(panelBtn(/^Switch to professor$/));
-  await sleep(500);
-  await caption('Instant signal', 'The whole class, tallied the moment it closes.', 'No grading, no guessing who is lost.');
+  await caption('Professor', 'Answers tallied the instant the poll closes \u2014 zero grading.');
   await uiClick(panelBtn(/End Poll & Show Results/), { spotlight: true });
   await until(B4);
 
   // --- Beat 5: after class ---
   await uiClick(panelBtn(/^End Class$/), { spotlight: true });
-  await caption('After class', 'Everyone leaves with a recap of what they missed.');
-  await sleep(1200);
+  await caption('Recovery Agent', 'Capture confusion in class, fix it after.');
   await uiClick(panelBtn(/^Switch to student$/));
   await until(B5);
 
-  // --- End card ---
+  // --- Closing card ---
   await hideCaption();
-  await vid(() => {
+  await vid((src) => {
     window.__vid.hideCursor();
-    window.__vid.endCard(
-      'Zoom <em>Momentum</em>',
-      'AI-generated polls, a live topic timeline,<br/>and a recovery pack for every student.',
-      'zoom-momentum.vercel.app',
-      'Zoom Fellowship project · built by Shitij Mathur',
-    );
-  });
+    window.__vid.imageCard(src);
+  }, OG_IMAGE);
   await until(END - 400);
   await vid(() => window.__vid.fadeToBlack());
   await until(END + 600);
