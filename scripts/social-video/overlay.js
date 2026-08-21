@@ -31,7 +31,7 @@ const installOverlay = () => {
 
     /* ---- caption ---- */
     #vid-cap {
-      position: absolute; left: 44px; bottom: 92px; max-width: 640px;
+      position: absolute; z-index: 3; left: 44px; bottom: 92px; max-width: 640px;
       background: rgba(7, 11, 20, 0.93);
       backdrop-filter: blur(6px);
       border-left: 3px solid ${BLUE};
@@ -42,6 +42,16 @@ const installOverlay = () => {
       transition: opacity .34s ease, transform .44s cubic-bezier(.16,1,.3,1);
     }
     #vid-cap.on { opacity: 1; transform: translateY(0); }
+    /* Card variant: wider, centred, sitting over the screenshot. */
+    #vid-cap.card {
+      left: 50%; right: auto; bottom: 74px; max-width: 940px;
+      width: 940px; margin-left: -470px; text-align: center;
+      border-left: none; border-radius: 18px;
+      border-top: 3px solid ${BLUE};
+      padding: 22px 34px 26px;
+    }
+    #vid-cap.card .line { font-size: 32px; }
+    #vid-cap.card .sub { font-size: 18px; margin-top: 10px; }
     #vid-cap .eyebrow {
       display: block; font-size: 12.5px; font-weight: 700;
       letter-spacing: .16em; text-transform: uppercase;
@@ -87,7 +97,7 @@ const installOverlay = () => {
 
     /* ---- full-bleed card: the project's own og-image ---- */
     #vid-card {
-      position: absolute; inset: 0;
+      position: absolute; inset: 0; z-index: 2;
       /* Sampled from the image's own top and bottom edges, so the letterbox
          either side of its 1.905:1 crop blends into it. */
       background: linear-gradient(180deg, #0a45be 0%, #0b3083 100%);
@@ -117,7 +127,7 @@ const installOverlay = () => {
 
     /* ---- black hold used at the head and tail of the take ---- */
     #vid-black {
-      position: absolute; inset: 0; background: #000;
+      position: absolute; inset: 0; z-index: 4; background: #000;
       opacity: 1; transition: opacity .5s ease;
     }
     #vid-black.off { opacity: 0; }
@@ -160,7 +170,8 @@ const installOverlay = () => {
     },
 
     // --- caption ---
-    caption(eyebrow, line, sub) {
+    caption(eyebrow, line, sub, onCard) {
+      cap.classList.toggle('card', !!onCard);
       cap.querySelector('.eyebrow').textContent = eyebrow || '';
       cap.querySelector('.line').textContent = line || '';
       const s = cap.querySelector('.sub');
@@ -190,6 +201,23 @@ const installOverlay = () => {
         width: `${r.width / scale + 12}px`, height: `${r.height / scale + 12}px`,
       });
       spot.classList.add('on');
+    },
+
+    // --- camera ---
+    /**
+     * Pushes the app subtree in or out. k is the magnification, ox/oy the fixed
+     * point in the app's own layout coordinates. Captions and cursor live
+     * outside <body>, so they stay put while the shot moves.
+     */
+    camera(k, ox, oy) {
+      // Applied to the app root, not <body>: body carries the CSS zoom that
+      // scales the composition to the frame, and combining zoom with a
+      // transform there puts the origin in an unpredictable coordinate space.
+      // .demo-root is a plain unzoomed box of the design size.
+      const root = document.querySelector('.demo-root');
+      if (!root) return;
+      root.style.transformOrigin = `${ox}px ${oy}px`;
+      root.style.transform = `scale(${k})`;
     },
 
     // --- full-bleed card ---

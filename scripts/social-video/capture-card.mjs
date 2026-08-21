@@ -4,8 +4,13 @@
 //
 //   node scripts/social-video/capture-card.mjs
 //
-// Serves website/ on a scratch port, screenshots the hero at frame size, and
-// writes build/social-video/card.png for shoot.mjs to use.
+// Serves website/ on a scratch port and screenshots the hero at the capture
+// frame size (2560x1440, matching shoot.mjs), writing build/social-video/card.png.
+//
+// The page is CSS-zoomed the same way shoot.mjs zooms the app: the site is
+// composed at 1920x1080, where the hero fills the frame, and that composition
+// is scaled up to the capture size. Shooting 2560x1440 directly would show the
+// hero plus most of the next section.
 
 import { chromium } from 'playwright';
 import { createServer } from 'http';
@@ -42,7 +47,28 @@ await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
 
 mkdirSync(OUT_DIR, { recursive: true });
 const browser = await chromium.launch({ executablePath: CHROME });
-const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+const FRAME = { width: 2560, height: 1440 };
+const DESIGN = { width: 1920, height: 1080 };
+const Z = FRAME.width / DESIGN.width;
+
+const page = await browser.newPage({ viewport: FRAME, deviceScaleFactor: 1 });
+await page.addInitScript(({ w, h, z }) => {
+  const apply = () => {
+    document.body.style.zoom = String(z);
+    const s = document.createElement('style');
+    // Isolate the hero: everything below it is a different section of the
+    // page and just clutters a title frame.
+    s.textContent =
+      `html{overflow:hidden}body{width:${w}px;height:${h}px;overflow:hidden;margin:0}` +
+      `main#top > section:not(.hero){display:none !important}` +
+      `section.hero{min-height:${h}px !important;display:flex !important;` +
+      `flex-direction:column;justify-content:center}`;
+    document.head.appendChild(s);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
+  else apply();
+}, { w: DESIGN.width, h: DESIGN.height, z: Z });
+
 await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'networkidle' });
 // Let the hero's reveal animations finish before capturing.
 await page.waitForTimeout(2500);

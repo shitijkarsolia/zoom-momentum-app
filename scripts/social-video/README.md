@@ -1,13 +1,20 @@
 # Social demo video
 
-A 34.5 second silent cut of the public demo, sized for the LinkedIn and X
-feeds. Everything comes from what the project already has: the shoot drives the
+A 41 second silent cut of the public demo, sized for the LinkedIn and X feeds.
+Everything comes from what the project already has: the shoot drives the
 interactive demo the way a visitor would, it opens and closes on a screenshot
-of the site's own hero, and every caption is wording lifted from the site's
-features section. No artwork or copy is invented here.
+of the site's own hero, and the captions are the site's own wording. No artwork
+is invented here.
+
+The piece opens by saying what Momentum is, then walks one continuous story —
+the lecture is running, Anchor builds the outline, Pulse drafts a check, the
+class answers, the gap shows up, everyone leaves with a recap. The camera
+pushes into the Momentum panel for the detail beats and pulls back out for the
+room, so the panel is readable at feed size without losing the context that it
+is running inside a Zoom meeting.
 
 Output: `build/social-video/dist/zoom-momentum-demo-16x9.mp4` — 1920×1080,
-30fps, ~6.5 MB, H.264 High / yuv420p with `+faststart` and a silent AAC track.
+30fps, ~8 MB, H.264 High / yuv420p with `+faststart` and a silent AAC track.
 Upload it natively to both platforms.
 
 The cut has no voiceover, so each beat is captioned on screen for muted
@@ -46,13 +53,27 @@ Playwright's bundled Chromium.
 
 Three details worth knowing before changing anything:
 
-**The frame is 1920×1080 but the app is composed at 1280×720.** Playwright
-captures video at the CSS viewport size — `deviceScaleFactor` does not raise it
-— so the viewport has to be 1920×1080 to get a 1080p file. At that width the
-Momentum panel is only ~20% of the frame and unreadable on a phone, so the app
-subtree is CSS-zoomed 1.5× to give the 1280-wide composition (~30%) at full
-resolution. The app's `100vh` containers are pinned to the design height
-because `vh` resolves before the zoom is applied and would otherwise overflow.
+**Three sizes are in play.** The app is composed at 1280×720, where the
+Momentum panel takes ~30% of the frame rather than ~20%. Capture is 2560×1440,
+and delivery is 1920×1080 — the extra headroom means a 1.6× push-in still has a
+full 1080p of real pixels behind it. Playwright captures video at the CSS
+viewport size and ignores `deviceScaleFactor`, so that resolution has to come
+from the viewport itself, with the app subtree CSS-zoomed 2× to fill it. The
+app's `100vh` containers are pinned to the design height because `vh` resolves
+before the zoom is applied and would otherwise overflow.
+
+**The camera is a transform on `.demo-root`, not on `<body>`.** Body carries
+the CSS zoom, and combining zoom with a transform on the same element puts
+`transform-origin` in an unpredictable coordinate space. `.demo-root` is a
+plain unzoomed box of the design size, so origins are in design pixels. Do not
+add `will-change: transform` to it: promoting it to its own composited layer
+under the parent zoom renders it mis-positioned in the screencast, though
+`page.screenshot` still looks correct — which makes the bug easy to miss.
+
+**Configure the overlay at install, not later.** Until `configure()` runs, the
+overlay defaults to the design size and its black hold covers only the
+top-left quarter of the frame, leaking the app during setup and breaking the
+content-window detection that depends on that hold.
 
 **Playwright's webm timestamps do not track wall clock**, and the error varies
 between takes in both directions, so `post.sh` retimes the trimmed content back
@@ -84,7 +105,7 @@ Drawn from the site so it matches the video. Trim to taste.
 >
 > No second screen, no separate site, nothing for students to install.
 >
-> 35 seconds of it below. Interactive demo at zoom-momentum.vercel.app — you
+> 40 seconds of it below. Interactive demo at zoom-momentum.vercel.app — you
 > can play both the professor and the student seat.
 >
 > Built as my Zoom Fellowship project at ASU Next Lab.

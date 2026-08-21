@@ -16,7 +16,7 @@ RAW="$OUT_DIR/raw/capture.webm"
 DIST="$OUT_DIR/dist"
 
 # Wall-clock length the shoot script scheduled; keep in step with TOTAL in shoot.mjs.
-TARGET="${TARGET:-34.5}"
+TARGET="${TARGET:-41.2}"
 
 [ -f "$RAW" ] || { echo "missing raw capture: $RAW (run shoot.mjs first)" >&2; exit 1; }
 mkdir -p "$DIST"

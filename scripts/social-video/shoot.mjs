@@ -33,11 +33,13 @@ const CHROME = process.env.CHROME || undefined;
 // readable and not on a phone-sized feed.
 //
 // FRAME is what actually gets recorded. Playwright's video is captured at the
-// CSS viewport size — deviceScaleFactor does not raise it — so the frame has to
-// be 1920x1080 natively to deliver 1080p. The app subtree is CSS-zoomed by
-// FRAME/DESIGN to fill it, giving the 1280-wide composition at true 1080p.
+// CSS viewport size — deviceScaleFactor does not raise it — so resolution has
+// to come from the viewport itself. It is 2560x1440 rather than the 1920x1080
+// delivery size so that the push-ins still have a full 1080p of real pixels
+// behind them; post.sh downscales. The app subtree is CSS-zoomed by
+// FRAME/DESIGN, giving the 1280-wide composition across the whole frame.
 const DESIGN = { width: 1280, height: 720 };
-const FRAME = { width: 1920, height: 1080 };
+const FRAME = { width: 2560, height: 1440 };
 const ZOOM = FRAME.width / DESIGN.width;
 
 const OVERLAY = readFileSync(path.join(HERE, 'overlay.js'), 'utf8');
@@ -78,8 +80,16 @@ async function main() {
       s.textContent =
         `html{overflow:hidden}` +
         `body{width:${w}px;height:${h}px;overflow:hidden;margin:0}` +
-        `.demo-root{height:${h}px !important;min-height:${h}px !important}`;
+        // No will-change here: promoting the app root to its own composited
+        // layer under the parent CSS zoom makes the screencast (though not
+        // page.screenshot) render it mis-positioned.
+        `.demo-root{height:${h}px !important;min-height:${h}px !important;` +
+        `transition:transform 950ms cubic-bezier(.22,1,.36,1)}`;
       document.head.appendChild(s);
+      // Size the overlay to the frame straight away. Until it is configured it
+      // defaults to the design size, so its black hold would cover only the
+      // top-left quarter and leak the app during setup.
+      if (window.__vid) window.__vid.configure(w, h, z);
     };
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', apply, { once: true });
@@ -130,7 +140,13 @@ async function main() {
     await sleep(220);
     await page.evaluate(() => window.__vid.cursorClick());
     await sleep(150);
-    await locator.click({ force: true });
+    // A push-in can carry a control off the visible frame; the real click
+    // refuses that, so fall back to dispatching one on the element itself.
+    try {
+      await locator.click({ force: true, timeout: 2500 });
+    } catch {
+      await locator.evaluate((el) => el.click());
+    }
     if (spotlight) {
       await sleep(250);
       await page.evaluate(() => window.__vid.spotlight(null));
@@ -138,9 +154,22 @@ async function main() {
     await sleep(settle);
   }
 
-  const caption = (eyebrow, line, sub) =>
-    page.evaluate(([e, l, s]) => window.__vid.caption(e, l, s), [eyebrow, line, sub]);
+  const caption = (eyebrow, line, sub, onCard) =>
+    page.evaluate(([e, l, s, c]) => window.__vid.caption(e, l, s, c), [eyebrow, line, sub, onCard]);
   const hideCaption = () => vid(() => window.__vid.hideCaption());
+
+  // Camera moves, in the app's own layout coordinates. Scaling about a fixed
+  // point on the right edge frames the Momentum panel; about the left edge,
+  // the meeting gallery. WIDE resets to the whole room.
+  const WIDE = [1, 640, 360];
+  const PANEL = [1.6, 1280, 360];
+  const PANEL_TIGHT = [1.95, 1280, 330];
+  const ROOM = [1.35, 120, 380];
+  const CAMERA_MS = 950;
+  const camera = async ([k, ox, oy], settle = CAMERA_MS) => {
+    await vid(([a, b, c]) => window.__vid.camera(a, b, c), [k, ox, oy]);
+    if (settle) await sleep(settle);
+  };
 
   const panelBtn = (re) => page.locator('.zmw-panel button').filter({ hasText: re }).first();
   const panelTab = (name) => page.locator('.zmw-panel button.tab', { hasText: name }).first();
@@ -148,13 +177,13 @@ async function main() {
   // ---- the cut ------------------------------------------------------------
   // Absolute marks on one timeline so the total length is deterministic
   // regardless of how long any individual click takes to settle.
-  const CARD_OUT = 2600;   // opening website card
-  const B1 = 8200;         // Live Anchor
-  const B2 = 14800;        // Pulse: draft + launch
-  const B3 = 20800;        // student answers
-  const B4 = 26200;        // results
-  const B5 = 31500;        // end class -> recovery pack
-  const END = 34500;       // closing website card out
+  const CARD_OUT = 5400;   // opening card + what-it-is explainer
+  const B1 = 12000;        // Live Anchor
+  const B2 = 19200;        // Pulse: draft + launch
+  const B3 = 25800;        // student answers
+  const B4 = 31800;        // results
+  const B5 = 37200;        // end class -> recovery pack
+  const END = 41200;       // closing card out
   const TOTAL = END;
 
   // Bring the card fully up behind the black hold first — fading both at once
@@ -169,49 +198,78 @@ async function main() {
 
   T0.t = Date.now();
 
-  // --- Opening card ---
-  await until(CARD_OUT - 450);
+  // --- Opening card: say what this actually is ---
+  await sleep(1100);
+  await caption(
+    'What it is',
+    'A Zoom App for live college lectures.',
+    'Momentum reads the meeting\u2019s live transcript and turns it into comprehension checks, a topic timeline, and a recap \u2014 without anyone leaving the call.',
+    true,
+  );
+  await until(CARD_OUT - 700);
+  await hideCaption();
+  await sleep(250);
   await vid(() => window.__vid.hideCard());
   await until(CARD_OUT);
 
-  // --- Beat 1: Live Anchor ---
-  await caption('Live Anchor', 'A live topic timeline and glossary from the transcript.');
+  // --- Beat 1: the room, then push in on the panel ---
+  await caption('Inside the meeting', 'The professor teaches. Momentum listens.');
+  await sleep(1600);
+  await camera(PANEL);
+  await sleep(1100);
+  await caption('1 · Live Anchor', 'It marks every topic change as she speaks.',
+    'Key points and a glossary, built from the transcript in real time.');
   await until(B1);
 
-  // --- Beat 2: Pulse ---
-  await caption("Professor's Pulse", 'One click drafts a poll from the last few minutes of lecture.');
+  // --- Beat 2: Pulse drafts a check ---
+  await caption('2 · Professor\u2019s Pulse', 'One click drafts a comprehension check.',
+    'Written from the last few minutes of lecture, editable before it goes out.');
   await uiClick(panelTab('Pulse'));
   await uiClick(panelBtn(/^Generate Check-In$/), { spotlight: true });
-  await sleep(1200);
+  await sleep(1100);
   await uiClick(panelBtn(/^Launch Poll$/), { spotlight: true });
   await until(B2);
 
-  // --- Beat 3: the student's seat ---
-  await caption('Student', 'The poll lands on every student\u2019s panel the moment it launches.');
+  // --- Beat 3: pull out so the class answering is visible, then back in ---
+  await caption('3 · Every student', 'It lands on all nine panels in the same meeting.',
+    'No new app, no link, nothing to install.');
+  await camera(WIDE);
   await uiClick(panelBtn(/^Switch to student$/));
+  await camera(PANEL, 600);
   await uiClick(page.locator('.zmw-panel button').filter({ hasText: /What the loss function measures/ }).first());
   await uiClick(panelBtn(/^Submit Answer$/), { spotlight: true });
   await until(B3);
 
-  // --- Beat 4: the professor sees the gap ---
+  // --- Beat 4: the gap, held tight on the results ---
+  await camera(WIDE, 700);
   await uiClick(panelBtn(/^Switch to professor$/));
-  await caption('Professor', 'Answers tallied the instant the poll closes \u2014 zero grading.');
   await uiClick(panelBtn(/End Poll & Show Results/), { spotlight: true });
+  await camera(PANEL_TIGHT, 600);
+  await caption('4 · The gap, live', 'Answers are tallied the moment the poll closes.',
+    'Nearly half the room is stuck on the same idea \u2014 with time left to fix it.');
   await until(B4);
 
-  // --- Beat 5: after class ---
+  // --- Beat 5: pull back out for the end of class ---
+  await camera(WIDE, 800);
   await uiClick(panelBtn(/^End Class$/), { spotlight: true });
-  await caption('Recovery Agent', 'Capture confusion in class, fix it after.');
+  await caption('5 · After class', 'Everyone leaves with a recap of what they missed.',
+    'Topics covered, terms defined, and every moment they bookmarked.');
   await uiClick(panelBtn(/^Switch to student$/));
+  await camera(ROOM, 0);
   await until(B5);
 
   // --- Closing card ---
   await hideCaption();
+  await sleep(200);
   await vid((src) => {
     window.__vid.hideCursor();
     window.__vid.imageCard(src);
   }, CARD);
+  await sleep(700);
+  await caption('Try it', 'zoom-momentum.vercel.app',
+    'Play both the professor and the student seat in your browser.', true);
   await until(END - 400);
+  await hideCaption();
   await vid(() => window.__vid.fadeToBlack());
   await until(END + 600);
 
