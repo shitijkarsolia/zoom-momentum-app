@@ -6,12 +6,17 @@ interactive demo the way a visitor would, it opens and closes on a screenshot
 of the site's own hero, and the captions are the site's own wording. No artwork
 is invented here.
 
-The piece opens by saying what Momentum is, then walks one continuous story —
-the lecture is running, Anchor builds the outline, Pulse drafts a check, the
-class answers, the gap shows up, everyone leaves with a recap. The camera
-pushes into the Momentum panel for the detail beats and pulls back out for the
-room, so the panel is readable at feed size without losing the context that it
-is running inside a Zoom meeting.
+The piece opens by saying what Momentum is, then goes through the flow in
+order: Anchor builds the outline, Pulse drafts a check-in, the class answers,
+the results come back, and each student gets a recap. The camera pushes into
+the Momentum panel for the detail beats and pulls back out for the room, so the
+panel is readable at feed size without losing the context that it runs inside a
+Zoom meeting.
+
+Captions are deliberately plain — they describe what is on screen and nothing
+more. They are set in Inter rather than the demo chrome's Space Grotesk, on a
+neutral dark plate, so they read as subtitles next to the app's own system-UI
+type instead of as display text competing with it.
 
 Output: `build/social-video/dist/zoom-momentum-demo-16x9.mp4` — 1920×1080,
 30fps, ~8 MB, H.264 High / yuv420p with `+faststart` and a silent AAC track.
@@ -87,35 +92,31 @@ re-sample it if you point `CARD` at something shaped differently.
 
 ## Suggested post copy
 
-Drawn from the site so it matches the video. Trim to taste.
+Plain descriptions, matching the video. Trim to taste.
 
 ### LinkedIn
 
-> Most Zoom lectures give the professor one signal: a grid of muted tiles.
+> Zoom Momentum is a Zoom App for live college lectures. It runs in the meeting
+> side panel and works off the live transcript.
 >
-> Zoom Momentum is a Zoom App that runs inside the meeting and works off the
-> live lecture transcript:
+> While the lecture is running, it builds a topic timeline with key points and
+> a glossary. The professor can generate a check-in poll from the last few
+> minutes of lecture, edit it, and launch it to the class; answers are tallied
+> as soon as the poll closes. Students can bookmark anything they did not
+> follow, and at the end of class each one gets a recap of the topics covered,
+> the terms defined, and the moments they marked.
 >
-> • Professor's Pulse — one click drafts a poll from the last few minutes of
-> lecture, and answers are tallied the instant it closes. Zero grading.
-> • Live Anchor — a live topic timeline and glossary, in any of six languages.
-> Join late and you can still see the current topic and every term so far.
-> • Recovery Agent — students bookmark hard moments privately, and each one
-> turns into a recovery pack after class.
+> Nothing to install, and students stay in the meeting.
 >
-> No second screen, no separate site, nothing for students to install.
->
-> 40 seconds of it below. Interactive demo at zoom-momentum.vercel.app — you
-> can play both the professor and the student seat.
+> A 40 second walkthrough is below. There is an interactive demo at
+> zoom-momentum.vercel.app with both the professor and student views.
 >
 > Built as my Zoom Fellowship project at ASU Next Lab.
 
 ### X
 
-> Zoom lectures give professors one signal: a grid of muted tiles.
+> Zoom Momentum is a Zoom App for live college lectures. It reads the live
+> transcript and uses it to generate check-in polls, a topic timeline, a
+> glossary, and a recap for each student after class.
 >
-> Zoom Momentum runs on the live lecture transcript: one-click comprehension
-> polls, a topic timeline and glossary that build themselves, and a recovery
-> pack for every student after class.
->
-> Demo: zoom-momentum.vercel.app
+> Interactive demo: zoom-momentum.vercel.app

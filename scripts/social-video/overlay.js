@@ -9,7 +9,18 @@
 const installOverlay = () => {
   const BLUE = '#0b5cff';
   const BLUE_LIGHT = '#5c9bff';
-  const FONT = "'Space Grotesk', 'Liberation Sans', system-ui, sans-serif";
+  // Inter rather than the demo chrome's Space Grotesk: the captions should read
+  // as plain subtitles next to the app's own system-UI type, not as display
+  // text competing with it.
+  const FONT = "'Inter', 'Liberation Sans', system-ui, sans-serif";
+
+  if (!document.getElementById('vid-font')) {
+    const link = document.createElement('link');
+    link.id = 'vid-font';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap';
+    document.head.appendChild(link);
+  }
 
   const style = document.createElement('style');
   style.textContent = `
@@ -31,39 +42,38 @@ const installOverlay = () => {
 
     /* ---- caption ---- */
     #vid-cap {
-      position: absolute; z-index: 3; left: 44px; bottom: 92px; max-width: 640px;
-      background: rgba(7, 11, 20, 0.93);
-      backdrop-filter: blur(6px);
-      border-left: 3px solid ${BLUE};
-      border-radius: 4px 16px 16px 4px;
-      padding: 18px 26px 20px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-      opacity: 0; transform: translateY(16px);
-      transition: opacity .34s ease, transform .44s cubic-bezier(.16,1,.3,1);
+      position: absolute; z-index: 3; left: 44px; bottom: 88px; max-width: 620px;
+      background: rgba(13, 15, 20, 0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 16px 22px 18px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .32s ease, transform .4s cubic-bezier(.16,1,.3,1);
     }
     #vid-cap.on { opacity: 1; transform: translateY(0); }
     /* Card variant: wider, centred, sitting over the screenshot. */
+    /* Card variant sits in the band below the hero's own copy, not over it. */
     #vid-cap.card {
-      left: 50%; right: auto; bottom: 74px; max-width: 940px;
-      width: 940px; margin-left: -470px; text-align: center;
-      border-left: none; border-radius: 18px;
-      border-top: 3px solid ${BLUE};
-      padding: 22px 34px 26px;
+      left: 50%; right: auto; bottom: 26px; max-width: 880px;
+      width: 880px; margin-left: -440px; text-align: center;
+      padding: 16px 32px 18px;
     }
-    #vid-cap.card .line { font-size: 32px; }
-    #vid-cap.card .sub { font-size: 18px; margin-top: 10px; }
+    #vid-cap.card .line { font-size: 24px; }
+    #vid-cap.card .sub { font-size: 15px; margin-top: 8px; }
     #vid-cap .eyebrow {
-      display: block; font-size: 12.5px; font-weight: 700;
-      letter-spacing: .16em; text-transform: uppercase;
-      color: ${BLUE_LIGHT}; margin-bottom: 9px;
+      display: block; font-size: 11.5px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: rgba(216, 222, 233, 0.5); margin-bottom: 7px;
     }
     #vid-cap .line {
-      display: block; font-size: 29px; line-height: 1.2; font-weight: 700;
-      color: #fff; letter-spacing: -0.01em;
+      display: block; font-size: 24px; line-height: 1.3; font-weight: 600;
+      color: #f4f6fa;
     }
     #vid-cap .sub {
-      display: block; margin-top: 8px; font-size: 16px; line-height: 1.4;
-      font-weight: 400; color: rgba(233, 238, 248, 0.74);
+      display: block; margin-top: 7px; font-size: 15px; line-height: 1.5;
+      font-weight: 400; color: rgba(226, 232, 242, 0.66);
     }
 
     /* ---- synthetic cursor ---- */
@@ -111,15 +121,14 @@ const installOverlay = () => {
 
     /* ---- progress bar ---- */
     #vid-prog {
-      position: absolute; top: 0; left: 0; height: 3px; width: 0%;
-      background: linear-gradient(90deg, ${BLUE}, ${BLUE_LIGHT});
-      box-shadow: 0 0 12px rgba(11,92,255,.7);
+      position: absolute; top: 0; left: 0; height: 2px; width: 0%;
+      background: rgba(255, 255, 255, 0.5);
     }
 
     /* ---- spotlight ring on the element being used ---- */
     #vid-spot {
       position: absolute; border: 2.5px solid ${BLUE}; border-radius: 12px;
-      box-shadow: 0 0 0 4px rgba(11,92,255,.18), 0 0 26px rgba(11,92,255,.4);
+      box-shadow: 0 0 0 3px rgba(11,92,255,.12);
       opacity: 0; transition: opacity .3s ease, top .4s ease, left .4s ease,
         width .4s ease, height .4s ease;
     }
@@ -172,7 +181,9 @@ const installOverlay = () => {
     // --- caption ---
     caption(eyebrow, line, sub, onCard) {
       cap.classList.toggle('card', !!onCard);
-      cap.querySelector('.eyebrow').textContent = eyebrow || '';
+      const eb = cap.querySelector('.eyebrow');
+      eb.textContent = eyebrow || '';
+      eb.style.display = eyebrow ? 'block' : 'none';
       cap.querySelector('.line').textContent = line || '';
       const s = cap.querySelector('.sub');
       s.textContent = sub || '';

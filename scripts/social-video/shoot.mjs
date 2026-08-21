@@ -98,7 +98,7 @@ async function main() {
 
   await page.goto(DEMO_URL, { waitUntil: 'domcontentloaded' });
 
-  // The demo injects Space Grotesk at runtime; the overlay uses the same face.
+  // Both the demo's own webfont and the overlay's Inter load at runtime.
   await page.waitForFunction(() => document.fonts && document.fonts.status === 'loaded', null, { timeout: 15000 })
     .catch(() => console.warn('! fonts not confirmed loaded, continuing'));
   await page.waitForSelector('.tour-skip', { timeout: 15000 });
@@ -201,9 +201,9 @@ async function main() {
   // --- Opening card: say what this actually is ---
   await sleep(1100);
   await caption(
-    'What it is',
+    '',
     'A Zoom App for live college lectures.',
-    'Momentum reads the meeting\u2019s live transcript and turns it into comprehension checks, a topic timeline, and a recap \u2014 without anyone leaving the call.',
+    'Momentum uses AI to generate live polls, a topic outline, a glossary, and a post-class recap from your lecture.',
     true,
   );
   await until(CARD_OUT - 700);
@@ -213,17 +213,17 @@ async function main() {
   await until(CARD_OUT);
 
   // --- Beat 1: the room, then push in on the panel ---
-  await caption('Inside the meeting', 'The professor teaches. Momentum listens.');
+  await caption('Inside the meeting', 'Momentum runs in the side panel of a live Zoom lecture.');
   await sleep(1600);
   await camera(PANEL);
   await sleep(1100);
-  await caption('1 · Live Anchor', 'It marks every topic change as she speaks.',
-    'Key points and a glossary, built from the transcript in real time.');
+  await caption('Live Anchor', 'A topic timeline built from the live transcript.',
+    'Each topic gets key points, and new terms are added to a glossary.');
   await until(B1);
 
   // --- Beat 2: Pulse drafts a check ---
-  await caption('2 · Professor\u2019s Pulse', 'One click drafts a comprehension check.',
-    'Written from the last few minutes of lecture, editable before it goes out.');
+  await caption('Professor\u2019s Pulse', 'The professor generates a check-in poll from the lecture.',
+    'The question and options can be edited before it is launched.');
   await uiClick(panelTab('Pulse'));
   await uiClick(panelBtn(/^Generate Check-In$/), { spotlight: true });
   await sleep(1100);
@@ -231,8 +231,8 @@ async function main() {
   await until(B2);
 
   // --- Beat 3: pull out so the class answering is visible, then back in ---
-  await caption('3 · Every student', 'It lands on all nine panels in the same meeting.',
-    'No new app, no link, nothing to install.');
+  await caption('Student view', 'The poll appears in each student\u2019s panel.',
+    'Students answer without leaving the meeting.');
   await camera(WIDE);
   await uiClick(panelBtn(/^Switch to student$/));
   await camera(PANEL, 600);
@@ -245,15 +245,15 @@ async function main() {
   await uiClick(panelBtn(/^Switch to professor$/));
   await uiClick(panelBtn(/End Poll & Show Results/), { spotlight: true });
   await camera(PANEL_TIGHT, 600);
-  await caption('4 · The gap, live', 'Answers are tallied the moment the poll closes.',
-    'Nearly half the room is stuck on the same idea \u2014 with time left to fix it.');
+  await caption('Results', 'Answers are tallied when the poll closes.',
+    '44% picked the same option, so the professor knows what to go back over.');
   await until(B4);
 
   // --- Beat 5: pull back out for the end of class ---
   await camera(WIDE, 800);
   await uiClick(panelBtn(/^End Class$/), { spotlight: true });
-  await caption('5 · After class', 'Everyone leaves with a recap of what they missed.',
-    'Topics covered, terms defined, and every moment they bookmarked.');
+  await caption('Recovery Agent', 'At the end of class, each student gets a recap.',
+    'Topics covered, terms defined, and the moments they bookmarked.');
   await uiClick(panelBtn(/^Switch to student$/));
   await camera(ROOM, 0);
   await until(B5);
@@ -266,8 +266,8 @@ async function main() {
     window.__vid.imageCard(src);
   }, CARD);
   await sleep(700);
-  await caption('Try it', 'zoom-momentum.vercel.app',
-    'Play both the professor and the student seat in your browser.', true);
+  await caption('Interactive demo', 'zoom-momentum.vercel.app',
+    'Runs in the browser, with both the professor and student views.', true);
   await until(END - 400);
   await hideCaption();
   await vid(() => window.__vid.fadeToBlack());
