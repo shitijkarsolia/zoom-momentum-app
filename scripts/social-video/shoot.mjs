@@ -2,15 +2,16 @@
 //
 // Drives the public demo (client build served statically) through a scripted
 // run, with captions and a synthetic cursor drawn in-page by overlay.js. The
-// piece opens and closes on the project's existing og-image rather than any
-// artwork invented here, and every caption is the site's own wording.
-// Produces a raw .webm; post.sh turns that into the delivered MP4.
+// piece opens and closes on a screenshot of the project's own website (see
+// capture-card.mjs) rather than any artwork invented here, and every caption is
+// the site's own wording. Produces a raw .webm; post.sh encodes the MP4.
 //
 //   node scripts/social-video/shoot.mjs
 //
 // Env:
 //   DEMO_URL   demo origin              (default http://127.0.0.1:8099/)
 //   OUT_DIR    raw capture destination  (default build/social-video)
+//   CARD       card image               (default build/social-video/card.png)
 //   CHROME     browser executable       (default Playwright's bundled Chromium)
 
 import { chromium } from 'playwright';
@@ -41,10 +42,10 @@ const ZOOM = FRAME.width / DESIGN.width;
 
 const OVERLAY = readFileSync(path.join(HERE, 'overlay.js'), 'utf8');
 
-// The site's own share card, used as the opening and closing frame. Inlined as
-// a data URI so the demo can stay a plain static build with nothing added to it.
-const OG_IMAGE_PATH = process.env.OG_IMAGE || path.join(ROOT, 'website/og-image.png');
-const OG_IMAGE = `data:image/png;base64,${readFileSync(OG_IMAGE_PATH).toString('base64')}`;
+// The website screenshot used as the opening and closing frame. Inlined as a
+// data URI so the demo can stay a plain static build with nothing added to it.
+const CARD_PATH = process.env.CARD || path.join(OUT_DIR, 'card.png');
+const CARD = `data:image/png;base64,${readFileSync(CARD_PATH).toString('base64')}`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -147,18 +148,18 @@ async function main() {
   // ---- the cut ------------------------------------------------------------
   // Absolute marks on one timeline so the total length is deterministic
   // regardless of how long any individual click takes to settle.
-  const CARD_OUT = 2600;   // opening og-image card
+  const CARD_OUT = 2600;   // opening website card
   const B1 = 8200;         // Live Anchor
   const B2 = 14800;        // Pulse: draft + launch
   const B3 = 20800;        // student answers
   const B4 = 26200;        // results
   const B5 = 31500;        // end class -> recovery pack
-  const END = 34500;       // closing og-image card out
+  const END = 34500;       // closing website card out
   const TOTAL = END;
 
   // Bring the card fully up behind the black hold first — fading both at once
   // lets the app show through the gap between them.
-  await vid((src) => window.__vid.imageCard(src), OG_IMAGE);
+  await vid((src) => window.__vid.imageCard(src), CARD);
   await sleep(800);
 
   await vid((total) => {
@@ -209,7 +210,7 @@ async function main() {
   await vid((src) => {
     window.__vid.hideCursor();
     window.__vid.imageCard(src);
-  }, OG_IMAGE);
+  }, CARD);
   await until(END - 400);
   await vid(() => window.__vid.fadeToBlack());
   await until(END + 600);
